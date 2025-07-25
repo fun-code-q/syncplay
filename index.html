@@ -242,7 +242,15 @@
         z-index: 10;
         opacity: 1;
         transition: opacity 0.3s ease, transform 0.3s ease;
-    }
+        opacity: 1;
+        pointer-events: auto;
+        transition: opacity 0.3s ease;
+        }
+
+    .controls-container.hidden {
+    opacity: 0;
+    pointer-events: none;
+        }
 
     .controls {
         background: var(--control-bg);
@@ -303,11 +311,23 @@
             transition: transform 0.3s ease;
             z-index: 1000;
             display: none;
-        }
+            background: var(--control-bg);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 10000; /* Ensure it's above fullscreen elements */
+            }
 
         .notification.show {
             display: flex;
             transform: translateX(-50%) translateY(0);
+            animation: fadeInOut 3s ease;
+        }
+        @keyframes fadeInOut {
+        0% { opacity: 0; transform: translateX(-50%) translateY(20px); }
+        10% { opacity: 1; transform: translateX(-50%) translateY(0); }
+        90% { opacity: 1; transform: translateX(-50%) translateY(0); }
+        100% { opacity: 0; transform: translateX(-50%) translateY(-20px); }
         }
 
         .notification-content {
@@ -990,20 +1010,23 @@
             }
         }
 
-        function showControls() {
-            elements.controlsContainer.classList.remove('hidden');
-        }
+       function showControls() {
+    elements.controlsContainer.style.opacity = '1';
+    elements.controlsContainer.style.pointerEvents = 'auto';
+}
 
-        function hideControls() {
-            elements.controlsContainer.classList.add('hidden');
-        }
+function hideControls() {
+    elements.controlsContainer.style.opacity = '0';
+    elements.controlsContainer.style.pointerEvents = 'none';
+}
 
-        function resetControlsTimeout() {
-            if (controlsTimeout) {
-                clearTimeout(controlsTimeout);
-            }
-            controlsTimeout = setTimeout(hideControls, 3000);
-        }
+function resetControlsTimeout() {
+    if (controlsTimeout) {
+        clearTimeout(controlsTimeout);
+    }
+    showControls();
+    controlsTimeout = setTimeout(hideControls, 3000);
+}
 
         const handleInteraction = debounce(() => {
             showControls();
@@ -1033,6 +1056,28 @@
             elements.videoContainer.addEventListener('mousemove', handleInteraction);
             elements.videoContainer.addEventListener('touchstart', handleInteraction, { passive: true });
             resetControlsTimeout();
+
+            document.addEventListener('fullscreenchange', () => {
+    if (document.fullscreenElement) {
+        elements.fullscreenBtn.innerHTML = '<i class="fas fa-compress"></i>';
+        showNotification('Entered fullscreen mode');
+    } else {
+        elements.fullscreenBtn.innerHTML = '<i class="fas fa-expand"></i>';
+        showNotification('Exited fullscreen mode');
+    }
+    showControls();
+    resetControlsTimeout();
+    const handleInteraction = debounce(() => {
+    if (!document.fullscreenElement) {
+        showControls();
+        resetControlsTimeout();
+    } else {
+        // In fullscreen, show controls immediately and hide after delay
+        showControls();
+        resetControlsTimeout();
+    }
+}, 100);
+});
         });
     </script>
 </body>
