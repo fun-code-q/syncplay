@@ -83,6 +83,19 @@
             color: rgba(255, 255, 255, 0.6);
         }
         
+        .load-video-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+            width: 100%;
+        }
+        
+        .load-video-label {
+            display: flex;
+            width: 100%;
+            gap: 10px;
+        }
+        
         #loadVideo {
             padding: 15px 30px;
             background: linear-gradient(45deg, #ff8a00, #e52e71);
@@ -94,6 +107,7 @@
             cursor: pointer;
             transition: all 0.3s ease;
             box-shadow: 0 4px 15px rgba(229, 46, 113, 0.3);
+            flex-shrink: 0;
         }
         
         #loadVideo:hover {
@@ -153,8 +167,9 @@
             border-radius: 50px;
             padding: 12px 25px;
             display: flex;
-            gap: 20px;
+            gap: 15px;
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+            align-items: center;
         }
         
         .control-btn {
@@ -187,78 +202,81 @@
             height: 50px;
             font-size: 1.5rem;
         }
-        
-        .control-btn.push-to-talk {
-            background: linear-gradient(45deg, #00c6ff, #0072ff);
-            position: relative;
-        }
-        
-        .control-btn.push-to-talk.active {
-            background: linear-gradient(45deg, #ff0000, #ff8a00);
-            animation: pulse 1.5s infinite;
-        }
-        
-        .control-btn.push-to-talk.disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-        
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-            100% { transform: scale(1); }
-        }
-        
-        .mic-status {
+
+        /* Settings menu styles */
+        .settings-menu {
             position: absolute;
-            bottom: -5px;
-            right: -5px;
-            width: 15px;
-            height: 15px;
-            border-radius: 50%;
-            background-color: #ff0000;
-            border: 2px solid rgba(0, 0, 0, 0.7);
-            display: none;
-        }
-        
-        .mic-status.active {
-            background-color: #00ff00;
-            display: block;
-        }
-        
-        .mic-status.disabled {
-            background-color: #888;
-            display: block;
-        }
-        
-        .permission-prompt {
-            position: fixed;
-            bottom: 20px;
+            bottom: 80px;
             left: 50%;
             transform: translateX(-50%);
             background: rgba(0, 0, 0, 0.8);
-            padding: 15px 20px;
             border-radius: 10px;
+            padding: 10px;
             display: none;
-            z-index: 1000;
+            flex-direction: column;
+            gap: 5px;
+            z-index: 20;
+            min-width: 150px;
+        }
+        
+        .settings-menu.show {
+            display: flex;
+        }
+        
+        .settings-option {
+            padding: 8px 15px;
+            color: white;
+            cursor: pointer;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .settings-option:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .settings-option i {
+            width: 20px;
             text-align: center;
         }
+
+        /* Quality and subtitle menus */
+        .sub-menu {
+            position: absolute;
+            left: 100%;
+            bottom: 0.5px;
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 10px;
+            padding: 10px;
+            display: none;
+            flex-direction: column;
+            gap: 5px;
+            min-width: 150px;
+        }
         
-        .permission-prompt button {
-            background: linear-gradient(45deg, #ff8a00, #e52e71);
-            border: none;
-            color: white;
+        .settings-option:hover .sub-menu {
+            display: flex;
+        }
+        
+        .sub-menu-option {
             padding: 8px 15px;
-            border-radius: 20px;
-            margin-top: 10px;
+            color: white;
             cursor: pointer;
+            border-radius: 5px;
         }
         
-        .permission-prompt button:last-child {
-            background: rgba(255, 255, 255, 0.15);
-            margin-left: 10px;
+        .sub-menu-option:hover {
+            background: rgba(255, 255, 255, 0.2);
         }
         
+        .sub-menu-option.active {
+            background: rgba(255, 255, 255, 0.3);
+            font-weight: bold;
+        }
+
+        /* Blocker overlays */
         .click-blocker {
             position: absolute;
             left: 0;
@@ -282,7 +300,8 @@
             bottom: 0;
             height: 50%;
         }
-        
+
+        /* Fullscreen styles */
         .video-container:fullscreen {
             width: 100%;
             height: 100%;
@@ -304,8 +323,8 @@
         }
         
         .copy-icon {
-            width: 40px;
-            height: 40px;
+            width: 50px;
+            height: 50px;
             border-radius: 50%;
             background: rgba(255, 255, 255, 0.15);
             border: none;
@@ -316,7 +335,6 @@
             justify-content: center;
             align-items: center;
             transition: all 0.3s ease;
-            margin-left: 10px;
         }
         
         .copy-icon:hover {
@@ -329,14 +347,16 @@
         }
         
         .copy-success {
-            font-size: 0.9rem;
-            color: #4ade80;
+            position: absolute;
+            right: 10px;
+            top: -25px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 0.8rem;
             opacity: 0;
             transition: opacity 0.3s ease;
-            position: absolute;
-            right: 30px;
-            top: 50%;
-            transform: translateY(-50%);
+            pointer-events: none;
         }
         
         .copy-success.show {
@@ -396,6 +416,107 @@
             display: flex;
             align-items: center;
             width: 100%;
+            gap: 10px;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .terminate-btn, .leave-btn {
+            padding: 15px 15px;
+            border-radius: 50px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: none;
+        }
+        
+        .terminate-btn {
+            background: linear-gradient(45deg, #ff0000, #ff6b6b);
+            color: white;
+        }
+        
+        .leave-btn {
+            background: linear-gradient(45deg, #00c6ff, #0072ff);
+            color: white;
+        }
+        
+        .terminate-btn:hover, .leave-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        }
+        
+        .terminate-btn:active, .leave-btn:active {
+            transform: translateY(1px);
+        }
+        
+        .confirmation-popup {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        
+        .confirmation-popup.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        
+        .confirmation-content {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+        }
+        
+        .confirmation-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .confirmation-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 50px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .confirm-btn {
+            background: linear-gradient(45deg, #ff0000, #ff6b6b);
+            color: white;
+        }
+        
+        .cancel-btn {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+        }
+        
+        .confirmation-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        }
+        
+        .confirmation-btn:active {
+            transform: translateY(1px);
         }
         
         @keyframes fadeIn {
@@ -416,12 +537,16 @@
                 flex-direction: column;
             }
             
+            .load-video-label {
+                flex-direction: column;
+            }
+            
             #loadVideo {
                 width: 100%;
             }
             
             .controls {
-                gap: 10px;
+                gap: 8px;
                 padding: 10px 15px;
             }
             
@@ -436,9 +561,29 @@
                 height: 50px;
             }
             
-            .copy-icon {
-                margin-left: 0;
-                margin-top: 10px;
+            .input-container {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .action-buttons {
+                width: 100%;
+                justify-content: space-between;
+            }
+            
+            .terminate-btn, .leave-btn {
+                width: 48%;
+                text-align: center;
+            }
+            
+            .settings-menu {
+                bottom: 70px;
+                min-width: 120px;
+            }
+            
+            .sub-menu {
+                left: auto;
+                right: 100%;
             }
         }
     </style>
@@ -455,11 +600,11 @@
         </div>
         
         <header>
-            <h1>YouTube Sync Player</h1>
-            <p class="subtitle">Watch YouTube videos together in real-time</p>
+            <h1>Sync Player</h1>
         </header>
         
         <div class="video-container" id="videoContainer">
+            <!-- Click blocker overlays -->
             <div class="click-blocker top"></div>
             <div class="click-blocker middle"></div>
             <div class="click-blocker bottom"></div>
@@ -475,41 +620,88 @@
                     <button class="control-btn forward" title="Forward 10s" id="forwardBtn">
                         <i class="fas fa-forward"></i>
                     </button>
-                    <button class="control-btn push-to-talk disabled" title="Push to Talk (Enable in settings)" id="pushToTalkBtn">
-                        <i class="fas fa-microphone"></i>
-                        <div class="mic-status disabled" id="micStatus"></div>
+                    <button class="control-btn settings" title="Settings" id="settingsBtn">
+                        <i class="fas fa-cog"></i>
                     </button>
                     <button class="control-btn fullscreen" title="Fullscreen" id="fullscreenBtn">
                         <i class="fas fa-expand"></i>
                     </button>
+                    
+                    <div class="settings-menu" id="settingsMenu">
+                        <div class="settings-option" id="qualityBtn">
+                            <i class="fas fa-tachometer-alt"></i>
+                            <span>Quality</span>
+                            <div class="sub-menu" id="qualityMenu">
+                                <div class="sub-menu-option" data-quality="hd2160">2160p (4K)</div>
+                                <div class="sub-menu-option" data-quality="hd1440">1440p (QHD)</div>
+                                <div class="sub-menu-option" data-quality="hd1080">1080p (HD)</div>
+                                <div class="sub-menu-option" data-quality="hd720">720p (HD)</div>
+                                <div class="sub-menu-option" data-quality="large">480p</div>
+                                <div class="sub-menu-option" data-quality="medium">360p</div>
+                                <div class="sub-menu-option" data-quality="small">240p</div>
+                                <div class="sub-menu-option" data-quality="tiny">144p</div>
+                                <div class="sub-menu-option" data-quality="auto">Auto</div>
+                            </div>
+                        </div>
+                        <div class="settings-option" id="subtitlesBtn">
+                            <i class="fas fa-closed-captioning"></i>
+                            <span>Subtitles</span>
+                            <div class="sub-menu" id="subtitlesMenu">
+                                <div class="sub-menu-option" data-subtitles="off">Off</div>
+                                <div class="sub-menu-option" data-subtitles="on">On</div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
             <div id="player"></div>
         </div>
         
         <div class="input-group" id="inputGroup">
+            <div class="load-video-container">
+                <label class="load-video-label">
+                    <input type="text" id="videoUrl" placeholder="Enter YouTube URL">
+                    <button id="loadVideo">Load Video</button>
+                </label>
+            </div>
+            
             <div class="input-container">
-                <input type="text" id="videoUrl" placeholder="Enter YouTube URL">
-                <button id="loadVideo">Load Video</button>
-                <button class="copy-icon" id="copyRoomLink" style="display: none;">
-                    <i class="fas fa-copy"></i>
-                </button>
-                <div class="copy-success" id="copySuccess">Copied to clipboard!</div>
+                <div class="action-buttons">
+                    <button class="terminate-btn" id="terminateBtn">
+                        <i class="fas fa-power-off"></i> Terminate Room
+                    </button>
+                    <button class="leave-btn" id="leaveBtn">
+                        <i class="fas fa-sign-out-alt"></i> Leave Room
+                    </button>
+                    <button class="copy-icon" id="copyRoomLink" style="display: none;">
+                        <i class="fas fa-copy"></i>
+                        <span class="copy-success" id="copySuccess">Copied!</span>
+                    </button>
+                </div>
             </div>
         </div>
-        
-        <div class="permission-prompt" id="permissionPrompt">
-            <p>Enable microphone for push-to-talk?</p>
-            <button id="enableMicBtn">Enable Microphone</button>
-            <button id="disableMicBtn">No Thanks</button>
+    </div>
+    
+    <!-- Confirmation Popup -->
+    <div class="confirmation-popup" id="confirmationPopup">
+        <div class="confirmation-content">
+            <h3 id="confirmationTitle">Confirm Action</h3>
+            <p id="confirmationMessage">Are you sure you want to perform this action?</p>
+            <div class="confirmation-buttons">
+                <button class="confirmation-btn confirm-btn" id="confirmAction">Confirm</button>
+                <button class="confirmation-btn cancel-btn" id="cancelAction">Cancel</button>
+            </div>
         </div>
     </div>
 
+    <!-- YouTube IFrame API -->
     <script src="https://www.youtube.com/iframe_api"></script>
+    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
     
     <script>
+        // Firebase configuration - REPLACE WITH YOUR OWN CONFIG
         const firebaseConfig = {
             apiKey: "AIzaSyDsPjwl2fsQwua_HZTPJSDmtlgzRkgVXQ4",
             authDomain: "sync-f5dd9.firebaseapp.com",
@@ -520,9 +712,11 @@
             appId: "1:891545015962:web:e68867deec0117fe85f123"
         };
         
+        // Initialize Firebase
         const app = firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
         
+        // Global variables
         let player;
         let isPlaying = false;
         let roomId = null;
@@ -535,31 +729,41 @@
         let apiReady = false;
         let syncInterval = null;
         let previousJoinerCount = 0;
-        let localStream = null;
-        let peerConnections = {};
-        let pushToTalkActive = false;
-        let localAudioTrack = null;
-        let currentUserId = Math.random().toString(36).substring(2, 10);
-        let micPermissionGranted = false;
+        let inactivityTimer;
+        let isFullscreen = false;
+        let controlsVisible = true;
+        let currentQuality = 'auto';
+        let subtitlesEnabled = false;
         
+        // DOM Elements
         const videoUrlInput = document.getElementById('videoUrl');
         const loadButton = document.getElementById('loadVideo');
         const playPauseBtn = document.getElementById('playPauseBtn');
         const backwardBtn = document.getElementById('backwardBtn');
         const forwardBtn = document.getElementById('forwardBtn');
         const fullscreenBtn = document.getElementById('fullscreenBtn');
-        const pushToTalkBtn = document.getElementById('pushToTalkBtn');
-        const micStatus = document.getElementById('micStatus');
+        const settingsBtn = document.getElementById('settingsBtn');
+        const settingsMenu = document.getElementById('settingsMenu');
+        const qualityBtn = document.getElementById('qualityBtn');
+        const subtitlesBtn = document.getElementById('subtitlesBtn');
+        const qualityMenu = document.getElementById('qualityMenu');
+        const subtitlesMenu = document.getElementById('subtitlesMenu');
         const notification = document.getElementById('notification');
         const notificationText = document.getElementById('notificationText');
         const modeIndicator = document.getElementById('modeIndicator');
         const inputGroup = document.getElementById('inputGroup');
         const copyRoomLinkBtn = document.getElementById('copyRoomLink');
         const copySuccess = document.getElementById('copySuccess');
-        const permissionPrompt = document.getElementById('permissionPrompt');
-        const enableMicBtn = document.getElementById('enableMicBtn');
-        const disableMicBtn = document.getElementById('disableMicBtn');
+        const terminateBtn = document.getElementById('terminateBtn');
+        const leaveBtn = document.getElementById('leaveBtn');
+        const confirmationPopup = document.getElementById('confirmationPopup');
+        const confirmActionBtn = document.getElementById('confirmAction');
+        const cancelActionBtn = document.getElementById('cancelAction');
+        const confirmationTitle = document.getElementById('confirmationTitle');
+        const confirmationMessage = document.getElementById('confirmationMessage');
+        const videoContainer = document.getElementById('videoContainer');
 
+        // YouTube API ready callback
         window.onYouTubeIframeAPIReady = function() {
             console.log("YouTube API is ready");
             apiReady = true;
@@ -569,285 +773,141 @@
             }
         };
 
+        // Create YouTube player
         function createPlayer(videoId) {
             if (!apiReady) {
                 console.log("YouTube API not ready yet, queuing video load");
                 pendingVideoId = videoId;
                 return;
             }
-            try {
-                console.log("Creating YouTube player with video ID:", videoId);
-                player = new YT.Player('player', {
-                    height: '100%',
-                    width: '100%',
-                    videoId: videoId,
-                    playerVars: {
-                        'rel': 0,
-                        'modestbranding': 1,
-                        'playsinline': 1,
-                        'enablejsapi': 1
-                    },
-                    events: {
-                        'onReady': onPlayerReady,
-                        'onStateChange': onPlayerStateChange,
-                        'onError': (event) => console.error("YouTube Player Error:", event.data)
-                    }
-                });
-            } catch (error) {
-                console.error("Error creating YouTube player:", error);
-                showNotification("Failed to load video player. Please try again.");
-            }
+
+            console.log("Creating YouTube player with video ID:", videoId);
+            player = new YT.Player('player', {
+                height: '100%',
+                width: '100%',
+                videoId: videoId,
+                playerVars: {
+                    'rel': 0,
+                    'modestbranding': 1,
+                    'playsinline': 1,
+                    'enablejsapi': 1,
+                    'cc_load_policy': subtitlesEnabled ? 1 : 0
+                },
+                events: {
+                    'onReady': onPlayerReady,
+                    'onStateChange': onPlayerStateChange,
+                    'onError': onPlayerError
+                }
+            });
         }
 
+        // Player error handler
+        function onPlayerError(event) {
+            console.error("Player error:", event.data);
+            showNotification("Error loading video. Please try another URL.");
+        }
+
+        // Extract video ID from YouTube URL
         function extractVideoId(url) {
             const regExp = /^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#\&\?]*).*/;
             const match = url.match(regExp);
             return (match && match[2].length === 11) ? match[2] : null;
         }
         
+        // Load video into player
         function loadVideo() {
             const videoId = extractVideoId(videoUrlInput.value);
+            
             if (videoId) {
                 console.log("Loading video with ID:", videoId);
                 if (player) {
-                    player.loadVideoById(videoId);
+                    player.loadVideoById({
+                        videoId: videoId,
+                        suggestedQuality: currentQuality
+                    });
                 } else {
                     createPlayer(videoId);
                 }
                 isPlaying = false;
                 playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                
+                // If host, create a room
                 if (!isJoiner) {
                     createRoom(videoId);
                 }
             } else {
-                alert('Please enter a valid YouTube URL');
+                showNotification("Please enter a valid YouTube URL");
             }
         }
         
-        async function requestMicrophonePermission() {
-            try {
-                localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                localAudioTrack = localStream.getAudioTracks()[0];
-                localAudioTrack.enabled = false;
-                micPermissionGranted = true;
-                pushToTalkBtn.classList.remove('disabled');
-                micStatus.classList.remove('disabled');
-                showNotification('Microphone enabled - ready for push-to-talk');
-                initWebRTC();
-                return true;
-            } catch (error) {
-                console.error('Error accessing microphone:', error);
-                showNotification('Microphone access denied. Push-to-talk disabled.');
-                micPermissionGranted = false;
-                pushToTalkBtn.classList.add('disabled');
-                micStatus.classList.add('disabled');
-                return false;
-            }
-        }
-        
-        function initWebRTC() {
-            if (!micPermissionGranted || !localStream) {
-                console.log('Microphone not available for WebRTC');
-                return;
-            }
-            try {
-                if (isHost) {
-                    roomRef.child('joiners').on('child_added', (snapshot) => {
-                        const joinerId = snapshot.key;
-                        if (joinerId && !peerConnections[joinerId] && joinerId !== currentUserId) {
-                            createPeerConnection(joinerId, true);
-                        }
-                    });
-                    roomRef.child('joiners').on('child_removed', (snapshot) => {
-                        const joinerId = snapshot.key;
-                        if (peerConnections[joinerId]) {
-                            peerConnections[joinerId].close();
-                            delete peerConnections[joinerId];
-                        }
-                    });
-                } else if (isJoiner) {
-                    createPeerConnection('host', false);
-                }
-            } catch (error) {
-                console.error('Error initializing WebRTC:', error);
-                showNotification('Voice chat setup failed. Video sync still available.');
-            }
-        }
-        
-        function createPeerConnection(targetId, isInitiator) {
-            try {
-                const configuration = {
-                    iceServers: [
-                        { urls: 'stun:stun.l.google.com:19302' },
-                        { urls: 'stun:stun1.l.google.com:19302' },
-                        { urls: 'stun:stun2.l.google.com:19302' },
-                        {
-                            urls: 'turn:openrelay.metered.ca:80',
-                            username: 'openrelayproject',
-                            credential: 'openrelayproject'
-                        }
-                    ]
-                };
-                
-                const pc = new RTCPeerConnection(configuration);
-                peerConnections[targetId] = pc;
-                
-                if (localStream) {
-                    localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
-                }
-                
-                pc.onicecandidate = (event) => {
-                    if (event.candidate) {
-                        const candidateData = {
-                            type: 'candidate',
-                            candidate: event.candidate,
-                            target: targetId,
-                            sender: currentUserId
-                        };
-                        if (isHost) {
-                            database.ref(`rooms/${roomId}/signals/${targetId}`).push(candidateData);
-                        } else {
-                            database.ref(`rooms/${roomId}/signals/host`).push(candidateData);
-                        }
-                    }
-                };
-                
-                pc.ontrack = (event) => {
-                    const audio = new Audio();
-                    audio.srcObject = event.streams[0];
-                    audio.play().catch(e => console.error('Audio play error:', e));
-                };
-                
-                if (isInitiator) {
-                    pc.createOffer()
-                        .then(offer => pc.setLocalDescription(offer))
-                        .then(() => {
-                            const offerData = {
-                                type: 'offer',
-                                sdp: pc.localDescription,
-                                target: targetId,
-                                sender: currentUserId
-                            };
-                            database.ref(`rooms/${roomId}/signals/${targetId}`).push(offerData);
-                        })
-                        .catch(error => console.error('Error creating offer:', error));
-                }
-                
-                const signalsRef = database.ref(`rooms/${roomId}/signals/${isHost ? targetId : 'host'}`);
-                signalsRef.on('child_added', (snapshot) => {
-                    const signal = snapshot.val();
-                    if (signal.sender === currentUserId) return;
-                    if (signal.type === 'offer' && !isInitiator) {
-                        pc.setRemoteDescription(new RTCSessionDescription(signal.sdp))
-                            .then(() => pc.createAnswer())
-                            .then(answer => pc.setLocalDescription(answer))
-                            .then(() => {
-                                const answerData = {
-                                    type: 'answer',
-                                    sdp: pc.localDescription,
-                                    target: targetId,
-                                    sender: currentUserId
-                                };
-                                database.ref(`rooms/${roomId}/signals/${targetId}`).push(answerData);
-                            })
-                            .catch(error => console.error('Error handling offer:', error));
-                    } else if (signal.type === 'answer' && isInitiator) {
-                        pc.setRemoteDescription(new RTCSessionDescription(signal.sdp))
-                            .catch(error => console.error('Error setting remote answer:', error));
-                    } else if (signal.type === 'candidate') {
-                        pc.addIceCandidate(new RTCIceCandidate(signal.candidate))
-                            .catch(error => console.error('Error adding ICE candidate:', error));
-                    }
-                });
-                
-                pc.onconnectionstatechange = () => {
-                    console.log(`Connection state with ${targetId}:`, pc.connectionState);
-                };
-            } catch (error) {
-                console.error('Error creating peer connection:', error);
-            }
-        }
-        
-        function togglePushToTalk() {
-            if (!micPermissionGranted || !localAudioTrack) {
-                showPermissionPrompt();
-                return;
-            }
-            pushToTalkActive = !pushToTalkActive;
-            localAudioTrack.enabled = pushToTalkActive;
-            if (pushToTalkActive) {
-                pushToTalkBtn.classList.add('active');
-                micStatus.classList.add('active');
-            } else {
-                pushToTalkBtn.classList.remove('active');
-                micStatus.classList.remove('active');
-            }
-        }
-        
-        function showPermissionPrompt() {
-            permissionPrompt.style.display = 'block';
-        }
-        
-        function hidePermissionPrompt() {
-            permissionPrompt.style.display = 'none';
-        }
-        
+        // Create a room in Firebase
         function createRoom(videoId) {
+            // Generate random room ID
             roomId = Math.random().toString(36).substring(2, 10);
             roomRef = database.ref('rooms/' + roomId);
+            
             console.log("Creating room with ID:", roomId);
-            try {
-                roomRef.set({
-                    videoId: videoId,
-                    state: 'paused',
-                    currentTime: 0,
-                    hostActive: true,
-                    joiners: 0,
-                    lastUpdated: firebase.database.ServerValue.TIMESTAMP
-                });
-                const roomLink = window.location.href.split('?')[0] + '?roomId=' + roomId;
-                copyRoomLinkBtn.style.display = 'flex';
-                copyRoomLinkBtn.setAttribute('data-link', roomLink);
-                isHost = true;
-                modeIndicator.textContent = 'Host Mode';
-                modeIndicator.className = 'mode-indicator host-indicator';
-                modeIndicator.style.display = 'block';
-                roomRef.child('joiners').on('value', (snapshot) => {
-                    const count = snapshot.val() || 0;
-                    if (count > previousJoinerCount) {
-                        showNotification(count + " joiner(s) have joined");
-                    }
-                    previousJoinerCount = count;
-                    joinerCount = count;
-                });
-                roomRef.child('signals').on('child_added', (snapshot) => {
-                    if (micPermissionGranted) {
-                        const signal = snapshot.val();
-                        if (signal.target === currentUserId && signal.sender !== currentUserId) {
-                            if (!peerConnections[signal.sender]) {
-                                createPeerConnection(signal.sender, false);
-                            }
-                        }
-                    }
-                });
-                syncInterval = setInterval(() => {
-                    if (isHost && player && player.getCurrentTime) {
-                        const currentTime = player.getCurrentTime();
-                        roomRef.update({ 
-                            currentTime: currentTime,
-                            state: isPlaying ? 'playing' : 'paused',
-                            lastUpdated: firebase.database.ServerValue.TIMESTAMP
-                        });
-                    }
-                }, 1000);
-                window.addEventListener('beforeunload', cleanupRoom);
-                roomRef.child('hostActive').onDisconnect().set(false);
-            } catch (error) {
-                console.error('Error creating room:', error);
-                showNotification('Failed to create room. Please try again.');
-            }
+            
+            // Set room data
+            roomRef.set({
+                videoId: videoId,
+                state: 'paused',
+                currentTime: 0,
+                hostActive: true,
+                joiners: 0,
+                lastUpdated: firebase.database.ServerValue.TIMESTAMP,
+                quality: currentQuality,
+                subtitles: subtitlesEnabled
+            });
+            
+            // Show copy icon with room link
+            const roomLink = window.location.href.split('?')[0] + '?roomId=' + roomId;
+            copyRoomLinkBtn.style.display = 'flex';
+            copyRoomLinkBtn.setAttribute('data-link', roomLink);
+            
+            // Show terminate button
+            terminateBtn.style.display = 'block';
+            leaveBtn.style.display = 'none';
+            
+            // Set host mode
+            isHost = true;
+            modeIndicator.textContent = 'Host Mode';
+            modeIndicator.className = 'mode-indicator host-indicator';
+            modeIndicator.style.display = 'block';
+            
+            // Listen for joiner events
+            roomRef.child('joiners').on('value', (snapshot) => {
+                const count = snapshot.val() || 0;
+                
+                // Only show notification if the count increased
+                if (count > previousJoinerCount) {
+                    showNotification(count + " joiner(s) have joined");
+                }
+                
+                previousJoinerCount = count;
+                joinerCount = count;
+            });
+            
+            // Setup periodic sync
+            syncInterval = setInterval(() => {
+                if (isHost && player && player.getCurrentTime) {
+                    const currentTime = player.getCurrentTime();
+                    roomRef.update({ 
+                        currentTime: currentTime,
+                        state: isPlaying ? 'playing' : 'paused',
+                        quality: currentQuality,
+                        subtitles: subtitlesEnabled,
+                        lastUpdated: firebase.database.ServerValue.TIMESTAMP
+                    });
+                }
+            }, 1000);
+            
+            // Clean up on disconnect
+            window.addEventListener('beforeunload', cleanupRoom);
+            roomRef.child('hostActive').onDisconnect().set(false);
         }
         
+        // Clean up room resources
         function cleanupRoom() {
             if (syncInterval) {
                 clearInterval(syncInterval);
@@ -855,84 +915,193 @@
             if (roomRef && isHost) {
                 roomRef.update({ hostActive: false });
             }
-            Object.values(peerConnections).forEach(pc => pc.close());
-            peerConnections = {};
-            if (localStream) {
-                localStream.getTracks().forEach(track => track.stop());
-                localStream = null;
-                localAudioTrack = null;
-            }
         }
         
+        // Show notification
         function showNotification(message) {
             notificationText.textContent = message;
             notification.classList.add('show');
+            
             setTimeout(() => {
                 notification.classList.remove('show');
             }, 3000);
         }
         
+        // Join a room
         function joinRoom(roomId) {
             roomRef = database.ref('rooms/' + roomId);
+            
             console.log("Attempting to join room:", roomId);
+            
+            // Check if room exists
             roomRef.once('value').then((snapshot) => {
                 if (!snapshot.exists() || !snapshot.val().hostActive) {
-                    alert('Room not found or host has disconnected');
+                    showNotification("Room not found or host has disconnected");
                     return;
                 }
+                
                 const roomData = snapshot.val();
                 console.log("Joining existing room with video:", roomData.videoId);
+                
+                // Set joiner mode
                 isJoiner = true;
                 modeIndicator.textContent = 'Joiner Mode';
                 modeIndicator.className = 'mode-indicator joiner-indicator';
                 modeIndicator.style.display = 'block';
+                
+                // Show leave button
+                leaveBtn.style.display = 'block';
+                terminateBtn.style.display = 'none';
+                
+                // Hide input controls
                 inputGroup.style.display = 'none';
+                
+                // Disable host controls for joiner
                 hostControls = false;
                 backwardBtn.style.display = 'none';
                 forwardBtn.style.display = 'none';
                 playPauseBtn.style.display = 'none';
-                roomRef.child('joiners').transaction((count) => (count || 0) + 1);
+                
+                // Set initial quality and subtitles from host
+                currentQuality = roomData.quality || 'auto';
+                subtitlesEnabled = roomData.subtitles || false;
+                
+                // Create player with the room's video
                 createPlayer(roomData.videoId);
+                
+                // Listen for room changes
                 roomRef.on('value', (snapshot) => {
                     const roomData = snapshot.val();
+                    
                     if (roomData && player && player.getCurrentTime) {
                         const currentTime = player.getCurrentTime();
+                        
+                        // Only sync if difference is more than 1 second to prevent jitter
                         if (Math.abs(currentTime - roomData.currentTime) > 1) {
                             player.seekTo(roomData.currentTime, true);
                         }
+                        
+                        // Sync play/pause state
                         if (roomData.state === 'playing' && !isPlaying) {
                             player.playVideo();
                         } else if (roomData.state === 'paused' && isPlaying) {
                             player.pauseVideo();
                         }
-                    }
-                });
-                if (micPermissionGranted) {
-                    initWebRTC();
-                }
-                roomRef.child('signals').on('child_added', (snapshot) => {
-                    if (micPermissionGranted) {
-                        const signal = snapshot.val();
-                        if (signal.target === currentUserId && signal.sender !== currentUserId) {
-                            if (!peerConnections[signal.sender]) {
-                                createPeerConnection(signal.sender, false);
+                        
+                        // Sync quality if changed by host
+                        if (roomData.quality && roomData.quality !== currentQuality) {
+                            currentQuality = roomData.quality;
+                            player.setPlaybackQuality(currentQuality);
+                            updateQualityMenu();
+                        }
+                        
+                        // Sync subtitles if changed by host
+                        if (roomData.subtitles !== undefined && roomData.subtitles !== subtitlesEnabled) {
+                            subtitlesEnabled = roomData.subtitles;
+                            if (subtitlesEnabled) {
+                                player.loadModule('captions');
+                                player.setOption('captions', 'track', {languageCode: 'en'});
+                            } else {
+                                player.unloadModule('captions');
                             }
+                            updateSubtitlesMenu();
                         }
                     }
                 });
-                window.addEventListener('beforeunload', () => {
-                    roomRef.child('joiners').transaction((count) => Math.max(0, (count || 0) - 1));
-                    cleanupRoom();
+                
+                // Increment joiner count
+                roomRef.child('joiners').transaction((count) => {
+                    return (count || 0) + 1;
                 });
-            }).catch(error => {
-                console.error('Error joining room:', error);
-                alert('Failed to join room. Please check the room ID.');
+                
+                // Clean up on disconnect
+                window.addEventListener('beforeunload', () => {
+                    roomRef.child('joiners').transaction((count) => {
+                        return Math.max(0, (count || 0) - 1);
+                    });
+                });
             });
         }
         
+        // Update quality menu with active selection
+        function updateQualityMenu() {
+            const options = qualityMenu.querySelectorAll('.sub-menu-option');
+            options.forEach(option => {
+                option.classList.remove('active');
+                if (option.dataset.quality === currentQuality) {
+                    option.classList.add('active');
+                }
+            });
+        }
+        
+        // Update subtitles menu with active selection
+        function updateSubtitlesMenu() {
+            const options = subtitlesMenu.querySelectorAll('.sub-menu-option');
+            options.forEach(option => {
+                option.classList.remove('active');
+                if ((option.dataset.subtitles === 'on' && subtitlesEnabled) || 
+                    (option.dataset.subtitles === 'off' && !subtitlesEnabled)) {
+                    option.classList.add('active');
+                }
+            });
+        }
+        
+        // Set video quality
+        function setQuality(quality) {
+            if (!player) return;
+            
+            currentQuality = quality;
+            player.setPlaybackQuality(quality);
+            updateQualityMenu();
+            
+            // If host, update quality in Firebase
+            if (isHost && roomRef) {
+                roomRef.update({
+                    quality: quality,
+                    lastUpdated: firebase.database.ServerValue.TIMESTAMP
+                });
+            }
+            
+            showNotification(`Quality set to ${quality}`);
+            resetInactivityTimer();
+        }
+        
+        // Toggle subtitles
+        function toggleSubtitles(enable) {
+            if (!player) return;
+            
+            subtitlesEnabled = enable;
+            if (enable) {
+                player.loadModule('captions');
+                player.setOption('captions', 'track', {languageCode: 'en'});
+            } else {
+                player.unloadModule('captions');
+            }
+            updateSubtitlesMenu();
+            
+            // If host, update subtitles in Firebase
+            if (isHost && roomRef) {
+                roomRef.update({
+                    subtitles: enable,
+                    lastUpdated: firebase.database.ServerValue.TIMESTAMP
+                });
+            }
+            
+            showNotification(`Subtitles ${enable ? 'enabled' : 'disabled'}`);
+            resetInactivityTimer();
+        }
+        
+        // Player event handlers
         function onPlayerReady(event) {
             console.log("Player is ready");
+            
+            // Set initial quality and subtitles
+            if (currentQuality) {
+                event.target.setPlaybackQuality(currentQuality);
+            }
+            
             if (isJoiner && roomRef) {
+                // For joiners, sync immediately with host's state
                 roomRef.once('value').then((snapshot) => {
                     const roomData = snapshot.val();
                     if (roomData) {
@@ -943,8 +1112,15 @@
                             event.target.pauseVideo();
                         }
                     }
-                }).catch(error => console.error('Error syncing player:', error));
+                });
             }
+            
+            // Update menu states
+            updateQualityMenu();
+            updateSubtitlesMenu();
+            
+            // Reset inactivity timer when player is ready
+            resetInactivityTimer();
         }
         
         function onPlayerStateChange(event) {
@@ -952,6 +1128,8 @@
             if (event.data == YT.PlayerState.PLAYING) {
                 isPlaying = true;
                 playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                
+                // If host, update state in Firebase
                 if (isHost && roomRef) {
                     roomRef.update({ 
                         state: 'playing',
@@ -962,6 +1140,8 @@
             } else if (event.data == YT.PlayerState.PAUSED || event.data == YT.PlayerState.ENDED) {
                 isPlaying = false;
                 playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                
+                // If host, update state in Firebase
                 if (isHost && roomRef) {
                     roomRef.update({ 
                         state: 'paused',
@@ -970,99 +1150,252 @@
                     });
                 }
             }
+            
+            // Reset inactivity timer when player state changes
+            resetInactivityTimer();
         }
         
+        // Toggle play/pause
         function togglePlayPause() {
             if (!player || !hostControls) return;
+            
             if (isPlaying) {
                 player.pauseVideo();
             } else {
                 player.playVideo();
             }
+            
+            // Reset inactivity timer when controls are used
+            resetInactivityTimer();
         }
         
+        // Skip forward by 10 seconds
         function skipForward() {
             if (!player || !hostControls) return;
+            
             const currentTime = player.getCurrentTime();
             player.seekTo(currentTime + 10, true);
+            
+            // Update Firebase if host
             if (isHost && roomRef) {
                 roomRef.update({ 
                     currentTime: currentTime + 10,
                     lastUpdated: firebase.database.ServerValue.TIMESTAMP
                 });
             }
+            
+            // Reset inactivity timer when controls are used
+            resetInactivityTimer();
         }
         
+        // Skip backward by 10 seconds
         function skipBackward() {
             if (!player || !hostControls) return;
+            
             const currentTime = player.getCurrentTime();
             player.seekTo(Math.max(0, currentTime - 10), true);
+            
+            // Update Firebase if host
             if (isHost && roomRef) {
                 roomRef.update({ 
                     currentTime: Math.max(0, currentTime - 10),
                     lastUpdated: firebase.database.ServerValue.TIMESTAMP
                 });
             }
+            
+            // Reset inactivity timer when controls are used
+            resetInactivityTimer();
         }
         
+        // Toggle fullscreen
         function toggleFullscreen() {
-            const videoContainer = document.getElementById('videoContainer');
             if (!document.fullscreenElement) {
                 videoContainer.requestFullscreen().catch(err => {
-                    alert(`Error attempting to enable fullscreen: ${err.message}`);
+                    showNotification(`Error enabling fullscreen: ${err.message}`);
                 });
                 fullscreenBtn.innerHTML = '<i class="fas fa-compress"></i>';
+                isFullscreen = true;
             } else {
                 document.exitFullscreen();
                 fullscreenBtn.innerHTML = '<i class="fas fa-expand"></i>';
+                isFullscreen = false;
             }
+            
+            // Reset inactivity timer when fullscreen is toggled
+            resetInactivityTimer();
         }
         
+        // Copy room link to clipboard
         function copyRoomLink() {
             const roomLink = copyRoomLinkBtn.getAttribute('data-link');
             navigator.clipboard.writeText(roomLink).then(() => {
                 copySuccess.classList.add('show');
-                setTimeout(() => copySuccess.classList.remove('show'), 2000);
-            }).catch(err => console.error('Failed to copy room link:', err));
+                setTimeout(() => {
+                    copySuccess.classList.remove('show');
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy room link: ', err);
+            });
+            
+            // Reset inactivity timer when copying link
+            resetInactivityTimer();
         }
         
+        // Show confirmation popup
+        function showConfirmation(title, message, confirmCallback) {
+            confirmationTitle.textContent = title;
+            confirmationMessage.textContent = message;
+            confirmationPopup.classList.add('show');
+            
+            // Set up confirm action
+            confirmActionBtn.onclick = function() {
+                confirmationPopup.classList.remove('show');
+                if (confirmCallback) confirmCallback();
+            };
+            
+            // Set up cancel action
+            cancelActionBtn.onclick = function() {
+                confirmationPopup.classList.remove('show');
+            };
+        }
+        
+        // Terminate room
+        function terminateRoom() {
+            showConfirmation(
+                "Terminate Room", 
+                "Are you sure you want to terminate this room? All joiners will be disconnected.",
+                function() {
+                    if (roomRef) {
+                        roomRef.remove();
+                        cleanupRoom();
+                    }
+                    location.reload();
+                }
+            );
+        }
+        
+        // Leave room
+        function leaveRoom() {
+            showConfirmation(
+                "Leave Room", 
+                "Are you sure you want to leave this room?",
+                function() {
+                    if (roomRef) {
+                        roomRef.child('joiners').transaction((count) => {
+                            return Math.max(0, (count || 0) - 1);
+                        });
+                    }
+                    location.reload();
+                }
+            );
+        }
+        
+        // Reset inactivity timer
+        function resetInactivityTimer() {
+            clearTimeout(inactivityTimer);
+            showControls();
+            inactivityTimer = setTimeout(hideControls, 3000);
+        }
+        
+        // Show controls
+        function showControls() {
+            if (!controlsVisible) {
+                const controlsContainer = document.querySelector('.controls-container');
+                controlsContainer.style.opacity = '1';
+                controlsContainer.style.pointerEvents = 'auto';
+                controlsVisible = true;
+            }
+        }
+        
+        // Hide controls
+        function hideControls() {
+            if (controlsVisible) {
+                const controlsContainer = document.querySelector('.controls-container');
+                controlsContainer.style.opacity = '0';
+                controlsContainer.style.pointerEvents = 'none';
+                controlsVisible = false;
+                
+                // Also hide settings menu if visible
+                settingsMenu.classList.remove('show');
+            }
+        }
+        
+        // Initialize the application
         document.addEventListener('DOMContentLoaded', function() {
             console.log("DOM fully loaded");
+            
+            // Check if we're joining a room
             const urlParams = new URLSearchParams(window.location.search);
             const joinRoomId = urlParams.get('roomId');
+            
             if (joinRoomId) {
                 console.log("Joining existing room:", joinRoomId);
                 joinRoom(joinRoomId);
             }
+            
+            // Event listeners
             loadButton.addEventListener('click', loadVideo);
             playPauseBtn.addEventListener('click', togglePlayPause);
             backwardBtn.addEventListener('click', skipBackward);
             forwardBtn.addEventListener('click', skipForward);
             fullscreenBtn.addEventListener('click', toggleFullscreen);
             copyRoomLinkBtn.addEventListener('click', copyRoomLink);
-            pushToTalkBtn.addEventListener('mousedown', togglePushToTalk);
-            pushToTalkBtn.addEventListener('mouseup', togglePushToTalk);
-            pushToTalkBtn.addEventListener('mouseleave', () => {
-                if (pushToTalkActive) togglePushToTalk();
+            terminateBtn.addEventListener('click', terminateRoom);
+            leaveBtn.addEventListener('click', leaveRoom);
+            settingsBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                settingsMenu.classList.toggle('show');
+                resetInactivityTimer();
             });
-            pushToTalkBtn.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                togglePushToTalk();
+            
+            // Quality menu options
+            qualityMenu.querySelectorAll('.sub-menu-option').forEach(option => {
+                option.addEventListener('click', function() {
+                    setQuality(this.dataset.quality);
+                    settingsMenu.classList.remove('show');
+                });
             });
-            pushToTalkBtn.addEventListener('touchend', (e) => {
-                e.preventDefault();
-                togglePushToTalk();
+            
+            // Subtitles menu options
+            subtitlesMenu.querySelectorAll('.sub-menu-option').forEach(option => {
+                option.addEventListener('click', function() {
+                    toggleSubtitles(this.dataset.subtitles === 'on');
+                    settingsMenu.classList.remove('show');
+                });
             });
-            enableMicBtn.addEventListener('click', async () => {
-                const granted = await requestMicrophonePermission();
-                if (granted) hidePermissionPrompt();
-            });
-            disableMicBtn.addEventListener('click', () => {
-                hidePermissionPrompt();
-                showNotification('Push-to-talk disabled. You can enable it later.');
-            });
+            
+            // Support pressing Enter in input field
             videoUrlInput.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') loadVideo();
+                if (e.key === 'Enter') {
+                    loadVideo();
+                }
+            });
+            
+            // Fullscreen change event
+            document.addEventListener('fullscreenchange', function() {
+                isFullscreen = !!document.fullscreenElement;
+                if (!isFullscreen) {
+                    fullscreenBtn.innerHTML = '<i class="fas fa-expand"></i>';
+                }
+            });
+            
+            // Mouse movement detection for controls
+            document.addEventListener('mousemove', function() {
+                resetInactivityTimer();
+            });
+            
+            // Touch events for mobile
+            videoContainer.addEventListener('touchstart', function() {
+                videoContainer.classList.add('touch-active');
+                setTimeout(() => {
+                    videoContainer.classList.remove('touch-active');
+                }, 3000);
+                resetInactivityTimer();
+            });
+            
+            // Hide settings menu when clicking elsewhere
+            document.addEventListener('click', function() {
+                settingsMenu.classList.remove('show');
             });
         });
     </script>
