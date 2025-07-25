@@ -188,6 +188,39 @@
             font-size: 1.5rem;
         }
 
+        .control-btn.push-to-talk {
+            background: linear-gradient(45deg, #00c6ff, #0072ff);
+            position: relative;
+        }
+        
+        .control-btn.push-to-talk.active {
+            background: linear-gradient(45deg, #ff0000, #ff8a00);
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        
+        .mic-status {
+            position: absolute;
+            bottom: -5px;
+            right: -5px;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            background-color: #ff0000;
+            border: 2px solid rgba(0, 0, 0, 0.7);
+            display: none;
+        }
+        
+        .mic-status.active {
+            background-color: #00ff00;
+            display: block;
+        }
+
         /* Blocker overlays */
         .click-blocker {
             position: absolute;
@@ -387,7 +420,7 @@
         
         <header>
             <h1>YouTube Sync Player</h1>
-            <p class="subtitle">Watch videos together in real-time</p>
+            <p class="subtitle">Watch YouTube videos together in real-time</p>
         </header>
         
         <div class="video-container" id="videoContainer">
@@ -406,6 +439,10 @@
                     </button>
                     <button class="control-btn forward" title="Forward 10s" id="forwardBtn">
                         <i class="fas fa-forward"></i>
+                    </button>
+                    <button class="control-btn push-to-talk" title="Push to Talk" id="pushToTalkBtn">
+                        <i class="fas fa-microphone"></i>
+                        <div class="mic-status" id="micStatus"></div>
                     </button>
                     <button class="control-btn fullscreen" title="Fullscreen" id="fullscreenBtn">
                         <i class="fas fa-expand"></i>
@@ -434,15 +471,15 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
     
     <script>
-        // Firebase configuration - REPLACE WITH YOUR OWN CONFIG
+        // Firebase configuration
         const firebaseConfig = {
-        apiKey: "AIzaSyDsPjwl2fsQwua_HZTPJSDmtlgzRkgVXQ4",
-        authDomain: "sync-f5dd9.firebaseapp.com",
-        databaseURL: "https://sync-f5dd9-default-rtdb.firebaseio.com",
-        projectId: "sync-f5dd9",
-        storageBucket: "sync-f5dd9.firebasestorage.app",
-        messagingSenderId: "891545015962",
-        appId: "1:891545015962:web:e68867deec0117fe85f123"
+            apiKey: "AIzaSyDsPjwl2fsQwua_HZTPJSDmtlgzRkgVXQ4",
+            authDomain: "sync-f5dd9.firebaseapp.com",
+            databaseURL: "https://sync-f5dd9-default-rtdb.firebaseio.com",
+            projectId: "sync-f5dd9",
+            storageBucket: "sync-f5dd9.firebasestorage.app",
+            messagingSenderId: "891545015962",
+            appId: "1:891545015962:web:e68867deec0117fe85f123"
         };
         
         // Initialize Firebase
@@ -463,6 +500,13 @@
         let syncInterval = null;
         let previousJoinerCount = 0;
         
+        // WebRTC variables
+        let localStream;
+        let peerConnections = {};
+        let pushToTalkActive = false;
+        let localAudioTrack;
+        let currentUserId = Math.random().toString(36).substring(2, 10);
+        
         // DOM Elements
         const videoUrlInput = document.getElementById('videoUrl');
         const loadButton = document.getElementById('loadVideo');
@@ -470,6 +514,8 @@
         const backwardBtn = document.getElementById('backwardBtn');
         const forwardBtn = document.getElementById('forwardBtn');
         const fullscreenBtn = document.getElementById('fullscreenBtn');
+        const pushToTalkBtn = document.getElementById('pushToTalkBtn');
+        const micStatus = document.getElementById('micStatus');
         const notification = document.getElementById('notification');
         const notificationText = document.getElementById('notificationText');
         const modeIndicator = document.getElementById('modeIndicator');
@@ -543,6 +589,175 @@
             }
         }
         
+        // Initialize WebRTC
+        async function initWebRTC() {
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                localAudioTrack = localStream.getAudioTracks()[0];
+                localAudioTrack.enabled = false; // Start with mic muted
+                
+                if (isHost) {
+                    // Host listens for new joiners to create peer connections
+                    roomRef.child('joiners').on('child_added', (snapshot) => {
+                        const joinerId = snapshot.key;
+                        if (joinerId && !peerConnections[joinerId] && joinerId !== currentUserId) {
+                            createPeerConnection(joinerId, true);
+                        }
+                    });
+                    
+                    // Clean up disconnected peers
+                    roomRef.child('joiners').on('child_removed', (snapshot) => {
+                        const joinerId = snapshot.key;
+                        if (peerConnections[joinerId]) {
+                            peerConnections[joinerId].close();
+                            delete peerConnections[joinerId];
+                        }
+                    });
+                } else if (isJoiner) {
+                    // Joiner connects to host
+                    createPeerConnection('host', false);
+                }
+                
+                showNotification('Voice chat ready - use push-to-talk');
+            } catch (error) {
+                console.error('Error accessing microphone:', error);
+                showNotification('Microphone access denied. Push-to-talk will not work.');
+            }
+        }
+        
+        // Create peer connection
+        function createPeerConnection(targetId, isInitiator) {
+            const configuration = {
+                iceServers: [
+                    { urls: 'stun:stun.l.google.com:19302' },
+                    { urls: 'stun:stun1.l.google.com:19302' },
+                    { urls: 'stun:stun2.l.google.com:19302' },
+                    {
+                        urls: 'turn:openrelay.metered.ca:80',
+                        username: 'openrelayproject',
+                        credential: 'openrelayproject'
+                    }
+                ]
+            };
+            
+            const pc = new RTCPeerConnection(configuration);
+            peerConnections[targetId] = pc;
+            
+            // Add local stream
+            if (localStream) {
+                localStream.getTracks().forEach(track => {
+                    pc.addTrack(track, localStream);
+                });
+            }
+            
+            // Handle ICE candidates
+            pc.onicecandidate = (event) => {
+                if (event.candidate) {
+                    const candidateData = {
+                        type: 'candidate',
+                        candidate: event.candidate,
+                        target: targetId,
+                        sender: currentUserId
+                    };
+                    
+                    if (isHost) {
+                        // Host sends to specific joiner
+                        database.ref(`rooms/${roomId}/signals/${targetId}`).push(candidateData);
+                    } else {
+                        // Joiner sends to host
+                        database.ref(`rooms/${roomId}/signals/host`).push(candidateData);
+                    }
+                }
+            };
+            
+            // Handle remote stream
+            pc.ontrack = (event) => {
+                // Create audio element for remote stream
+                const audio = new Audio();
+                audio.srcObject = event.streams[0];
+                audio.play().catch(e => console.log('Audio play error:', e));
+            };
+            
+            // Create offer if initiator
+            if (isInitiator) {
+                pc.createOffer()
+                    .then(offer => pc.setLocalDescription(offer))
+                    .then(() => {
+                        const offerData = {
+                            type: 'offer',
+                            sdp: pc.localDescription,
+                            target: targetId,
+                            sender: currentUserId
+                        };
+                        database.ref(`rooms/${roomId}/signals/${targetId}`).push(offerData);
+                    })
+                    .catch(error => console.error('Error creating offer:', error));
+            }
+            
+            // Listen for signals
+            const signalsRef = database.ref(`rooms/${roomId}/signals/${isHost ? targetId : 'host'}`);
+            signalsRef.on('child_added', (snapshot) => {
+                const signal = snapshot.val();
+                
+                // Ignore our own signals
+                if (signal.sender === currentUserId) return;
+                
+                if (signal.type === 'offer' && !isInitiator) {
+                    pc.setRemoteDescription(new RTCSessionDescription(signal.sdp))
+                        .then(() => pc.createAnswer())
+                        .then(answer => pc.setLocalDescription(answer))
+                        .then(() => {
+                            const answerData = {
+                                type: 'answer',
+                                sdp: pc.localDescription,
+                                target: targetId,
+                                sender: currentUserId
+                            };
+                            database.ref(`rooms/${roomId}/signals/${targetId}`).push(answerData);
+                        })
+                        .catch(error => console.error('Error handling offer:', error));
+                } else if (signal.type === 'answer' && isInitiator) {
+                    pc.setRemoteDescription(new RTCSessionDescription(signal.sdp))
+                        .catch(error => console.error('Error setting remote answer:', error));
+                } else if (signal.type === 'candidate') {
+                    pc.addIceCandidate(new RTCIceCandidate(signal.candidate))
+                        .catch(error => console.error('Error adding ICE candidate:', error));
+                }
+            });
+            
+            // Handle connection state changes
+            pc.onconnectionstatechange = () => {
+                console.log(`Connection state with ${targetId}:`, pc.connectionState);
+                if (pc.connectionState === 'disconnected' || pc.connectionState === 'failed') {
+                    // Try to reconnect after a delay
+                    setTimeout(() => {
+                        if (pc.connectionState !== 'connected') {
+                            createPeerConnection(targetId, isInitiator);
+                        }
+                    }, 2000);
+                }
+            };
+        }
+        
+        // Toggle push-to-talk
+        function togglePushToTalk() {
+            if (!localAudioTrack) {
+                showNotification('Microphone not available');
+                return;
+            }
+            
+            pushToTalkActive = !pushToTalkActive;
+            localAudioTrack.enabled = pushToTalkActive;
+            
+            if (pushToTalkActive) {
+                pushToTalkBtn.classList.add('active');
+                micStatus.classList.add('active');
+            } else {
+                pushToTalkBtn.classList.remove('active');
+                micStatus.classList.remove('active');
+            }
+        }
+        
         // Create a room in Firebase
         function createRoom(videoId) {
             // Generate random room ID
@@ -557,11 +772,14 @@
                 state: 'paused',
                 currentTime: 0,
                 hostActive: true,
-                joiners: 0,
+                joiners: {},
                 lastUpdated: firebase.database.ServerValue.TIMESTAMP
             });
             
-            // Show copy icon with room link
+            // Add host to joiners list
+            roomRef.child('joiners').child(currentUserId).set(true);
+            
+            // Show room link
             const roomLink = window.location.href.split('?')[0] + '?roomId=' + roomId;
             copyRoomLinkBtn.style.display = 'flex';
             copyRoomLinkBtn.setAttribute('data-link', roomLink);
@@ -572,9 +790,13 @@
             modeIndicator.className = 'mode-indicator host-indicator';
             modeIndicator.style.display = 'block';
             
+            // Initialize WebRTC
+            initWebRTC();
+            
             // Listen for joiner events
             roomRef.child('joiners').on('value', (snapshot) => {
-                const count = snapshot.val() || 0;
+                const joiners = snapshot.val() || {};
+                const count = Object.keys(joiners).length - 1; // Exclude host
                 
                 // Only show notification if the count increased
                 if (count > previousJoinerCount) {
@@ -600,6 +822,7 @@
             // Clean up on disconnect
             window.addEventListener('beforeunload', cleanupRoom);
             roomRef.child('hostActive').onDisconnect().set(false);
+            roomRef.child('joiners').child(currentUserId).onDisconnect().remove();
         }
         
         // Clean up room resources
@@ -609,6 +832,15 @@
             }
             if (roomRef && isHost) {
                 roomRef.update({ hostActive: false });
+            }
+            
+            // Close all peer connections
+            Object.values(peerConnections).forEach(pc => pc.close());
+            peerConnections = {};
+            
+            // Stop local stream
+            if (localStream) {
+                localStream.getTracks().forEach(track => track.stop());
             }
         }
         
@@ -653,6 +885,12 @@
                 forwardBtn.style.display = 'none';
                 playPauseBtn.style.display = 'none';
                 
+                // Add joiner to joiners list
+                roomRef.child('joiners').child(currentUserId).set(true);
+                
+                // Initialize WebRTC
+                initWebRTC();
+                
                 // Create player with the room's video
                 createPlayer(roomData.videoId);
                 
@@ -677,16 +915,10 @@
                     }
                 });
                 
-                // Increment joiner count
-                roomRef.child('joiners').transaction((count) => {
-                    return (count || 0) + 1;
-                });
-                
                 // Clean up on disconnect
                 window.addEventListener('beforeunload', () => {
-                    roomRef.child('joiners').transaction((count) => {
-                        return Math.max(0, (count || 0) - 1);
-                    });
+                    roomRef.child('joiners').child(currentUserId).remove();
+                    cleanupRoom();
                 });
             });
         }
@@ -830,6 +1062,25 @@
             forwardBtn.addEventListener('click', skipForward);
             fullscreenBtn.addEventListener('click', toggleFullscreen);
             copyRoomLinkBtn.addEventListener('click', copyRoomLink);
+            
+            // Push-to-talk button events
+            pushToTalkBtn.addEventListener('mousedown', togglePushToTalk);
+            pushToTalkBtn.addEventListener('mouseup', togglePushToTalk);
+            pushToTalkBtn.addEventListener('mouseleave', () => {
+                if (pushToTalkActive) {
+                    togglePushToTalk();
+                }
+            });
+            
+            // Touch events for mobile
+            pushToTalkBtn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                togglePushToTalk();
+            });
+            pushToTalkBtn.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                togglePushToTalk();
+            });
             
             // Support pressing Enter in input field
             videoUrlInput.addEventListener('keypress', function(e) {
