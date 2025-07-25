@@ -362,35 +362,101 @@
             background: linear-gradient(45deg, #00c6ff, #0072ff);
         }
 
+    /* Feedback icons */
+    .feedback-container {
+        position: absolute;
+        top: 16px;
+        right: 16px;
+        display: flex;
+        gap: 8px;
+        z-index: 10;
+    }
+    
+    .feedback-btn {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: rgba(0, 0, 0, 0.6);
+        border: none;
+        color: white;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .feedback-btn:hover {
+        transform: scale(1.1);
+    }
+    
+    .feedback-btn.thumbs-up {
+        color: #4ade80;
+    }
+    
+    .feedback-btn.thumbs-down {
+        color: #f87171;
+    }
+    
+    .feedback-count {
+        position: absolute;
+        bottom: -8px;
+        right: -8px;
+        background: rgba(255, 255, 255, 0.9);
+        color: #1a2a6c;
+        border-radius: 50%;
+        width: 18px;
+        height: 18px;
+        font-size: 0.7rem;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-weight: bold;
+    }
 
     @media (max-width: 768px) {
         .input-group {
-            flex-direction: column;
+            flex-direction: row; /* Changed from column to row */
+            flex-wrap: wrap;
         }
 
         .input-container {
-            flex-direction: column;
+            flex-direction: row; /* Changed from column to row */
             max-width: 100%;
         }
 
-        #videoUrl, #loadVideo {
+        #videoUrl {
             width: 100%;
             max-width: none;
         }
 
         .controls {
-            gap: 8px;
+            gap: 6px;
             padding: 8px;
         }
 
         .control-btn {
-            width: 40px;
-            height: 40px;
+            width: 36px;
+            height: 36px;
+            font-size: 0.9rem;
+        }
+        
+        .control-btn.play-pause {
+            width: 36px;
+            height: 36px;
+            font-size: 1.1rem;
         }
 
         .copy-icon, .destroy-room-btn, .next-video-btn {
             width: auto;
             padding: 0 10px;
+            height: 36px;
+        }
+        
+        .feedback-btn {
+            width: 32px;
+            height: 32px;
+            font-size: 0.9rem;
         }
     }
      /* Blocker overlays */
@@ -437,8 +503,18 @@
             <div class="click-blocker top"></div>
             <div class="click-blocker middle"></div>
             <div class="click-blocker bottom"></div>
+            <div class="feedback-container" id="feedbackContainer">
+                <button class="feedback-btn thumbs-up" id="thumbsUpBtn" title="Thumbs Up">
+                    <i class="fas fa-thumbs-up"></i>
+                    <span class="feedback-count" id="thumbsUpCount">0</span>
+                </button>
+                <button class="feedback-btn thumbs-down" id="thumbsDownBtn" title="Thumbs Down">
+                    <i class="fas fa-thumbs-down"></i>
+                    <span class="feedback-count" id="thumbsDownCount">0</span>
+                </button>
+            </div>
             <div class="controls-container" id="controlsContainer">
-                <div class="controls">
+                <div class="controls" id="hostControls">
                     <button class="control-btn backward" title="Backward 10s" id="backwardBtn">
                         <i class="fas fa-backward"></i>
                     </button>
@@ -455,6 +531,23 @@
                         <i class="fas fa-closed-captioning"></i>
                     </button>
                     <button class="control-btn fullscreen" title="Fullscreen" id="fullscreenBtn">
+                        <i class="fas fa-expand"></i>
+                    </button>
+                </div>
+                <div class="controls" id="joinerControls" style="display: none;">
+                    <button class="control-btn next-video" title="Manage Queue" id="joinerNextVideoBtn">
+                        <i class="fas fa-list-ul"></i>
+                    </button>
+                    <button class="control-btn quality" title="Quality" id="joinerQualityBtn">
+                        <i class="fas fa-cog"></i>
+                    </button>
+                    <button class="control-btn subtitle" title="Toggle Subtitle" id="joinerSubtitleBtn">
+                        <i class="fas fa-closed-captioning"></i>
+                    </button>
+                    <button class="control-btn leave-room" title="Leave Room" id="leaveRoomBtn">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                    <button class="control-btn fullscreen" title="Fullscreen" id="joinerFullscreenBtn">
                         <i class="fas fa-expand"></i>
                     </button>
                 </div>
@@ -512,6 +605,8 @@
         let controlsTimeout = null;
         let nextVideos = [];
         let currentQuality = 'auto';
+        let thumbsUpCount = 0;
+        let thumbsDownCount = 0;
 
         const elements = {
             videoUrl: document.getElementById('videoUrl'),
@@ -532,7 +627,19 @@
             copySuccess: document.getElementById('copySuccess'),
             controlsContainer: document.getElementById('controlsContainer'),
             videoContainer: document.getElementById('videoContainer'),
-            destroyRoomBtn: document.getElementById('destroyRoomBtn')
+            destroyRoomBtn: document.getElementById('destroyRoomBtn'),
+            hostControls: document.getElementById('hostControls'),
+            joinerControls: document.getElementById('joinerControls'),
+            joinerNextVideoBtn: document.getElementById('joinerNextVideoBtn'),
+            joinerQualityBtn: document.getElementById('joinerQualityBtn'),
+            joinerSubtitleBtn: document.getElementById('joinerSubtitleBtn'),
+            leaveRoomBtn: document.getElementById('leaveRoomBtn'),
+            joinerFullscreenBtn: document.getElementById('joinerFullscreenBtn'),
+            thumbsUpBtn: document.getElementById('thumbsUpBtn'),
+            thumbsDownBtn: document.getElementById('thumbsDownBtn'),
+            thumbsUpCount: document.getElementById('thumbsUpCount'),
+            thumbsDownCount: document.getElementById('thumbsDownCount'),
+            feedbackContainer: document.getElementById('feedbackContainer')
         };
 
         // Debounce utility
@@ -627,6 +734,8 @@
                     hostActive: true,
                     joiners: 0,
                     nextVideos: [],
+                    thumbsUp: 0,
+                    thumbsDown: 0,
                     lastUpdated: firebase.database.ServerValue.TIMESTAMP
                 });
                 const roomLink = `${window.location.origin}${window.location.pathname}?roomId=${roomId}`;
@@ -637,6 +746,10 @@
                 elements.modeIndicator.textContent = 'Host Mode';
                 elements.modeIndicator.className = 'mode-indicator host-indicator';
                 elements.modeIndicator.style.display = 'block';
+                elements.hostControls.style.display = 'flex';
+                elements.joinerControls.style.display = 'none';
+                elements.feedbackContainer.style.display = 'flex';
+                
                 roomRef.child('joiners').on('value', (snapshot) => {
                     const count = snapshot.val() || 0;
                     if (count > previousJoinerCount) {
@@ -645,10 +758,22 @@
                     previousJoinerCount = count;
                     joinerCount = count;
                 });
+                
                 roomRef.child('nextVideos').on('value', (snapshot) => {
                     nextVideos = snapshot.val() || [];
                     updateBadge();
                 });
+                
+                roomRef.child('thumbsUp').on('value', (snapshot) => {
+                    thumbsUpCount = snapshot.val() || 0;
+                    elements.thumbsUpCount.textContent = thumbsUpCount;
+                });
+                
+                roomRef.child('thumbsDown').on('value', (snapshot) => {
+                    thumbsDownCount = snapshot.val() || 0;
+                    elements.thumbsDownCount.textContent = thumbsDownCount;
+                });
+                
                 syncInterval = setInterval(() => {
                     if (isHost && player && player.getCurrentTime) {
                         const currentTime = player.getCurrentTime();
@@ -754,11 +879,10 @@
                     elements.modeIndicator.style.display = 'block';
                     elements.inputGroup.style.display = 'none';
                     hostControls = false;
-                    elements.backwardBtn.style.display = 'none';
-                    elements.forwardBtn.style.display = 'none';
-                    elements.playPauseBtn.style.display = 'none';
-                    elements.qualityBtn.style.display = 'none';
-                    elements.subtitleBtn.style.display = 'none';
+                    elements.hostControls.style.display = 'none';
+                    elements.joinerControls.style.display = 'flex';
+                    elements.feedbackContainer.style.display = 'flex';
+                    
                     createPlayer(roomData.videoId);
                     roomRef.on('value', (snapshot) => {
                         const roomData = snapshot.val();
@@ -788,7 +912,18 @@
                             }
                         }
                     });
+                    
                     roomRef.child('joiners').transaction((count) => (count || 0) + 1);
+                    roomRef.child('thumbsUp').on('value', (snapshot) => {
+                        thumbsUpCount = snapshot.val() || 0;
+                        elements.thumbsUpCount.textContent = thumbsUpCount;
+                    });
+                    
+                    roomRef.child('thumbsDown').on('value', (snapshot) => {
+                        thumbsDownCount = snapshot.val() || 0;
+                        elements.thumbsDownCount.textContent = thumbsDownCount;
+                    });
+                    
                     window.addEventListener('beforeunload', () => {
                         roomRef.child('joiners').transaction((count) => Math.max(0, (count || 0) - 1));
                     });
@@ -926,7 +1061,7 @@
         }
 
         function toggleQuality() {
-            if (!player || !hostControls) return;
+            if (!player) return;
             try {
                 const qualities = ['auto', 'small', 'medium', 'large', 'hd720', 'hd1080', 'highres'];
                 const currentIndex = qualities.indexOf(currentQuality);
@@ -942,7 +1077,7 @@
         }
 
         function toggleSubtitle() {
-            if (!player || !hostControls) return;
+            if (!player) return;
             try {
                 const ccLoadPolicy = player.getOptions().indexOf('cc_load_policy') !== -1 ? 1 : 0;
                 player.setOption('cc_load_policy', ccLoadPolicy ? 0 : 1);
@@ -1009,9 +1144,11 @@
                         showNotification(`Fullscreen error: ${err.message}`);
                     });
                     elements.fullscreenBtn.innerHTML = '<i class="fas fa-compress"></i>';
+                    elements.joinerFullscreenBtn.innerHTML = '<i class="fas fa-compress"></i>';
                 } else {
                     document.exitFullscreen();
                     elements.fullscreenBtn.innerHTML = '<i class="fas fa-expand"></i>';
+                    elements.joinerFullscreenBtn.innerHTML = '<i class="fas fa-expand"></i>';
                 }
                 showControls();
                 resetControlsTimeout();
@@ -1034,23 +1171,48 @@
             }
         }
 
+        function leaveRoom() {
+            if (roomRef && isJoiner) {
+                roomRef.child('joiners').transaction((count) => Math.max(0, (count || 0) - 1));
+                resetAfterRoomDestroy();
+                window.location.href = window.location.pathname;
+            }
+        }
+
+        function sendFeedback(type) {
+            if (!roomRef) return;
+            
+            try {
+                if (type === 'thumbsUp') {
+                    roomRef.child('thumbsUp').transaction((count) => (count || 0) + 1);
+                    showNotification('Sent thumbs up!');
+                } else if (type === 'thumbsDown') {
+                    roomRef.child('thumbsDown').transaction((count) => (count || 0) + 1);
+                    showNotification('Sent thumbs down!');
+                }
+            } catch (error) {
+                console.error('Error sending feedback:', error);
+                showNotification('Failed to send feedback');
+            }
+        }
+
        function showControls() {
-    elements.controlsContainer.style.opacity = '1';
-    elements.controlsContainer.style.pointerEvents = 'auto';
-}
+            elements.controlsContainer.style.opacity = '1';
+            elements.controlsContainer.style.pointerEvents = 'auto';
+        }
 
-function hideControls() {
-    elements.controlsContainer.style.opacity = '0';
-    elements.controlsContainer.style.pointerEvents = 'none';
-}
+        function hideControls() {
+            elements.controlsContainer.style.opacity = '0';
+            elements.controlsContainer.style.pointerEvents = 'none';
+        }
 
-function resetControlsTimeout() {
-    if (controlsTimeout) {
-        clearTimeout(controlsTimeout);
-    }
-    showControls();
-    controlsTimeout = setTimeout(hideControls, 3000);
-}
+        function resetControlsTimeout() {
+            if (controlsTimeout) {
+                clearTimeout(controlsTimeout);
+            }
+            showControls();
+            controlsTimeout = setTimeout(hideControls, 3000);
+        }
 
         const handleInteraction = debounce(() => {
             showControls();
@@ -1079,29 +1241,33 @@ function resetControlsTimeout() {
             });
             elements.videoContainer.addEventListener('mousemove', handleInteraction);
             elements.videoContainer.addEventListener('touchstart', handleInteraction, { passive: true });
+            
+            // Joiner controls
+            elements.joinerNextVideoBtn.addEventListener('click', manageQueue);
+            elements.joinerQualityBtn.addEventListener('click', toggleQuality);
+            elements.joinerSubtitleBtn.addEventListener('click', toggleSubtitle);
+            elements.leaveRoomBtn.addEventListener('click', leaveRoom);
+            elements.joinerFullscreenBtn.addEventListener('click', toggleFullscreen);
+            
+            // Feedback buttons
+            elements.thumbsUpBtn.addEventListener('click', () => sendFeedback('thumbsUp'));
+            elements.thumbsDownBtn.addEventListener('click', () => sendFeedback('thumbsDown'));
+            
             resetControlsTimeout();
 
             document.addEventListener('fullscreenchange', () => {
-    if (document.fullscreenElement) {
-        elements.fullscreenBtn.innerHTML = '<i class="fas fa-compress"></i>';
-        showNotification('Entered fullscreen mode');
-    } else {
-        elements.fullscreenBtn.innerHTML = '<i class="fas fa-expand"></i>';
-        showNotification('Exited fullscreen mode');
-    }
-    showControls();
-    resetControlsTimeout();
-    const handleInteraction = debounce(() => {
-    if (!document.fullscreenElement) {
-        showControls();
-        resetControlsTimeout();
-    } else {
-        // In fullscreen, show controls immediately and hide after delay
-        showControls();
-        resetControlsTimeout();
-    }
-}, 100);
-});
+                if (document.fullscreenElement) {
+                    elements.fullscreenBtn.innerHTML = '<i class="fas fa-compress"></i>';
+                    elements.joinerFullscreenBtn.innerHTML = '<i class="fas fa-compress"></i>';
+                    showNotification('Entered fullscreen mode');
+                } else {
+                    elements.fullscreenBtn.innerHTML = '<i class="fas fa-expand"></i>';
+                    elements.joinerFullscreenBtn.innerHTML = '<i class="fas fa-expand"></i>';
+                    showNotification('Exited fullscreen mode');
+                }
+                showControls();
+                resetControlsTimeout();
+            });
         });
     </script>
 </body>
