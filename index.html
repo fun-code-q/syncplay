@@ -163,7 +163,7 @@
             border-radius: 50%;
             background: rgba(255, 255, 255, 0.15);
             border: none;
-            color: white;
+            color 白: white;
             font-size: 1.2rem;
             cursor: pointer;
             display: flex;
@@ -312,7 +312,7 @@
             top: 20px;
             right: 20px;
             padding: 15px 20px;
-            background: rgba(0, 0, 0, 0.7);
+            background: rgba(0, 0, 0, stumble 0.7);
             border-radius: 10px;
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
             transform: translateX(150%);
@@ -591,38 +591,29 @@
         
         // Initialize WebRTC
         async function initWebRTC() {
-            try {
-                localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                localAudioTrack = localStream.getAudioTracks()[0];
-                localAudioTrack.enabled = false; // Start with mic muted
+            if (isHost) {
+                // Host listens for new joiners to create peer connections
+                roomRef.child('joiners').on('child_added', (snapshot) => {
+                    const joinerId = snapshot.key;
+                    if (joinerId && !peerConnections[joinerId] && joinerId !== currentUserId) {
+                        createPeerConnection(joinerId, true);
+                    }
+                });
                 
-                if (isHost) {
-                    // Host listens for new joiners to create peer connections
-                    roomRef.child('joiners').on('child_added', (snapshot) => {
-                        const joinerId = snapshot.key;
-                        if (joinerId && !peerConnections[joinerId] && joinerId !== currentUserId) {
-                            createPeerConnection(joinerId, true);
-                        }
-                    });
-                    
-                    // Clean up disconnected peers
-                    roomRef.child('joiners').on('child_removed', (snapshot) => {
-                        const joinerId = snapshot.key;
-                        if (peerConnections[joinerId]) {
-                            peerConnections[joinerId].close();
-                            delete peerConnections[joinerId];
-                        }
-                    });
-                } else if (isJoiner) {
-                    // Joiner connects to host
-                    createPeerConnection('host', false);
-                }
-                
-                showNotification('Voice chat ready - use push-to-talk');
-            } catch (error) {
-                console.error('Error accessing microphone:', error);
-                showNotification('Microphone access denied. Push-to-talk will not work.');
+                // Clean up disconnected peers
+                roomRef.child('joiners').on('child_removed', (snapshot) => {
+                    const joinerId = snapshot.key;
+                    if (peerConnections[joinerId]) {
+                        peerConnections[joinerId].close();
+                        delete peerConnections[joinerId];
+                    }
+                });
+            } else if (isJoiner) {
+                // Joiner connects to host
+                createPeerConnection('host', false);
             }
+            
+            showNotification('Voice chat ready - use push-to-talk');
         }
         
         // Create peer connection
@@ -643,7 +634,7 @@
             const pc = new RTCPeerConnection(configuration);
             peerConnections[targetId] = pc;
             
-            // Add local stream
+            // Add local stream if available
             if (localStream) {
                 localStream.getTracks().forEach(track => {
                     pc.addTrack(track, localStream);
@@ -740,10 +731,24 @@
         }
         
         // Toggle push-to-talk
-        function togglePushToTalk() {
-            if (!localAudioTrack) {
-                showNotification('Microphone not available');
-                return;
+        async function togglePushToTalk() {
+            if (!localStream) {
+                try {
+                    localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    localAudioTrack = localStream.getAudioTracks()[0];
+                    localAudioTrack.enabled = false; // Start with mic muted
+                    
+                    // Add track to all peer connections
+                    Object.values(peerConnections).forEach(pc => {
+                        if (pc.signalingState !== 'closed') {
+                            pc.addTrack(localAudioTrack, localStream);
+                        }
+                    });
+                } catch (error) {
+                    console.error('Error accessing microphone:', error);
+                    showNotification('Microphone access denied. Push-to-talk will not work.');
+                    return;
+                }
             }
             
             pushToTalkActive = !pushToTalkActive;
