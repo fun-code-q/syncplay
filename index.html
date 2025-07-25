@@ -187,7 +187,7 @@
             height: 60px;
             font-size: 1.5rem;
         }
-
+        
         .control-btn.push-to-talk {
             background: linear-gradient(45deg, #00c6ff, #0072ff);
             position: relative;
@@ -258,8 +258,7 @@
             background: rgba(255, 255, 255, 0.15);
             margin-left: 10px;
         }
-
-        /* Blocker overlays */
+        
         .click-blocker {
             position: absolute;
             left: 0;
@@ -283,8 +282,7 @@
             bottom: 0;
             height: 50%;
         }
-
-        /* Fullscreen styles */
+        
         .video-container:fullscreen {
             width: 100%;
             height: 100%;
@@ -462,7 +460,6 @@
         </header>
         
         <div class="video-container" id="videoContainer">
-            <!-- Click blocker overlays -->
             <div class="click-blocker top"></div>
             <div class="click-blocker middle"></div>
             <div class="click-blocker bottom"></div>
@@ -508,14 +505,11 @@
         </div>
     </div>
 
-    <!-- YouTube IFrame API -->
     <script src="https://www.youtube.com/iframe_api"></script>
-    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
     
     <script>
-        // Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyDsPjwl2fsQwua_HZTPJSDmtlgzRkgVXQ4",
             authDomain: "sync-f5dd9.firebaseapp.com",
@@ -526,11 +520,9 @@
             appId: "1:891545015962:web:e68867deec0117fe85f123"
         };
         
-        // Initialize Firebase
         const app = firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
         
-        // Global variables
         let player;
         let isPlaying = false;
         let roomId = null;
@@ -543,8 +535,6 @@
         let apiReady = false;
         let syncInterval = null;
         let previousJoinerCount = 0;
-        
-        // WebRTC variables
         let localStream = null;
         let peerConnections = {};
         let pushToTalkActive = false;
@@ -552,7 +542,6 @@
         let currentUserId = Math.random().toString(36).substring(2, 10);
         let micPermissionGranted = false;
         
-        // DOM Elements
         const videoUrlInput = document.getElementById('videoUrl');
         const loadButton = document.getElementById('loadVideo');
         const playPauseBtn = document.getElementById('playPauseBtn');
@@ -571,7 +560,6 @@
         const enableMicBtn = document.getElementById('enableMicBtn');
         const disableMicBtn = document.getElementById('disableMicBtn');
 
-        // YouTube API ready callback
         window.onYouTubeIframeAPIReady = function() {
             console.log("YouTube API is ready");
             apiReady = true;
@@ -581,43 +569,44 @@
             }
         };
 
-        // Create YouTube player
         function createPlayer(videoId) {
             if (!apiReady) {
                 console.log("YouTube API not ready yet, queuing video load");
                 pendingVideoId = videoId;
                 return;
             }
-
-            console.log("Creating YouTube player with video ID:", videoId);
-            player = new YT.Player('player', {
-                height: '100%',
-                width: '100%',
-                videoId: videoId,
-                playerVars: {
-                    'rel': 0,
-                    'modestbranding': 1,
-                    'playsinline': 1,
-                    'enablejsapi': 1
-                },
-                events: {
-                    'onReady': onPlayerReady,
-                    'onStateChange': onPlayerStateChange
-                }
-            });
+            try {
+                console.log("Creating YouTube player with video ID:", videoId);
+                player = new YT.Player('player', {
+                    height: '100%',
+                    width: '100%',
+                    videoId: videoId,
+                    playerVars: {
+                        'rel': 0,
+                        'modestbranding': 1,
+                        'playsinline': 1,
+                        'enablejsapi': 1
+                    },
+                    events: {
+                        'onReady': onPlayerReady,
+                        'onStateChange': onPlayerStateChange,
+                        'onError': (event) => console.error("YouTube Player Error:", event.data)
+                    }
+                });
+            } catch (error) {
+                console.error("Error creating YouTube player:", error);
+                showNotification("Failed to load video player. Please try again.");
+            }
         }
 
-        // Extract video ID from YouTube URL
         function extractVideoId(url) {
             const regExp = /^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#\&\?]*).*/;
             const match = url.match(regExp);
             return (match && match[2].length === 11) ? match[2] : null;
         }
         
-        // Load video into player
         function loadVideo() {
             const videoId = extractVideoId(videoUrlInput.value);
-            
             if (videoId) {
                 console.log("Loading video with ID:", videoId);
                 if (player) {
@@ -627,8 +616,6 @@
                 }
                 isPlaying = false;
                 playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
-                
-                // If host, create a room
                 if (!isJoiner) {
                     createRoom(videoId);
                 }
@@ -637,176 +624,157 @@
             }
         }
         
-        // Request microphone permission
         async function requestMicrophonePermission() {
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                localStream = stream;
-                localAudioTrack = stream.getAudioTracks()[0];
-                localAudioTrack.enabled = false; // Start with mic muted
+                localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                localAudioTrack = localStream.getAudioTracks()[0];
+                localAudioTrack.enabled = false;
                 micPermissionGranted = true;
-                
-                // Enable push-to-talk button
                 pushToTalkBtn.classList.remove('disabled');
                 micStatus.classList.remove('disabled');
-                micStatus.classList.add('active');
-                
-                // Initialize WebRTC if in a room
-                if (roomRef) {
-                    initWebRTC();
-                }
-                
                 showNotification('Microphone enabled - ready for push-to-talk');
+                initWebRTC();
                 return true;
             } catch (error) {
                 console.error('Error accessing microphone:', error);
                 showNotification('Microphone access denied. Push-to-talk disabled.');
+                micPermissionGranted = false;
+                pushToTalkBtn.classList.add('disabled');
+                micStatus.classList.add('disabled');
                 return false;
             }
         }
         
-        // Initialize WebRTC
         function initWebRTC() {
             if (!micPermissionGranted || !localStream) {
                 console.log('Microphone not available for WebRTC');
                 return;
             }
-            
-            if (isHost) {
-                // Host listens for new joiners to create peer connections
-                roomRef.child('joiners').on('child_added', (snapshot) => {
-                    const joinerId = snapshot.key;
-                    if (joinerId && !peerConnections[joinerId] && joinerId !== currentUserId) {
-                        createPeerConnection(joinerId, true);
-                    }
-                });
-                
-                // Clean up disconnected peers
-                roomRef.child('joiners').on('child_removed', (snapshot) => {
-                    const joinerId = snapshot.key;
-                    if (peerConnections[joinerId]) {
-                        peerConnections[joinerId].close();
-                        delete peerConnections[joinerId];
-                    }
-                });
-            } else if (isJoiner) {
-                // Joiner connects to host
-                createPeerConnection('host', false);
+            try {
+                if (isHost) {
+                    roomRef.child('joiners').on('child_added', (snapshot) => {
+                        const joinerId = snapshot.key;
+                        if (joinerId && !peerConnections[joinerId] && joinerId !== currentUserId) {
+                            createPeerConnection(joinerId, true);
+                        }
+                    });
+                    roomRef.child('joiners').on('child_removed', (snapshot) => {
+                        const joinerId = snapshot.key;
+                        if (peerConnections[joinerId]) {
+                            peerConnections[joinerId].close();
+                            delete peerConnections[joinerId];
+                        }
+                    });
+                } else if (isJoiner) {
+                    createPeerConnection('host', false);
+                }
+            } catch (error) {
+                console.error('Error initializing WebRTC:', error);
+                showNotification('Voice chat setup failed. Video sync still available.');
             }
         }
         
-        // Create peer connection
         function createPeerConnection(targetId, isInitiator) {
-            const configuration = {
-                iceServers: [
-                    { urls: 'stun:stun.l.google.com:19302' },
-                    { urls: 'stun:stun1.l.google.com:19302' },
-                    { urls: 'stun:stun2.l.google.com:19302' },
-                    {
-                        urls: 'turn:openrelay.metered.ca:80',
-                        username: 'openrelayproject',
-                        credential: 'openrelayproject'
-                    }
-                ]
-            };
-            
-            const pc = new RTCPeerConnection(configuration);
-            peerConnections[targetId] = pc;
-            
-            // Add local stream
-            if (localStream) {
-                localStream.getTracks().forEach(track => {
-                    pc.addTrack(track, localStream);
-                });
-            }
-            
-            // Handle ICE candidates
-            pc.onicecandidate = (event) => {
-                if (event.candidate) {
-                    const candidateData = {
-                        type: 'candidate',
-                        candidate: event.candidate,
-                        target: targetId,
-                        sender: currentUserId
-                    };
-                    
-                    if (isHost) {
-                        database.ref(`rooms/${roomId}/signals/${targetId}`).push(candidateData);
-                    } else {
-                        database.ref(`rooms/${roomId}/signals/host`).push(candidateData);
-                    }
+            try {
+                const configuration = {
+                    iceServers: [
+                        { urls: 'stun:stun.l.google.com:19302' },
+                        { urls: 'stun:stun1.l.google.com:19302' },
+                        { urls: 'stun:stun2.l.google.com:19302' },
+                        {
+                            urls: 'turn:openrelay.metered.ca:80',
+                            username: 'openrelayproject',
+                            credential: 'openrelayproject'
+                        }
+                    ]
+                };
+                
+                const pc = new RTCPeerConnection(configuration);
+                peerConnections[targetId] = pc;
+                
+                if (localStream) {
+                    localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
                 }
-            };
-            
-            // Handle remote stream
-            pc.ontrack = (event) => {
-                const audio = new Audio();
-                audio.srcObject = event.streams[0];
-                audio.play().catch(e => console.log('Audio play error:', e));
-            };
-            
-            // Create offer if initiator
-            if (isInitiator) {
-                pc.createOffer()
-                    .then(offer => pc.setLocalDescription(offer))
-                    .then(() => {
-                        const offerData = {
-                            type: 'offer',
-                            sdp: pc.localDescription,
+                
+                pc.onicecandidate = (event) => {
+                    if (event.candidate) {
+                        const candidateData = {
+                            type: 'candidate',
+                            candidate: event.candidate,
                             target: targetId,
                             sender: currentUserId
                         };
-                        database.ref(`rooms/${roomId}/signals/${targetId}`).push(offerData);
-                    })
-                    .catch(error => console.error('Error creating offer:', error));
-            }
-            
-            // Listen for signals
-            const signalsRef = database.ref(`rooms/${roomId}/signals/${isHost ? targetId : 'host'}`);
-            signalsRef.on('child_added', (snapshot) => {
-                const signal = snapshot.val();
+                        if (isHost) {
+                            database.ref(`rooms/${roomId}/signals/${targetId}`).push(candidateData);
+                        } else {
+                            database.ref(`rooms/${roomId}/signals/host`).push(candidateData);
+                        }
+                    }
+                };
                 
-                if (signal.sender === currentUserId) return;
+                pc.ontrack = (event) => {
+                    const audio = new Audio();
+                    audio.srcObject = event.streams[0];
+                    audio.play().catch(e => console.error('Audio play error:', e));
+                };
                 
-                if (signal.type === 'offer' && !isInitiator) {
-                    pc.setRemoteDescription(new RTCSessionDescription(signal.sdp))
-                        .then(() => pc.createAnswer())
-                        .then(answer => pc.setLocalDescription(answer))
+                if (isInitiator) {
+                    pc.createOffer()
+                        .then(offer => pc.setLocalDescription(offer))
                         .then(() => {
-                            const answerData = {
-                                type: 'answer',
+                            const offerData = {
+                                type: 'offer',
                                 sdp: pc.localDescription,
                                 target: targetId,
                                 sender: currentUserId
                             };
-                            database.ref(`rooms/${roomId}/signals/${targetId}`).push(answerData);
+                            database.ref(`rooms/${roomId}/signals/${targetId}`).push(offerData);
                         })
-                        .catch(error => console.error('Error handling offer:', error));
-                } else if (signal.type === 'answer' && isInitiator) {
-                    pc.setRemoteDescription(new RTCSessionDescription(signal.sdp))
-                        .catch(error => console.error('Error setting remote answer:', error));
-                } else if (signal.type === 'candidate') {
-                    pc.addIceCandidate(new RTCIceCandidate(signal.candidate))
-                        .catch(error => console.error('Error adding ICE candidate:', error));
+                        .catch(error => console.error('Error creating offer:', error));
                 }
-            });
-            
-            // Handle connection state changes
-            pc.onconnectionstatechange = () => {
-                console.log(`Connection state with ${targetId}:`, pc.connectionState);
-            };
+                
+                const signalsRef = database.ref(`rooms/${roomId}/signals/${isHost ? targetId : 'host'}`);
+                signalsRef.on('child_added', (snapshot) => {
+                    const signal = snapshot.val();
+                    if (signal.sender === currentUserId) return;
+                    if (signal.type === 'offer' && !isInitiator) {
+                        pc.setRemoteDescription(new RTCSessionDescription(signal.sdp))
+                            .then(() => pc.createAnswer())
+                            .then(answer => pc.setLocalDescription(answer))
+                            .then(() => {
+                                const answerData = {
+                                    type: 'answer',
+                                    sdp: pc.localDescription,
+                                    target: targetId,
+                                    sender: currentUserId
+                                };
+                                database.ref(`rooms/${roomId}/signals/${targetId}`).push(answerData);
+                            })
+                            .catch(error => console.error('Error handling offer:', error));
+                    } else if (signal.type === 'answer' && isInitiator) {
+                        pc.setRemoteDescription(new RTCSessionDescription(signal.sdp))
+                            .catch(error => console.error('Error setting remote answer:', error));
+                    } else if (signal.type === 'candidate') {
+                        pc.addIceCandidate(new RTCIceCandidate(signal.candidate))
+                            .catch(error => console.error('Error adding ICE candidate:', error));
+                    }
+                });
+                
+                pc.onconnectionstatechange = () => {
+                    console.log(`Connection state with ${targetId}:`, pc.connectionState);
+                };
+            } catch (error) {
+                console.error('Error creating peer connection:', error);
+            }
         }
         
-        // Toggle push-to-talk
         function togglePushToTalk() {
             if (!micPermissionGranted || !localAudioTrack) {
                 showPermissionPrompt();
                 return;
             }
-            
             pushToTalkActive = !pushToTalkActive;
             localAudioTrack.enabled = pushToTalkActive;
-            
             if (pushToTalkActive) {
                 pushToTalkBtn.classList.add('active');
                 micStatus.classList.add('active');
@@ -816,72 +784,70 @@
             }
         }
         
-        // Show permission prompt
         function showPermissionPrompt() {
             permissionPrompt.style.display = 'block';
         }
         
-        // Hide permission prompt
         function hidePermissionPrompt() {
             permissionPrompt.style.display = 'none';
         }
         
-        // Create a room in Firebase
         function createRoom(videoId) {
             roomId = Math.random().toString(36).substring(2, 10);
             roomRef = database.ref('rooms/' + roomId);
-            
             console.log("Creating room with ID:", roomId);
-            
-            roomRef.set({
-                videoId: videoId,
-                state: 'paused',
-                currentTime: 0,
-                hostActive: true,
-                joiners: {},
-                lastUpdated: firebase.database.ServerValue.TIMESTAMP
-            });
-            
-            roomRef.child('joiners').child(currentUserId).set(true);
-            
-            const roomLink = window.location.href.split('?')[0] + '?roomId=' + roomId;
-            copyRoomLinkBtn.style.display = 'flex';
-            copyRoomLinkBtn.setAttribute('data-link', roomLink);
-            
-            isHost = true;
-            modeIndicator.textContent = 'Host Mode';
-            modeIndicator.className = 'mode-indicator host-indicator';
-            modeIndicator.style.display = 'block';
-            
-            roomRef.child('joiners').on('value', (snapshot) => {
-                const joiners = snapshot.val() || {};
-                const count = Object.keys(joiners).length - 1; // Subtract 1 for host
-                
-                if (count > previousJoinerCount) {
-                    showNotification(count + " joiner(s) have joined");
-                }
-                
-                previousJoinerCount = count;
-                joinerCount = count;
-            });
-            
-            syncInterval = setInterval(() => {
-                if (isHost && player && player.getCurrentTime) {
-                    const currentTime = player.getCurrentTime();
-                    roomRef.update({ 
-                        currentTime: currentTime,
-                        state: isPlaying ? 'playing' : 'paused',
-                        lastUpdated: firebase.database.ServerValue.TIMESTAMP
-                    });
-                }
-            }, 1000);
-            
-            window.addEventListener('beforeunload', cleanupRoom);
-            roomRef.child('hostActive').onDisconnect().set(false);
-            roomRef.child('joiners').child(currentUserId).onDisconnect().remove();
+            try {
+                roomRef.set({
+                    videoId: videoId,
+                    state: 'paused',
+                    currentTime: 0,
+                    hostActive: true,
+                    joiners: 0,
+                    lastUpdated: firebase.database.ServerValue.TIMESTAMP
+                });
+                const roomLink = window.location.href.split('?')[0] + '?roomId=' + roomId;
+                copyRoomLinkBtn.style.display = 'flex';
+                copyRoomLinkBtn.setAttribute('data-link', roomLink);
+                isHost = true;
+                modeIndicator.textContent = 'Host Mode';
+                modeIndicator.className = 'mode-indicator host-indicator';
+                modeIndicator.style.display = 'block';
+                roomRef.child('joiners').on('value', (snapshot) => {
+                    const count = snapshot.val() || 0;
+                    if (count > previousJoinerCount) {
+                        showNotification(count + " joiner(s) have joined");
+                    }
+                    previousJoinerCount = count;
+                    joinerCount = count;
+                });
+                roomRef.child('signals').on('child_added', (snapshot) => {
+                    if (micPermissionGranted) {
+                        const signal = snapshot.val();
+                        if (signal.target === currentUserId && signal.sender !== currentUserId) {
+                            if (!peerConnections[signal.sender]) {
+                                createPeerConnection(signal.sender, false);
+                            }
+                        }
+                    }
+                });
+                syncInterval = setInterval(() => {
+                    if (isHost && player && player.getCurrentTime) {
+                        const currentTime = player.getCurrentTime();
+                        roomRef.update({ 
+                            currentTime: currentTime,
+                            state: isPlaying ? 'playing' : 'paused',
+                            lastUpdated: firebase.database.ServerValue.TIMESTAMP
+                        });
+                    }
+                }, 1000);
+                window.addEventListener('beforeunload', cleanupRoom);
+                roomRef.child('hostActive').onDisconnect().set(false);
+            } catch (error) {
+                console.error('Error creating room:', error);
+                showNotification('Failed to create room. Please try again.');
+            }
         }
         
-        // Clean up room resources
         function cleanupRoom() {
             if (syncInterval) {
                 clearInterval(syncInterval);
@@ -889,10 +855,8 @@
             if (roomRef && isHost) {
                 roomRef.update({ hostActive: false });
             }
-            
             Object.values(peerConnections).forEach(pc => pc.close());
             peerConnections = {};
-            
             if (localStream) {
                 localStream.getTracks().forEach(track => track.stop());
                 localStream = null;
@@ -900,57 +864,42 @@
             }
         }
         
-        // Show notification
         function showNotification(message) {
             notificationText.textContent = message;
             notification.classList.add('show');
-            
             setTimeout(() => {
                 notification.classList.remove('show');
             }, 3000);
         }
         
-        // Join a room
         function joinRoom(roomId) {
             roomRef = database.ref('rooms/' + roomId);
-            
             console.log("Attempting to join room:", roomId);
-            
             roomRef.once('value').then((snapshot) => {
                 if (!snapshot.exists() || !snapshot.val().hostActive) {
                     alert('Room not found or host has disconnected');
                     return;
                 }
-                
                 const roomData = snapshot.val();
                 console.log("Joining existing room with video:", roomData.videoId);
-                
                 isJoiner = true;
                 modeIndicator.textContent = 'Joiner Mode';
                 modeIndicator.className = 'mode-indicator joiner-indicator';
                 modeIndicator.style.display = 'block';
-                
                 inputGroup.style.display = 'none';
-                
                 hostControls = false;
                 backwardBtn.style.display = 'none';
                 forwardBtn.style.display = 'none';
                 playPauseBtn.style.display = 'none';
-                
-                roomRef.child('joiners').child(currentUserId).set(true);
-                
+                roomRef.child('joiners').transaction((count) => (count || 0) + 1);
                 createPlayer(roomData.videoId);
-                
                 roomRef.on('value', (snapshot) => {
                     const roomData = snapshot.val();
-                    
                     if (roomData && player && player.getCurrentTime) {
                         const currentTime = player.getCurrentTime();
-                        
                         if (Math.abs(currentTime - roomData.currentTime) > 1) {
                             player.seekTo(roomData.currentTime, true);
                         }
-                        
                         if (roomData.state === 'playing' && !isPlaying) {
                             player.playVideo();
                         } else if (roomData.state === 'paused' && isPlaying) {
@@ -958,15 +907,29 @@
                         }
                     }
                 });
-                
+                if (micPermissionGranted) {
+                    initWebRTC();
+                }
+                roomRef.child('signals').on('child_added', (snapshot) => {
+                    if (micPermissionGranted) {
+                        const signal = snapshot.val();
+                        if (signal.target === currentUserId && signal.sender !== currentUserId) {
+                            if (!peerConnections[signal.sender]) {
+                                createPeerConnection(signal.sender, false);
+                            }
+                        }
+                    }
+                });
                 window.addEventListener('beforeunload', () => {
-                    roomRef.child('joiners').child(currentUserId).remove();
+                    roomRef.child('joiners').transaction((count) => Math.max(0, (count || 0) - 1));
                     cleanupRoom();
                 });
+            }).catch(error => {
+                console.error('Error joining room:', error);
+                alert('Failed to join room. Please check the room ID.');
             });
         }
         
-        // Player event handlers
         function onPlayerReady(event) {
             console.log("Player is ready");
             if (isJoiner && roomRef) {
@@ -980,7 +943,7 @@
                             event.target.pauseVideo();
                         }
                     }
-                });
+                }).catch(error => console.error('Error syncing player:', error));
             }
         }
         
@@ -989,7 +952,6 @@
             if (event.data == YT.PlayerState.PLAYING) {
                 isPlaying = true;
                 playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
-                
                 if (isHost && roomRef) {
                     roomRef.update({ 
                         state: 'playing',
@@ -1000,7 +962,6 @@
             } else if (event.data == YT.PlayerState.PAUSED || event.data == YT.PlayerState.ENDED) {
                 isPlaying = false;
                 playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
-                
                 if (isHost && roomRef) {
                     roomRef.update({ 
                         state: 'paused',
@@ -1011,10 +972,8 @@
             }
         }
         
-        // Toggle play/pause
         function togglePlayPause() {
             if (!player || !hostControls) return;
-            
             if (isPlaying) {
                 player.pauseVideo();
             } else {
@@ -1022,13 +981,10 @@
             }
         }
         
-        // Skip forward by 10 seconds
         function skipForward() {
             if (!player || !hostControls) return;
-            
             const currentTime = player.getCurrentTime();
             player.seekTo(currentTime + 10, true);
-            
             if (isHost && roomRef) {
                 roomRef.update({ 
                     currentTime: currentTime + 10,
@@ -1037,13 +993,10 @@
             }
         }
         
-        // Skip backward by 10 seconds
         function skipBackward() {
             if (!player || !hostControls) return;
-            
             const currentTime = player.getCurrentTime();
             player.seekTo(Math.max(0, currentTime - 10), true);
-            
             if (isHost && roomRef) {
                 roomRef.update({ 
                     currentTime: Math.max(0, currentTime - 10),
@@ -1052,10 +1005,8 @@
             }
         }
         
-        // Toggle fullscreen
         function toggleFullscreen() {
             const videoContainer = document.getElementById('videoContainer');
-            
             if (!document.fullscreenElement) {
                 videoContainer.requestFullscreen().catch(err => {
                     alert(`Error attempting to enable fullscreen: ${err.message}`);
@@ -1067,49 +1018,33 @@
             }
         }
         
-        // Copy room link to clipboard
         function copyRoomLink() {
             const roomLink = copyRoomLinkBtn.getAttribute('data-link');
             navigator.clipboard.writeText(roomLink).then(() => {
                 copySuccess.classList.add('show');
-                setTimeout(() => {
-                    copySuccess.classList.remove('show');
-                }, 2000);
-            }).catch(err => {
-                console.error('Failed to copy room link: ', err);
-            });
+                setTimeout(() => copySuccess.classList.remove('show'), 2000);
+            }).catch(err => console.error('Failed to copy room link:', err));
         }
         
-        // Initialize the application
         document.addEventListener('DOMContentLoaded', function() {
             console.log("DOM fully loaded");
-            
             const urlParams = new URLSearchParams(window.location.search);
             const joinRoomId = urlParams.get('roomId');
-            
             if (joinRoomId) {
                 console.log("Joining existing room:", joinRoomId);
                 joinRoom(joinRoomId);
             }
-            
-            // Event listeners
             loadButton.addEventListener('click', loadVideo);
             playPauseBtn.addEventListener('click', togglePlayPause);
             backwardBtn.addEventListener('click', skipBackward);
             forwardBtn.addEventListener('click', skipForward);
             fullscreenBtn.addEventListener('click', toggleFullscreen);
             copyRoomLinkBtn.addEventListener('click', copyRoomLink);
-            
-            // Push-to-talk button events
             pushToTalkBtn.addEventListener('mousedown', togglePushToTalk);
             pushToTalkBtn.addEventListener('mouseup', togglePushToTalk);
             pushToTalkBtn.addEventListener('mouseleave', () => {
-                if (pushToTalkActive) {
-                    togglePushToTalk();
-                }
+                if (pushToTalkActive) togglePushToTalk();
             });
-            
-            // Touch events for mobile
             pushToTalkBtn.addEventListener('touchstart', (e) => {
                 e.preventDefault();
                 togglePushToTalk();
@@ -1118,25 +1053,16 @@
                 e.preventDefault();
                 togglePushToTalk();
             });
-            
-            // Permission prompt buttons
             enableMicBtn.addEventListener('click', async () => {
                 const granted = await requestMicrophonePermission();
-                if (granted) {
-                    hidePermissionPrompt();
-                }
+                if (granted) hidePermissionPrompt();
             });
-            
             disableMicBtn.addEventListener('click', () => {
                 hidePermissionPrompt();
                 showNotification('Push-to-talk disabled. You can enable it later.');
             });
-            
-            // Support pressing Enter in input field
             videoUrlInput.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    loadVideo();
-                }
+                if (e.key === 'Enter') loadVideo();
             });
         });
     </script>
