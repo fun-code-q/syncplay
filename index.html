@@ -83,7 +83,7 @@
             color: rgba(255, 255, 255, 0.6);
         }
         
-         #loadVideo {
+        #loadVideo {
             padding: 15px 30px;
             background: linear-gradient(45deg, #ff8a00, #e52e71);
             border: none;
@@ -277,8 +277,8 @@
         
         .notification {
             position: absolute;
-            top: 35px;
-            right: 65px;
+            top: 55px;
+            right: 100px;
             padding: 15px 20px;
             background: rgba(0, 0, 0, 0.7);
             border-radius: 10px;
@@ -328,6 +328,34 @@
             display: flex;
             align-items: center;
             width: 100%;
+        }
+        
+        .destroy-room-btn {
+            position: absolute;
+            top: 5px;
+            right: 20px;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255, 0, 0, 0.7);
+            border: none;
+            color: white;
+            font-size: 1rem;
+            cursor: pointer;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 20;
+            transition: all 0.3s ease;
+        }
+        
+        .destroy-room-btn:hover {
+            background: rgba(255, 0, 0, 0.9);
+            transform: scale(1.1);
+        }
+        
+        .destroy-room-btn:active {
+            transform: scale(0.95);
         }
         
         @keyframes fadeIn {
@@ -388,12 +416,23 @@
                 width: 100%;
                 height: 100%;
             }
+            
+            .destroy-room-btn {
+                top: 15px;
+                right: 15px;
+                width: 35px;
+                height: 35px;
+                font-size: 0.9rem;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="mode-indicator" id="modeIndicator"></div>
+        <button class="destroy-room-btn" id="destroyRoomBtn" title="Destroy Room">
+            <i class="fas fa-trash"></i>
+        </button>
         
         <div class="notification" id="notification">
             <div class="notification-content">
@@ -497,6 +536,7 @@
         const copySuccess = document.getElementById('copySuccess');
         const controlsContainer = document.getElementById('controlsContainer');
         const videoContainer = document.getElementById('videoContainer');
+        const destroyRoomBtn = document.getElementById('destroyRoomBtn');
 
         // YouTube API ready callback
         window.onYouTubeIframeAPIReady = function() {
@@ -588,6 +628,9 @@
             copyRoomLinkBtn.style.display = 'flex';
             copyRoomLinkBtn.setAttribute('data-link', roomLink);
             
+            // Show destroy room button
+            destroyRoomBtn.style.display = 'flex';
+            
             // Set host mode
             isHost = true;
             modeIndicator.textContent = 'Host Mode';
@@ -634,6 +677,54 @@
             }
         }
         
+        // Destroy the room and notify joiners
+        function destroyRoom() {
+            if (!isHost || !roomRef) return;
+            
+            if (confirm('Are you sure you want to destroy this room? All joiners will be disconnected.')) {
+                // Set room to destroyed state
+                roomRef.update({
+                    hostActive: false,
+                    destroyed: true,
+                    lastUpdated: firebase.database.ServerValue.TIMESTAMP
+                }).then(() => {
+                    // Remove the room from Firebase
+                    roomRef.remove();
+                    
+                    // Show notification
+                    showNotification('Room has been destroyed');
+                    
+                    // Reset UI
+                    resetAfterRoomDestroy();
+                });
+            }
+        }
+        
+        // Reset UI after room is destroyed
+        function resetAfterRoomDestroy() {
+            // Clear interval
+            if (syncInterval) {
+                clearInterval(syncInterval);
+                syncInterval = null;
+            }
+            
+            // Reset variables
+            isHost = false;
+            roomId = null;
+            roomRef = null;
+            
+            // Reset UI elements
+            modeIndicator.style.display = 'none';
+            copyRoomLinkBtn.style.display = 'none';
+            destroyRoomBtn.style.display = 'none';
+            inputGroup.style.display = 'flex';
+            
+            // Pause the player if it exists
+            if (player && player.pauseVideo) {
+                player.pauseVideo();
+            }
+        }
+        
         // Show notification
         function showNotification(message) {
             notificationText.textContent = message;
@@ -652,12 +743,18 @@
             
             // Check if room exists
             roomRef.once('value').then((snapshot) => {
-                if (!snapshot.exists() || !snapshot.val().hostActive) {
+                const roomData = snapshot.val();
+                
+                if (!roomData || !roomData.hostActive) {
                     alert('Room not found or host has disconnected');
                     return;
                 }
                 
-                const roomData = snapshot.val();
+                if (roomData.destroyed) {
+                    alert('This room has been destroyed by the host');
+                    return;
+                }
+                
                 console.log("Joining existing room with video:", roomData.videoId);
                 
                 // Set joiner mode
@@ -681,6 +778,19 @@
                 // Listen for room changes
                 roomRef.on('value', (snapshot) => {
                     const roomData = snapshot.val();
+                    
+                    if (!roomData) {
+                        // Room has been destroyed
+                        alert('The host has destroyed this room');
+                        resetAfterRoomDestroy();
+                        return;
+                    }
+                    
+                    if (roomData.destroyed) {
+                        alert('The host has destroyed this room');
+                        resetAfterRoomDestroy();
+                        return;
+                    }
                     
                     if (roomData && player && player.getCurrentTime) {
                         const currentTime = player.getCurrentTime();
@@ -905,6 +1015,7 @@
             forwardBtn.addEventListener('click', skipForward);
             fullscreenBtn.addEventListener('click', toggleFullscreen);
             copyRoomLinkBtn.addEventListener('click', copyRoomLink);
+            destroyRoomBtn.addEventListener('click', destroyRoom);
             
             // Support pressing Enter in input field
             videoUrlInput.addEventListener('keypress', function(e) {
