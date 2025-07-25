@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YouTube Sync Player</title>
+    <title>Universal Sync Player</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {
@@ -62,7 +62,7 @@
             transition: all 0.3s ease;
         }
         
-        #videoUrl {
+        #mediaUrl {
             flex: 1;
             padding: 15px 20px;
             border: none;
@@ -74,29 +74,29 @@
             transition: all 0.3s ease;
         }
         
-        #videoUrl:focus {
+        #mediaUrl:focus {
             background: rgba(255, 255, 255, 0.25);
             box-shadow: 0 0 0 3px rgba(255, 138, 0, 0.3);
         }
         
-        #videoUrl::placeholder {
+        #mediaUrl::placeholder {
             color: rgba(255, 255, 255, 0.6);
         }
         
-        .load-video-container {
+        .load-media-container {
             position: relative;
             display: flex;
             align-items: center;
             width: 100%;
         }
         
-        .load-video-label {
+        .load-media-label {
             display: flex;
             width: 100%;
             gap: 10px;
         }
         
-        #loadVideo {
+        #loadMedia {
             padding: 15px 30px;
             background: linear-gradient(45deg, #ff8a00, #e52e71);
             border: none;
@@ -110,16 +110,16 @@
             flex-shrink: 0;
         }
         
-        #loadVideo:hover {
+        #loadMedia:hover {
             transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(229, 46, 113, 0.4);
         }
         
-        #loadVideo:active {
+        #loadMedia:active {
             transform: translateY(1px);
         }
         
-        .video-container {
+        .media-container {
             position: relative;
             width: 100%;
             padding-top: 56.25%; /* 16:9 Aspect Ratio */
@@ -139,6 +139,20 @@
             border: none;
         }
         
+        .audio-container {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+        }
+        
+        #audioPlayer {
+            width: 100%;
+            height: 50px;
+        }
+        
         .controls-container {
             position: absolute;
             bottom: 0;
@@ -154,11 +168,22 @@
             pointer-events: none;
         }
         
-        .video-container:hover .controls-container,
-        .video-container.touch-active .controls-container {
+        .media-container:hover .controls-container,
+        .media-container.touch-active .controls-container {
             opacity: 1;
             transform: translateY(0);
             pointer-events: auto;
+        }
+        
+        .audio-controls {
+            width: 100%;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 15px;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 10px;
         }
         
         .controls {
@@ -302,7 +327,7 @@
         }
 
         /* Fullscreen styles */
-        .video-container:fullscreen {
+        .media-container:fullscreen {
             width: 100%;
             height: 100%;
             padding-top: 0;
@@ -310,12 +335,12 @@
             background: black;
         }
         
-        .video-container:fullscreen #player {
+        .media-container:fullscreen #player {
             position: relative;
             height: 100%;
         }
         
-        .video-container:fullscreen .controls {
+        .media-container:fullscreen .controls {
             position: fixed;
             bottom: 20px;
             left: 50%;
@@ -519,6 +544,117 @@
             transform: translateY(1px);
         }
         
+        .playlist-container {
+            width: 100%;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 10px;
+            display: none;
+        }
+        
+        .playlist-item {
+            padding: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .playlist-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .playlist-item.active {
+            background: rgba(255, 255, 255, 0.2);
+            font-weight: bold;
+        }
+        
+        .playlist-item .remove-btn {
+            color: #ff6b6b;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+            padding: 5px;
+        }
+        
+        .playlist-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .playlist-btn {
+            padding: 8px 15px;
+            border-radius: 20px;
+            border: none;
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .playlist-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
+        
+        .auto-play-toggle {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+        
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(255, 255, 255, 0.15);
+            transition: .4s;
+            border-radius: 24px;
+        }
+        
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .slider {
+            background: linear-gradient(45deg, #ff8a00, #e52e71);
+        }
+        
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+        
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
@@ -537,11 +673,11 @@
                 flex-direction: column;
             }
             
-            .load-video-label {
+            .load-media-label {
                 flex-direction: column;
             }
             
-            #loadVideo {
+            #loadMedia {
                 width: 100%;
             }
             
@@ -600,10 +736,11 @@
         </div>
         
         <header>
-            <h1>Sync Player</h1>
+            <h1>Universal Sync Player</h1>
+            <p class="subtitle">Play any video or music from the internet in sync</p>
         </header>
         
-        <div class="video-container" id="videoContainer">
+        <div class="media-container" id="mediaContainer" style="display: none;">
             <!-- Click blocker overlays -->
             <div class="click-blocker top"></div>
             <div class="click-blocker middle"></div>
@@ -657,11 +794,46 @@
             <div id="player"></div>
         </div>
         
+        <div class="audio-container" id="audioContainer" style="display: none;">
+            <audio id="audioPlayer" controls></audio>
+            <div class="audio-controls">
+                <button class="control-btn backward" title="Backward 10s" id="audioBackwardBtn">
+                    <i class="fas fa-backward"></i>
+                </button>
+                <button class="control-btn play-pause" title="Play/Pause" id="audioPlayPauseBtn">
+                    <i class="fas fa-play"></i>
+                </button>
+                <button class="control-btn forward" title="Forward 10s" id="audioForwardBtn">
+                    <i class="fas fa-forward"></i>
+                </button>
+            </div>
+        </div>
+        
+        <div class="playlist-controls">
+            <button class="playlist-btn" id="showPlaylistBtn">
+                <i class="fas fa-list"></i> Show Playlist
+            </button>
+            <button class="playlist-btn" id="addToPlaylistBtn">
+                <i class="fas fa-plus"></i> Add Current to Playlist
+            </button>
+            <div class="auto-play-toggle">
+                <span>Auto-play next:</span>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="autoPlayToggle">
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+        
+        <div class="playlist-container" id="playlistContainer">
+            <!-- Playlist items will be added here dynamically -->
+        </div>
+        
         <div class="input-group" id="inputGroup">
-            <div class="load-video-container">
-                <label class="load-video-label">
-                    <input type="text" id="videoUrl" placeholder="Enter YouTube URL">
-                    <button id="loadVideo">Load Video</button>
+            <div class="load-media-container">
+                <label class="load-media-label">
+                    <input type="text" id="mediaUrl" placeholder="Enter video or audio URL">
+                    <button id="loadMedia">Load Media</button>
                 </label>
             </div>
             
@@ -734,10 +906,14 @@
         let controlsVisible = true;
         let currentQuality = 'auto';
         let subtitlesEnabled = false;
+        let playlist = [];
+        let currentMediaIndex = -1;
+        let autoPlayNext = true;
+        let currentMediaType = ''; // 'video' or 'audio'
         
         // DOM Elements
-        const videoUrlInput = document.getElementById('videoUrl');
-        const loadButton = document.getElementById('loadVideo');
+        const mediaUrlInput = document.getElementById('mediaUrl');
+        const loadButton = document.getElementById('loadMedia');
         const playPauseBtn = document.getElementById('playPauseBtn');
         const backwardBtn = document.getElementById('backwardBtn');
         const forwardBtn = document.getElementById('forwardBtn');
@@ -761,8 +937,17 @@
         const cancelActionBtn = document.getElementById('cancelAction');
         const confirmationTitle = document.getElementById('confirmationTitle');
         const confirmationMessage = document.getElementById('confirmationMessage');
-        const videoContainer = document.getElementById('videoContainer');
-
+        const mediaContainer = document.getElementById('mediaContainer');
+        const audioContainer = document.getElementById('audioContainer');
+        const audioPlayer = document.getElementById('audioPlayer');
+        const audioPlayPauseBtn = document.getElementById('audioPlayPauseBtn');
+        const audioBackwardBtn = document.getElementById('audioBackwardBtn');
+        const audioForwardBtn = document.getElementById('audioForwardBtn');
+        const playlistContainer = document.getElementById('playlistContainer');
+        const showPlaylistBtn = document.getElementById('showPlaylistBtn');
+        const addToPlaylistBtn = document.getElementById('addToPlaylistBtn');
+        const autoPlayToggle = document.getElementById('autoPlayToggle');
+        
         // YouTube API ready callback
         window.onYouTubeIframeAPIReady = function() {
             console.log("YouTube API is ready");
@@ -799,12 +984,22 @@
                     'onError': onPlayerError
                 }
             });
+            
+            // Show video container and hide audio container
+            mediaContainer.style.display = 'block';
+            audioContainer.style.display = 'none';
+            currentMediaType = 'video';
         }
 
         // Player error handler
         function onPlayerError(event) {
             console.error("Player error:", event.data);
             showNotification("Error loading video. Please try another URL.");
+            
+            // Try to play next item in playlist if available
+            if (autoPlayNext && playlist.length > 0) {
+                playNextInPlaylist();
+            }
         }
 
         // Extract video ID from YouTube URL
@@ -814,12 +1009,26 @@
             return (match && match[2].length === 11) ? match[2] : null;
         }
         
-        // Load video into player
-        function loadVideo() {
-            const videoId = extractVideoId(videoUrlInput.value);
+        // Check if URL is for audio
+        function isAudioUrl(url) {
+            const audioExtensions = ['.mp3', '.wav', '.ogg', '.m4a', '.aac', '.flac'];
+            return audioExtensions.some(ext => url.toLowerCase().includes(ext));
+        }
+        
+        // Load media (video or audio)
+        function loadMedia() {
+            const mediaUrl = mediaUrlInput.value.trim();
+            
+            if (!mediaUrl) {
+                showNotification("Please enter a valid URL");
+                return;
+            }
+            
+            // Check if it's a YouTube URL
+            const videoId = extractVideoId(mediaUrl);
             
             if (videoId) {
-                console.log("Loading video with ID:", videoId);
+                console.log("Loading YouTube video with ID:", videoId);
                 if (player) {
                     player.loadVideoById({
                         videoId: videoId,
@@ -833,15 +1042,42 @@
                 
                 // If host, create a room
                 if (!isJoiner) {
-                    createRoom(videoId);
+                    createRoom(videoId, 'video');
                 }
-            } else {
-                showNotification("Please enter a valid YouTube URL");
+                
+                // Update current media type
+                currentMediaType = 'video';
+            } 
+            // Check if it's an audio URL
+            else if (isAudioUrl(mediaUrl)) {
+                console.log("Loading audio from URL:", mediaUrl);
+                audioPlayer.src = mediaUrl;
+                audioPlayer.load();
+                
+                // Show audio container and hide video container
+                audioContainer.style.display = 'block';
+                mediaContainer.style.display = 'none';
+                currentMediaType = 'audio';
+                
+                // If host, create a room
+                if (!isJoiner) {
+                    createRoom(mediaUrl, 'audio');
+                }
+            } 
+            // Check if it's a direct video URL
+            else if (mediaUrl.match(/\.(mp4|webm|mov|avi|mkv)$/i)) {
+                console.log("Loading video from URL:", mediaUrl);
+                // For direct video URLs, we'll use the YouTube player if possible
+                // or fall back to HTML5 video (not implemented here)
+                showNotification("Direct video URLs not fully supported yet. Try a YouTube link.");
+            } 
+            else {
+                showNotification("Unsupported URL. Please enter a YouTube link or direct audio URL.");
             }
         }
         
         // Create a room in Firebase
-        function createRoom(videoId) {
+        function createRoom(mediaId, mediaType) {
             // Generate random room ID
             roomId = Math.random().toString(36).substring(2, 10);
             roomRef = database.ref('rooms/' + roomId);
@@ -850,7 +1086,8 @@
             
             // Set room data
             roomRef.set({
-                videoId: videoId,
+                mediaId: mediaId,
+                mediaType: mediaType,
                 state: 'paused',
                 currentTime: 0,
                 hostActive: true,
@@ -890,11 +1127,21 @@
             
             // Setup periodic sync
             syncInterval = setInterval(() => {
-                if (isHost && player && player.getCurrentTime) {
-                    const currentTime = player.getCurrentTime();
+                if (isHost) {
+                    let currentTime = 0;
+                    let state = 'paused';
+                    
+                    if (currentMediaType === 'video' && player && player.getCurrentTime) {
+                        currentTime = player.getCurrentTime();
+                        state = isPlaying ? 'playing' : 'paused';
+                    } else if (currentMediaType === 'audio' && audioPlayer) {
+                        currentTime = audioPlayer.currentTime;
+                        state = !audioPlayer.paused ? 'playing' : 'paused';
+                    }
+                    
                     roomRef.update({ 
                         currentTime: currentTime,
-                        state: isPlaying ? 'playing' : 'paused',
+                        state: state,
                         quality: currentQuality,
                         subtitles: subtitlesEnabled,
                         lastUpdated: firebase.database.ServerValue.TIMESTAMP
@@ -941,7 +1188,7 @@
                 }
                 
                 const roomData = snapshot.val();
-                console.log("Joining existing room with video:", roomData.videoId);
+                console.log("Joining existing room with media:", roomData.mediaId, "Type:", roomData.mediaType);
                 
                 // Set joiner mode
                 isJoiner = true;
@@ -966,43 +1213,91 @@
                 currentQuality = roomData.quality || 'auto';
                 subtitlesEnabled = roomData.subtitles || false;
                 
-                // Create player with the room's video
-                createPlayer(roomData.videoId);
+                // Load media based on type
+                if (roomData.mediaType === 'video') {
+                    createPlayer(roomData.mediaId);
+                    currentMediaType = 'video';
+                } else if (roomData.mediaType === 'audio') {
+                    audioPlayer.src = roomData.mediaId;
+                    audioPlayer.load();
+                    audioContainer.style.display = 'block';
+                    mediaContainer.style.display = 'none';
+                    currentMediaType = 'audio';
+                }
                 
                 // Listen for room changes
                 roomRef.on('value', (snapshot) => {
                     const roomData = snapshot.val();
                     
-                    if (roomData && player && player.getCurrentTime) {
-                        const currentTime = player.getCurrentTime();
-                        
-                        // Only sync if difference is more than 1 second to prevent jitter
-                        if (Math.abs(currentTime - roomData.currentTime) > 1) {
-                            player.seekTo(roomData.currentTime, true);
+                    if (roomData) {
+                        // Sync media type if changed by host
+                        if (roomData.mediaType && roomData.mediaType !== currentMediaType) {
+                            currentMediaType = roomData.mediaType;
+                            if (currentMediaType === 'video') {
+                                createPlayer(roomData.mediaId);
+                                audioContainer.style.display = 'none';
+                                mediaContainer.style.display = 'block';
+                            } else if (currentMediaType === 'audio') {
+                                audioPlayer.src = roomData.mediaId;
+                                audioPlayer.load();
+                                audioContainer.style.display = 'block';
+                                mediaContainer.style.display = 'none';
+                            }
                         }
                         
-                        // Sync play/pause state
-                        if (roomData.state === 'playing' && !isPlaying) {
-                            player.playVideo();
-                        } else if (roomData.state === 'paused' && isPlaying) {
-                            player.pauseVideo();
+                        // Sync playback position and state
+                        if (currentMediaType === 'video' && player && player.getCurrentTime) {
+                            const currentTime = player.getCurrentTime();
+                            
+                            // Only sync if difference is more than 1 second to prevent jitter
+                            if (Math.abs(currentTime - roomData.currentTime) > 1) {
+                                player.seekTo(roomData.currentTime, true);
+                            }
+                            
+                            // Sync play/pause state
+                            if (roomData.state === 'playing' && !isPlaying) {
+                                player.playVideo();
+                            } else if (roomData.state === 'paused' && isPlaying) {
+                                player.pauseVideo();
+                            }
+                        } 
+                        else if (currentMediaType === 'audio' && audioPlayer) {
+                            const currentTime = audioPlayer.currentTime;
+                            
+                            // Only sync if difference is more than 1 second
+                            if (Math.abs(currentTime - roomData.currentTime) > 1) {
+                                audioPlayer.currentTime = roomData.currentTime;
+                            }
+                            
+                            // Sync play/pause state
+                            if (roomData.state === 'playing' && audioPlayer.paused) {
+                                audioPlayer.play();
+                                audioPlayPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                            } else if (roomData.state === 'paused' && !audioPlayer.paused) {
+                                audioPlayer.pause();
+                                audioPlayPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                            }
                         }
                         
-                        // Sync quality if changed by host
+                        // Sync quality if changed by host (for videos)
                         if (roomData.quality && roomData.quality !== currentQuality) {
                             currentQuality = roomData.quality;
-                            player.setPlaybackQuality(currentQuality);
+                            if (player) {
+                                player.setPlaybackQuality(currentQuality);
+                            }
                             updateQualityMenu();
                         }
                         
-                        // Sync subtitles if changed by host
+                        // Sync subtitles if changed by host (for videos)
                         if (roomData.subtitles !== undefined && roomData.subtitles !== subtitlesEnabled) {
                             subtitlesEnabled = roomData.subtitles;
-                            if (subtitlesEnabled) {
-                                player.loadModule('captions');
-                                player.setOption('captions', 'track', {languageCode: 'en'});
-                            } else {
-                                player.unloadModule('captions');
+                            if (player) {
+                                if (subtitlesEnabled) {
+                                    player.loadModule('captions');
+                                    player.setOption('captions', 'track', {languageCode: 'en'});
+                                } else {
+                                    player.unloadModule('captions');
+                                }
                             }
                             updateSubtitlesMenu();
                         }
@@ -1149,14 +1444,19 @@
                         lastUpdated: firebase.database.ServerValue.TIMESTAMP
                     });
                 }
+                
+                // If video ended and auto-play is on, play next in playlist
+                if (event.data == YT.PlayerState.ENDED && autoPlayNext && playlist.length > 0) {
+                    playNextInPlaylist();
+                }
             }
             
             // Reset inactivity timer when player state changes
             resetInactivityTimer();
         }
         
-        // Toggle play/pause
-        function togglePlayPause() {
+        // Toggle play/pause for video
+        function toggleVideoPlayPause() {
             if (!player || !hostControls) return;
             
             if (isPlaying) {
@@ -1169,8 +1469,42 @@
             resetInactivityTimer();
         }
         
-        // Skip forward by 10 seconds
-        function skipForward() {
+        // Toggle play/pause for audio
+        function toggleAudioPlayPause() {
+            if (!audioPlayer || !hostControls) return;
+            
+            if (audioPlayer.paused) {
+                audioPlayer.play();
+                audioPlayPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                
+                // If host, update state in Firebase
+                if (isHost && roomRef) {
+                    roomRef.update({ 
+                        state: 'playing',
+                        currentTime: audioPlayer.currentTime,
+                        lastUpdated: firebase.database.ServerValue.TIMESTAMP
+                    });
+                }
+            } else {
+                audioPlayer.pause();
+                audioPlayPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                
+                // If host, update state in Firebase
+                if (isHost && roomRef) {
+                    roomRef.update({ 
+                        state: 'paused',
+                        currentTime: audioPlayer.currentTime,
+                        lastUpdated: firebase.database.ServerValue.TIMESTAMP
+                    });
+                }
+            }
+            
+            // Reset inactivity timer when controls are used
+            resetInactivityTimer();
+        }
+        
+        // Skip forward by 10 seconds for video
+        function skipVideoForward() {
             if (!player || !hostControls) return;
             
             const currentTime = player.getCurrentTime();
@@ -1188,8 +1522,8 @@
             resetInactivityTimer();
         }
         
-        // Skip backward by 10 seconds
-        function skipBackward() {
+        // Skip backward by 10 seconds for video
+        function skipVideoBackward() {
             if (!player || !hostControls) return;
             
             const currentTime = player.getCurrentTime();
@@ -1207,18 +1541,56 @@
             resetInactivityTimer();
         }
         
+        // Skip forward by 10 seconds for audio
+        function skipAudioForward() {
+            if (!audioPlayer || !hostControls) return;
+            
+            audioPlayer.currentTime = Math.min(audioPlayer.duration, audioPlayer.currentTime + 10);
+            
+            // Update Firebase if host
+            if (isHost && roomRef) {
+                roomRef.update({ 
+                    currentTime: audioPlayer.currentTime,
+                    lastUpdated: firebase.database.ServerValue.TIMESTAMP
+                });
+            }
+            
+            // Reset inactivity timer when controls are used
+            resetInactivityTimer();
+        }
+        
+        // Skip backward by 10 seconds for audio
+        function skipAudioBackward() {
+            if (!audioPlayer || !hostControls) return;
+            
+            audioPlayer.currentTime = Math.max(0, audioPlayer.currentTime - 10);
+            
+            // Update Firebase if host
+            if (isHost && roomRef) {
+                roomRef.update({ 
+                    currentTime: audioPlayer.currentTime,
+                    lastUpdated: firebase.database.ServerValue.TIMESTAMP
+                });
+            }
+            
+            // Reset inactivity timer when controls are used
+            resetInactivityTimer();
+        }
+        
         // Toggle fullscreen
         function toggleFullscreen() {
-            if (!document.fullscreenElement) {
-                videoContainer.requestFullscreen().catch(err => {
-                    showNotification(`Error enabling fullscreen: ${err.message}`);
-                });
-                fullscreenBtn.innerHTML = '<i class="fas fa-compress"></i>';
-                isFullscreen = true;
-            } else {
-                document.exitFullscreen();
-                fullscreenBtn.innerHTML = '<i class="fas fa-expand"></i>';
-                isFullscreen = false;
+            if (currentMediaType === 'video') {
+                if (!document.fullscreenElement) {
+                    mediaContainer.requestFullscreen().catch(err => {
+                        showNotification(`Error enabling fullscreen: ${err.message}`);
+                    });
+                    fullscreenBtn.innerHTML = '<i class="fas fa-compress"></i>';
+                    isFullscreen = true;
+                } else {
+                    document.exitFullscreen();
+                    fullscreenBtn.innerHTML = '<i class="fas fa-expand"></i>';
+                    isFullscreen = false;
+                }
             }
             
             // Reset inactivity timer when fullscreen is toggled
@@ -1301,8 +1673,10 @@
         function showControls() {
             if (!controlsVisible) {
                 const controlsContainer = document.querySelector('.controls-container');
-                controlsContainer.style.opacity = '1';
-                controlsContainer.style.pointerEvents = 'auto';
+                if (controlsContainer) {
+                    controlsContainer.style.opacity = '1';
+                    controlsContainer.style.pointerEvents = 'auto';
+                }
                 controlsVisible = true;
             }
         }
@@ -1311,13 +1685,102 @@
         function hideControls() {
             if (controlsVisible) {
                 const controlsContainer = document.querySelector('.controls-container');
-                controlsContainer.style.opacity = '0';
-                controlsContainer.style.pointerEvents = 'none';
+                if (controlsContainer) {
+                    controlsContainer.style.opacity = '0';
+                    controlsContainer.style.pointerEvents = 'none';
+                }
                 controlsVisible = false;
                 
                 // Also hide settings menu if visible
                 settingsMenu.classList.remove('show');
             }
+        }
+        
+        // Playlist functions
+        function addToPlaylist() {
+            const url = mediaUrlInput.value.trim();
+            if (!url) return;
+            
+            // Check if URL is already in playlist
+            if (playlist.some(item => item.url === url)) {
+                showNotification("This URL is already in the playlist");
+                return;
+            }
+            
+            // Add to playlist
+            playlist.push({
+                url: url,
+                type: isAudioUrl(url) ? 'audio' : 'video'
+            });
+            
+            // Update playlist display
+            updatePlaylistDisplay();
+            showNotification("Added to playlist");
+        }
+        
+        function updatePlaylistDisplay() {
+            playlistContainer.innerHTML = '';
+            
+            if (playlist.length === 0) {
+                playlistContainer.style.display = 'none';
+                return;
+            }
+            
+            playlistContainer.style.display = 'block';
+            
+            playlist.forEach((item, index) => {
+                const playlistItem = document.createElement('div');
+                playlistItem.className = `playlist-item ${index === currentMediaIndex ? 'active' : ''}`;
+                playlistItem.innerHTML = `
+                    <span>${item.url}</span>
+                    <button class="remove-btn" data-index="${index}">
+                        <i class="fas fa-times"></i>
+                    </button>
+                `;
+                
+                playlistItem.addEventListener('click', () => {
+                    playFromPlaylist(index);
+                });
+                
+                const removeBtn = playlistItem.querySelector('.remove-btn');
+                removeBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    removeFromPlaylist(index);
+                });
+                
+                playlistContainer.appendChild(playlistItem);
+            });
+        }
+        
+        function removeFromPlaylist(index) {
+            playlist.splice(index, 1);
+            
+            // Adjust current media index if needed
+            if (currentMediaIndex === index) {
+                currentMediaIndex = -1;
+            } else if (currentMediaIndex > index) {
+                currentMediaIndex--;
+            }
+            
+            updatePlaylistDisplay();
+            showNotification("Removed from playlist");
+        }
+        
+        function playFromPlaylist(index) {
+            if (index < 0 || index >= playlist.length) return;
+            
+            currentMediaIndex = index;
+            const item = playlist[index];
+            mediaUrlInput.value = item.url;
+            loadMedia();
+            updatePlaylistDisplay();
+        }
+        
+        function playNextInPlaylist() {
+            if (playlist.length === 0) return;
+            
+            const nextIndex = (currentMediaIndex + 1) % playlist.length;
+            playFromPlaylist(nextIndex);
         }
         
         // Initialize the application
@@ -1334,10 +1797,10 @@
             }
             
             // Event listeners
-            loadButton.addEventListener('click', loadVideo);
-            playPauseBtn.addEventListener('click', togglePlayPause);
-            backwardBtn.addEventListener('click', skipBackward);
-            forwardBtn.addEventListener('click', skipForward);
+            loadButton.addEventListener('click', loadMedia);
+            playPauseBtn.addEventListener('click', toggleVideoPlayPause);
+            backwardBtn.addEventListener('click', skipVideoBackward);
+            forwardBtn.addEventListener('click', skipVideoForward);
             fullscreenBtn.addEventListener('click', toggleFullscreen);
             copyRoomLinkBtn.addEventListener('click', copyRoomLink);
             terminateBtn.addEventListener('click', terminateRoom);
@@ -1346,6 +1809,57 @@
                 e.stopPropagation();
                 settingsMenu.classList.toggle('show');
                 resetInactivityTimer();
+            });
+            
+            // Audio player controls
+            audioPlayPauseBtn.addEventListener('click', toggleAudioPlayPause);
+            audioBackwardBtn.addEventListener('click', skipAudioBackward);
+            audioForwardBtn.addEventListener('click', skipAudioForward);
+            
+            // Audio player events
+            audioPlayer.addEventListener('play', () => {
+                audioPlayPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                
+                // If host, update state in Firebase
+                if (isHost && roomRef) {
+                    roomRef.update({ 
+                        state: 'playing',
+                        currentTime: audioPlayer.currentTime,
+                        lastUpdated: firebase.database.ServerValue.TIMESTAMP
+                    });
+                }
+            });
+            
+            audioPlayer.addEventListener('pause', () => {
+                audioPlayPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                
+                // If host, update state in Firebase
+                if (isHost && roomRef) {
+                    roomRef.update({ 
+                        state: 'paused',
+                        currentTime: audioPlayer.currentTime,
+                        lastUpdated: firebase.database.ServerValue.TIMESTAMP
+                    });
+                }
+            });
+            
+            audioPlayer.addEventListener('ended', () => {
+                // If audio ended and auto-play is on, play next in playlist
+                if (autoPlayNext && playlist.length > 0) {
+                    playNextInPlaylist();
+                }
+            });
+            
+            // Playlist controls
+            showPlaylistBtn.addEventListener('click', () => {
+                playlistContainer.style.display = playlistContainer.style.display === 'none' ? 'block' : 'none';
+            });
+            
+            addToPlaylistBtn.addEventListener('click', addToPlaylist);
+            
+            // Auto-play toggle
+            autoPlayToggle.addEventListener('change', (e) => {
+                autoPlayNext = e.target.checked;
             });
             
             // Quality menu options
@@ -1365,9 +1879,9 @@
             });
             
             // Support pressing Enter in input field
-            videoUrlInput.addEventListener('keypress', function(e) {
+            mediaUrlInput.addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') {
-                    loadVideo();
+                    loadMedia();
                 }
             });
             
@@ -1385,10 +1899,10 @@
             });
             
             // Touch events for mobile
-            videoContainer.addEventListener('touchstart', function() {
-                videoContainer.classList.add('touch-active');
+            mediaContainer.addEventListener('touchstart', function() {
+                mediaContainer.classList.add('touch-active');
                 setTimeout(() => {
-                    videoContainer.classList.remove('touch-active');
+                    mediaContainer.classList.remove('touch-active');
                 }, 3000);
                 resetInactivityTimer();
             });
