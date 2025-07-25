@@ -714,9 +714,11 @@
             peerConnections[targetId] = pc;
             
             // Add local stream
-            localStream.getTracks().forEach(track => {
-                pc.addTrack(track, localStream);
-            });
+            if (localStream) {
+                localStream.getTracks().forEach(track => {
+                    pc.addTrack(track, localStream);
+                });
+            }
             
             // Handle ICE candidates
             pc.onicecandidate = (event) => {
@@ -853,7 +855,7 @@
             
             roomRef.child('joiners').on('value', (snapshot) => {
                 const joiners = snapshot.val() || {};
-                const count = Object.keys(joiners).length - 1;
+                const count = Object.keys(joiners).length - 1; // Subtract 1 for host
                 
                 if (count > previousJoinerCount) {
                     showNotification(count + " joiner(s) have joined");
