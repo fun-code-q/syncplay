@@ -198,6 +198,11 @@
             animation: pulse 1.5s infinite;
         }
         
+        .control-btn.push-to-talk.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
         @keyframes pulse {
             0% { transform: scale(1); }
             50% { transform: scale(1.1); }
@@ -219,6 +224,39 @@
         .mic-status.active {
             background-color: #00ff00;
             display: block;
+        }
+        
+        .mic-status.disabled {
+            background-color: #888;
+            display: block;
+        }
+        
+        .permission-prompt {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px 20px;
+            border-radius: 10px;
+            display: none;
+            z-index: 1000;
+            text-align: center;
+        }
+        
+        .permission-prompt button {
+            background: linear-gradient(45deg, #ff8a00, #e52e71);
+            border: none;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            margin-top: 10px;
+            cursor: pointer;
+        }
+        
+        .permission-prompt button:last-child {
+            background: rgba(255, 255, 255, 0.15);
+            margin-left: 10px;
         }
 
         /* Blocker overlays */
@@ -312,7 +350,7 @@
             top: 20px;
             right: 20px;
             padding: 15px 20px;
-            background: rgba(0, 0, 0, stumble 0.7);
+            background: rgba(0, 0, 0, 0.7);
             border-radius: 10px;
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
             transform: translateX(150%);
@@ -440,9 +478,9 @@
                     <button class="control-btn forward" title="Forward 10s" id="forwardBtn">
                         <i class="fas fa-forward"></i>
                     </button>
-                    <button class="control-btn push-to-talk" title="Push to Talk" id="pushToTalkBtn">
+                    <button class="control-btn push-to-talk disabled" title="Push to Talk (Enable in settings)" id="pushToTalkBtn">
                         <i class="fas fa-microphone"></i>
-                        <div class="mic-status" id="micStatus"></div>
+                        <div class="mic-status disabled" id="micStatus"></div>
                     </button>
                     <button class="control-btn fullscreen" title="Fullscreen" id="fullscreenBtn">
                         <i class="fas fa-expand"></i>
@@ -461,6 +499,12 @@
                 </button>
                 <div class="copy-success" id="copySuccess">Copied to clipboard!</div>
             </div>
+        </div>
+        
+        <div class="permission-prompt" id="permissionPrompt">
+            <p>Enable microphone for push-to-talk?</p>
+            <button id="enableMicBtn">Enable Microphone</button>
+            <button id="disableMicBtn">No Thanks</button>
         </div>
     </div>
 
@@ -501,11 +545,12 @@
         let previousJoinerCount = 0;
         
         // WebRTC variables
-        let localStream;
+        let localStream = null;
         let peerConnections = {};
         let pushToTalkActive = false;
-        let localAudioTrack;
+        let localAudioTrack = null;
         let currentUserId = Math.random().toString(36).substring(2, 10);
+        let micPermissionGranted = false;
         
         // DOM Elements
         const videoUrlInput = document.getElementById('videoUrl');
@@ -522,6 +567,9 @@
         const inputGroup = document.getElementById('inputGroup');
         const copyRoomLinkBtn = document.getElementById('copyRoomLink');
         const copySuccess = document.getElementById('copySuccess');
+        const permissionPrompt = document.getElementById('permissionPrompt');
+        const enableMicBtn = document.getElementById('enableMicBtn');
+        const disableMicBtn = document.getElementById('disableMicBtn');
 
         // YouTube API ready callback
         window.onYouTubeIframeAPIReady = function() {
@@ -589,8 +637,41 @@
             }
         }
         
+        // Request microphone permission
+        async function requestMicrophonePermission() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                localStream = stream;
+                localAudioTrack = stream.getAudioTracks()[0];
+                localAudioTrack.enabled = false; // Start with mic muted
+                micPermissionGranted = true;
+                
+                // Enable push-to-talk button
+                pushToTalkBtn.classList.remove('disabled');
+                micStatus.classList.remove('disabled');
+                micStatus.classList.add('active');
+                
+                // Initialize WebRTC if in a room
+                if (roomRef) {
+                    initWebRTC();
+                }
+                
+                showNotification('Microphone enabled - ready for push-to-talk');
+                return true;
+            } catch (error) {
+                console.error('Error accessing microphone:', error);
+                showNotification('Microphone access denied. Push-to-talk disabled.');
+                return false;
+            }
+        }
+        
         // Initialize WebRTC
-        async function initWebRTC() {
+        function initWebRTC() {
+            if (!micPermissionGranted || !localStream) {
+                console.log('Microphone not available for WebRTC');
+                return;
+            }
+            
             if (isHost) {
                 // Host listens for new joiners to create peer connections
                 roomRef.child('joiners').on('child_added', (snapshot) => {
@@ -612,8 +693,6 @@
                 // Joiner connects to host
                 createPeerConnection('host', false);
             }
-            
-            showNotification('Voice chat ready - use push-to-talk');
         }
         
         // Create peer connection
@@ -634,12 +713,10 @@
             const pc = new RTCPeerConnection(configuration);
             peerConnections[targetId] = pc;
             
-            // Add local stream if available
-            if (localStream) {
-                localStream.getTracks().forEach(track => {
-                    pc.addTrack(track, localStream);
-                });
-            }
+            // Add local stream
+            localStream.getTracks().forEach(track => {
+                pc.addTrack(track, localStream);
+            });
             
             // Handle ICE candidates
             pc.onicecandidate = (event) => {
@@ -652,10 +729,8 @@
                     };
                     
                     if (isHost) {
-                        // Host sends to specific joiner
                         database.ref(`rooms/${roomId}/signals/${targetId}`).push(candidateData);
                     } else {
-                        // Joiner sends to host
                         database.ref(`rooms/${roomId}/signals/host`).push(candidateData);
                     }
                 }
@@ -663,7 +738,6 @@
             
             // Handle remote stream
             pc.ontrack = (event) => {
-                // Create audio element for remote stream
                 const audio = new Audio();
                 audio.srcObject = event.streams[0];
                 audio.play().catch(e => console.log('Audio play error:', e));
@@ -690,7 +764,6 @@
             signalsRef.on('child_added', (snapshot) => {
                 const signal = snapshot.val();
                 
-                // Ignore our own signals
                 if (signal.sender === currentUserId) return;
                 
                 if (signal.type === 'offer' && !isInitiator) {
@@ -719,36 +792,14 @@
             // Handle connection state changes
             pc.onconnectionstatechange = () => {
                 console.log(`Connection state with ${targetId}:`, pc.connectionState);
-                if (pc.connectionState === 'disconnected' || pc.connectionState === 'failed') {
-                    // Try to reconnect after a delay
-                    setTimeout(() => {
-                        if (pc.connectionState !== 'connected') {
-                            createPeerConnection(targetId, isInitiator);
-                        }
-                    }, 2000);
-                }
             };
         }
         
         // Toggle push-to-talk
-        async function togglePushToTalk() {
-            if (!localStream) {
-                try {
-                    localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                    localAudioTrack = localStream.getAudioTracks()[0];
-                    localAudioTrack.enabled = false; // Start with mic muted
-                    
-                    // Add track to all peer connections
-                    Object.values(peerConnections).forEach(pc => {
-                        if (pc.signalingState !== 'closed') {
-                            pc.addTrack(localAudioTrack, localStream);
-                        }
-                    });
-                } catch (error) {
-                    console.error('Error accessing microphone:', error);
-                    showNotification('Microphone access denied. Push-to-talk will not work.');
-                    return;
-                }
+        function togglePushToTalk() {
+            if (!micPermissionGranted || !localAudioTrack) {
+                showPermissionPrompt();
+                return;
             }
             
             pushToTalkActive = !pushToTalkActive;
@@ -763,15 +814,23 @@
             }
         }
         
+        // Show permission prompt
+        function showPermissionPrompt() {
+            permissionPrompt.style.display = 'block';
+        }
+        
+        // Hide permission prompt
+        function hidePermissionPrompt() {
+            permissionPrompt.style.display = 'none';
+        }
+        
         // Create a room in Firebase
         function createRoom(videoId) {
-            // Generate random room ID
             roomId = Math.random().toString(36).substring(2, 10);
             roomRef = database.ref('rooms/' + roomId);
             
             console.log("Creating room with ID:", roomId);
             
-            // Set room data
             roomRef.set({
                 videoId: videoId,
                 state: 'paused',
@@ -781,29 +840,21 @@
                 lastUpdated: firebase.database.ServerValue.TIMESTAMP
             });
             
-            // Add host to joiners list
             roomRef.child('joiners').child(currentUserId).set(true);
             
-            // Show room link
             const roomLink = window.location.href.split('?')[0] + '?roomId=' + roomId;
             copyRoomLinkBtn.style.display = 'flex';
             copyRoomLinkBtn.setAttribute('data-link', roomLink);
             
-            // Set host mode
             isHost = true;
             modeIndicator.textContent = 'Host Mode';
             modeIndicator.className = 'mode-indicator host-indicator';
             modeIndicator.style.display = 'block';
             
-            // Initialize WebRTC
-            initWebRTC();
-            
-            // Listen for joiner events
             roomRef.child('joiners').on('value', (snapshot) => {
                 const joiners = snapshot.val() || {};
-                const count = Object.keys(joiners).length - 1; // Exclude host
+                const count = Object.keys(joiners).length - 1;
                 
-                // Only show notification if the count increased
                 if (count > previousJoinerCount) {
                     showNotification(count + " joiner(s) have joined");
                 }
@@ -812,7 +863,6 @@
                 joinerCount = count;
             });
             
-            // Setup periodic sync
             syncInterval = setInterval(() => {
                 if (isHost && player && player.getCurrentTime) {
                     const currentTime = player.getCurrentTime();
@@ -824,7 +874,6 @@
                 }
             }, 1000);
             
-            // Clean up on disconnect
             window.addEventListener('beforeunload', cleanupRoom);
             roomRef.child('hostActive').onDisconnect().set(false);
             roomRef.child('joiners').child(currentUserId).onDisconnect().remove();
@@ -839,13 +888,13 @@
                 roomRef.update({ hostActive: false });
             }
             
-            // Close all peer connections
             Object.values(peerConnections).forEach(pc => pc.close());
             peerConnections = {};
             
-            // Stop local stream
             if (localStream) {
                 localStream.getTracks().forEach(track => track.stop());
+                localStream = null;
+                localAudioTrack = null;
             }
         }
         
@@ -865,7 +914,6 @@
             
             console.log("Attempting to join room:", roomId);
             
-            // Check if room exists
             roomRef.once('value').then((snapshot) => {
                 if (!snapshot.exists() || !snapshot.val().hostActive) {
                     alert('Room not found or host has disconnected');
@@ -875,43 +923,32 @@
                 const roomData = snapshot.val();
                 console.log("Joining existing room with video:", roomData.videoId);
                 
-                // Set joiner mode
                 isJoiner = true;
                 modeIndicator.textContent = 'Joiner Mode';
                 modeIndicator.className = 'mode-indicator joiner-indicator';
                 modeIndicator.style.display = 'block';
                 
-                // Hide input controls
                 inputGroup.style.display = 'none';
                 
-                // Disable host controls for joiner
                 hostControls = false;
                 backwardBtn.style.display = 'none';
                 forwardBtn.style.display = 'none';
                 playPauseBtn.style.display = 'none';
                 
-                // Add joiner to joiners list
                 roomRef.child('joiners').child(currentUserId).set(true);
                 
-                // Initialize WebRTC
-                initWebRTC();
-                
-                // Create player with the room's video
                 createPlayer(roomData.videoId);
                 
-                // Listen for room changes
                 roomRef.on('value', (snapshot) => {
                     const roomData = snapshot.val();
                     
                     if (roomData && player && player.getCurrentTime) {
                         const currentTime = player.getCurrentTime();
                         
-                        // Only sync if difference is more than 1 second to prevent jitter
                         if (Math.abs(currentTime - roomData.currentTime) > 1) {
                             player.seekTo(roomData.currentTime, true);
                         }
                         
-                        // Sync play/pause state
                         if (roomData.state === 'playing' && !isPlaying) {
                             player.playVideo();
                         } else if (roomData.state === 'paused' && isPlaying) {
@@ -920,7 +957,6 @@
                     }
                 });
                 
-                // Clean up on disconnect
                 window.addEventListener('beforeunload', () => {
                     roomRef.child('joiners').child(currentUserId).remove();
                     cleanupRoom();
@@ -932,7 +968,6 @@
         function onPlayerReady(event) {
             console.log("Player is ready");
             if (isJoiner && roomRef) {
-                // For joiners, sync immediately with host's state
                 roomRef.once('value').then((snapshot) => {
                     const roomData = snapshot.val();
                     if (roomData) {
@@ -953,7 +988,6 @@
                 isPlaying = true;
                 playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
                 
-                // If host, update state in Firebase
                 if (isHost && roomRef) {
                     roomRef.update({ 
                         state: 'playing',
@@ -965,7 +999,6 @@
                 isPlaying = false;
                 playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
                 
-                // If host, update state in Firebase
                 if (isHost && roomRef) {
                     roomRef.update({ 
                         state: 'paused',
@@ -994,7 +1027,6 @@
             const currentTime = player.getCurrentTime();
             player.seekTo(currentTime + 10, true);
             
-            // Update Firebase if host
             if (isHost && roomRef) {
                 roomRef.update({ 
                     currentTime: currentTime + 10,
@@ -1010,7 +1042,6 @@
             const currentTime = player.getCurrentTime();
             player.seekTo(Math.max(0, currentTime - 10), true);
             
-            // Update Firebase if host
             if (isHost && roomRef) {
                 roomRef.update({ 
                     currentTime: Math.max(0, currentTime - 10),
@@ -1051,7 +1082,6 @@
         document.addEventListener('DOMContentLoaded', function() {
             console.log("DOM fully loaded");
             
-            // Check if we're joining a room
             const urlParams = new URLSearchParams(window.location.search);
             const joinRoomId = urlParams.get('roomId');
             
@@ -1085,6 +1115,19 @@
             pushToTalkBtn.addEventListener('touchend', (e) => {
                 e.preventDefault();
                 togglePushToTalk();
+            });
+            
+            // Permission prompt buttons
+            enableMicBtn.addEventListener('click', async () => {
+                const granted = await requestMicrophonePermission();
+                if (granted) {
+                    hidePermissionPrompt();
+                }
+            });
+            
+            disableMicBtn.addEventListener('click', () => {
+                hidePermissionPrompt();
+                showNotification('Push-to-talk disabled. You can enable it later.');
             });
             
             // Support pressing Enter in input field
