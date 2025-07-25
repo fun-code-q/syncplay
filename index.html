@@ -2,193 +2,398 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YouTube Sync Player</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        
-        body {
-            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #1a2a6c);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-        
-        .container {
-            background-color: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-            width: 100%;
-            max-width: 800px;
-            padding: 30px;
-            color: white;
-            position: relative;
-        }
-        
-        header {
-            text-align: center;
-            margin-bottom: 25px;
-        }
-        
-        h1 {
-            font-size: 2.5rem;
-            margin-bottom: 10px;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
-            background: linear-gradient(45deg, #ff8a00, #e52e71);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-        }
-        
-        .subtitle {
-            font-size: 1.1rem;
-            opacity: 0.8;
-            margin-bottom: 20px;
-        }
-        
-        .input-group {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-            transition: all 0.3s ease;
-        }
-        
-        #videoUrl {
-            flex: 1;
-            padding: 15px 20px;
-            border: none;
-            border-radius: 50px;
-            font-size: 1rem;
-            background: rgba(255, 255, 255, 0.15);
-            color: white;
-            outline: none;
-            transition: all 0.3s ease;
-        }
-        
-        #videoUrl:focus {
-            background: rgba(255, 255, 255, 0.25);
-            box-shadow: 0 0 0 3px rgba(255, 138, 0, 0.3);
-        }
-        
-        #videoUrl::placeholder {
-            color: rgba(255, 255, 255, 0.6);
-        }
-        
-        #loadVideo {
-            padding: 15px 30px;
-            background: linear-gradient(45deg, #ff8a00, #e52e71);
-            border: none;
-            border-radius: 50px;
-            color: white;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(229, 46, 113, 0.3);
-        }
-        
-        #loadVideo:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(229, 46, 113, 0.4);
-        }
-        
-        #loadVideo:active {
-            transform: translateY(1px);
-        }
-        
-        .video-container {
-            position: relative;
-            width: 100%;
-            padding-top: 56.25%; /* 16:9 Aspect Ratio */
-            background: #000;
-            border-radius: 15px;
-            overflow: hidden;
-            margin-bottom: 20px;
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
-        }
-        
-        #player {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            border: none;
-        }
-        
-        .controls-container {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            padding: 20px;
-            display: flex;
-            justify-content: center;
-            z-index: 10;
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#1a2a6c">
+    <title>Sync Player</title>
+    <link rel="icon" href="https://cdn3.iconfinder.com/data/icons/iconic-1/32/play_alt-1024.png" type="image/png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+<style>
+    :root {
+        --primary-gradient: linear-gradient(45deg, #ff8a00, #e52e71);
+        --bg-gradient: linear-gradient(135deg, #1a2a6c, #b21f1f, #1a2a6c);
+        --control-bg: rgba(0, 0, 0, 0.7);
+        --text-color: #ffffff;
+        --input-bg: rgba(255, 255, 255, 0.15);
+        --input-focus: rgba(255, 255, 255, 0.25);
+        --shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+        --transition: all 0.3s ease;
+    }
+
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    body {
+        background: var(--bg-gradient);
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 16px;
+        overflow-x: hidden;
+        touch-action: manipulation;
+    }
+
+    .container {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border-radius: 16px;
+        box-shadow: var(--shadow);
+        width: 100%;
+        max-width: 960px;
+        padding: 24px;
+        color: var(--text-color);
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+    }
+
+    header {
+        margin-bottom: 24px;
+    }
+
+    h1 {
+        font-size: clamp(1.8rem, 5vw, 2.4rem);
+        font-weight: 700;
+        background: var(--primary-gradient);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    .subtitle {
+        font-size: clamp(0.9rem, 3vw, 1rem);
+        opacity: 0.8;
+        margin-top: 8px;
+    }
+
+    .input-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 24px;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .input-container {
+        position: relative;
+        display: flex;
+        align-items: center;
+        width: 100%;
+        max-width: 500px;
+        gap: 8px;
+        min-width: 0;
+    }
+
+    #videoUrl {
+        flex: 1;
+        min-width: 0;
+        padding: 12px 16px;
+        border: none;
+        border-radius: 12px;
+        font-size: 0.95rem;
+        background: var(--input-bg);
+        color: var(--text-color);
+        outline: none;
+        transition: var(--transition);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    #videoUrl:focus {
+        background: var(--input-focus);
+        box-shadow: 0 0 0 3px rgba(255, 138, 0, 0.2);
+    }
+
+    #videoUrl::placeholder {
+        color: rgba(255, 255, 255, 0.6);
+    }
+
+    /* Buttons next to input (Load, Copy, Destroy, Manage Queue) */
+    #loadVideo, .action-btn, .destroy-room-btn, .next-video-btn, .copy-icon {
+        min-width: 44px;
+        height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 12px;
+        cursor: pointer;
+        flex-shrink: 0;
+    }
+
+    #loadVideo {
+        padding: 0 16px;
+        background: var(--primary-gradient);
+        border: none;
+        color: var(--text-color);
+        font-size: 0.95rem;
+        font-weight: 600;
+        box-shadow: 0 4px 12px rgba(229, 46, 113, 0.3);
+    }
+
+    #loadVideo:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(229, 46, 113, 0.4);
+    }
+
+    .copy-icon, .destroy-room-btn, .next-video-btn {
+        background: rgba(255, 255, 255, 0.15);
+        border: none;
+        color: var(--text-color);
+        font-size: 1rem;
+        border-radius: 8px; /* make clickable area full */
+        padding: 0 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .copy-success {
+            font-size: 0.85rem;
+            color: #4ade80;
             opacity: 0;
-            transform: translateY(-20px);
-            transition: all 0.3s ease;
-            pointer-events: none;
-        }
-        
-        .video-container:hover .controls-container,
-        .video-container.touch-active .controls-container {
-            opacity: 1;
-            transform: translateY(0);
-            pointer-events: auto;
-        }
-        
-        .controls {
-            background: rgba(0, 0, 0, 0.7);
-            backdrop-filter: blur(10px);
-            border-radius: 50px;
-            padding: 12px 25px;
-            display: flex;
-            gap: 20px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
-        }
-        
-        .control-btn {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.15);
-            border: none;
-            color: white;
-            font-size: 1.2rem;
-            cursor: pointer;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            transition: all 0.3s ease;
-        }
-        
-        .control-btn:hover {
-            background: rgba(255, 255, 255, 0.25);
-            transform: scale(1.1);
-        }
-        
-        .control-btn:active {
-            transform: scale(0.95);
-        }
-        
-        .control-btn.play-pause {
-            background: linear-gradient(45deg, #ff8a00, #e52e71);
-            width: 50px;
-            height: 50px;
-            font-size: 1.5rem;
+            transition: opacity 0.3s ease;
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
         }
 
-        /* Blocker overlays */
+        .copy-success.show {
+            opacity: 1;
+        }
+
+    .copy-icon:hover, .destroy-room-btn:hover, .next-video-btn:hover {
+        background: rgba(255, 255, 255, 0.25);
+        transform: scale(1.05);
+    }
+
+    .destroy-room-btn {
+        background: rgba(255, 0, 0, 0.7);
+    }
+
+    .destroy-room-btn:hover {
+        background: rgba(255, 0, 0, 0.9);
+    }
+
+    .next-video-btn {
+        background: rgba(0, 128, 0, 0.7);
+        position: relative;
+    }
+
+    .next-video-btn:hover {
+        background: rgba(0, 128, 0, 0.9);
+    }
+
+    .next-video-badge {
+        position: absolute;
+        top: -6px;
+        right: -6px;
+        background: #e52e71;
+        color: var(--text-color);
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .video-container {
+        position: relative;
+        width: 100%;
+        aspect-ratio: 16 / 9;
+        background: #000;
+        border-radius: 12px;
+        overflow: hidden;
+        margin: 0 auto 24px;
+        box-shadow: var(--shadow);
+        max-width: 720px;
+    }
+
+    #player {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        border: none;
+    }
+
+    .controls-container {
+        position: absolute;
+        bottom: 12px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 90%;
+        max-width: 600px;
+        padding: 12px;
+        display: flex;
+        justify-content: center;
+        z-index: 10;
+        opacity: 1;
+        transition: opacity 0.3s ease, transform 0.3s ease;
+        opacity: 1;
+        pointer-events: auto;
+        transition: opacity 0.3s ease;
+        }
+
+    .controls-container.hidden {
+    opacity: 0;
+    pointer-events: none;
+        }
+
+    .controls {
+        background: var(--control-bg);
+        backdrop-filter: blur(8px);
+        border-radius: 12px;
+        padding: 12px;
+        display: flex;
+        gap: 12px;
+        box-shadow: var(--shadow);
+        align-items: center;
+    }
+
+    .control-btn {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.15);
+        border: none;
+        color: var(--text-color);
+        font-size: 1.1rem;
+        cursor: pointer;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        transition: var(--transition);
+        flex-shrink: 0;
+    }
+
+    .control-btn.subtitle {
+        font-size: 1.1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-top: 0; /* Ensure alignment */
+        padding-bottom: 0;
+    }
+
+    .control-btn:hover {
+        background: rgba(255, 255, 255, 0.25);
+        transform: scale(1.05);
+    }
+
+    .control-btn.play-pause {
+        background: var(--primary-gradient);
+        width: 44px;
+        height: 44px;
+        font-size: 1.3rem;
+    }
+     .notification {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 12px 20px;
+            background: var(--control-bg);
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+            display: none;
+            background: var(--control-bg);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 10000; /* Ensure it's above fullscreen elements */
+            }
+
+        .notification.show {
+            display: flex;
+            transform: translateX(-50%) translateY(0);
+            animation: fadeInOut 3s ease;
+        }
+        @keyframes fadeInOut {
+        0% { opacity: 0; transform: translateX(-50%) translateY(20px); }
+        10% { opacity: 1; transform: translateX(-50%) translateY(0); }
+        90% { opacity: 1; transform: translateX(-50%) translateY(0); }
+        100% { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+        }
+
+        .notification-content {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+        }
+
+        .notification i {
+            color: #4ade80;
+            font-size: 1.1rem;
+        }
+
+         .mode-indicator {
+            position: absolute;
+            top: 16px;
+            left: 16px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            background: var(--control-bg);
+            display: none;
+        }
+
+        .host-indicator {
+            background: var(--primary-gradient);
+        }
+
+        .joiner-indicator {
+            background: linear-gradient(45deg, #00c6ff, #0072ff);
+        }
+
+
+    @media (max-width: 768px) {
+        .input-group {
+            flex-direction: column;
+        }
+
+        .input-container {
+            flex-direction: column;
+            max-width: 100%;
+        }
+
+        #videoUrl, #loadVideo {
+            width: 100%;
+            max-width: none;
+        }
+
+        .controls {
+            gap: 8px;
+            padding: 8px;
+        }
+
+        .control-btn {
+            width: 40px;
+            height: 40px;
+        }
+
+        .copy-icon, .destroy-room-btn, .next-video-btn {
+            width: auto;
+            padding: 0 10px;
+        }
+    }
+     /* Blocker overlays */
         .click-blocker {
             position: absolute;
             left: 0;
@@ -212,190 +417,27 @@
             bottom: 0;
             height: 50%;
         }
+</style>
 
-        /* Fullscreen styles */
-        .video-container:fullscreen {
-            width: 100%;
-            height: 100%;
-            padding-top: 0;
-            border-radius: 0;
-            background: black;
-        }
-        
-        .video-container:fullscreen #player {
-            position: relative;
-            height: 100%;
-        }
-        
-        .video-container:fullscreen .controls {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-        }
-        
-        .copy-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.15);
-            border: none;
-            color: white;
-            font-size: 1.1rem;
-            cursor: pointer;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            transition: all 0.3s ease;
-            margin-left: 10px;
-        }
-        
-        .copy-icon:hover {
-            background: rgba(255, 255, 255, 0.25);
-            transform: scale(1.1);
-        }
-        
-        .copy-icon:active {
-            transform: scale(0.95);
-        }
-        
-        .copy-success {
-            font-size: 0.9rem;
-            color: #4ade80;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-            position: absolute;
-            right: 30px;
-            top: 50%;
-            transform: translateY(-50%);
-        }
-        
-        .copy-success.show {
-            opacity: 1;
-        }
-        
-        .notification {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            padding: 15px 20px;
-            background: rgba(0, 0, 0, 0.7);
-            border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
-            transform: translateX(150%);
-            transition: transform 0.3s ease;
-            z-index: 100;
-        }
-        
-        .notification.show {
-            transform: translateX(0);
-        }
-        
-        .notification-content {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .notification i {
-            color: #4ade80;
-            font-size: 1.2rem;
-        }
-        
-        .mode-indicator {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            padding: 8px 15px;
-            border-radius: 30px;
-            font-weight: 600;
-            font-size: 0.8rem;
-            background: rgba(0, 0, 0, 0.4);
-            display: none;
-        }
-        
-        .host-indicator {
-            background: linear-gradient(45deg, #ff8a00, #e52e71);
-        }
-        
-        .joiner-indicator {
-            background: linear-gradient(45deg, #00c6ff, #0072ff);
-        }
-        
-        .input-container {
-            position: relative;
-            display: flex;
-            align-items: center;
-            width: 100%;
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        @media (max-width: 600px) {
-            .container {
-                padding: 20px;
-            }
-            
-            h1 {
-                font-size: 2rem;
-            }
-            
-            .input-group {
-                flex-direction: column;
-            }
-            
-            #loadVideo {
-                width: 100%;
-            }
-            
-            .controls {
-                gap: 10px;
-                padding: 10px 15px;
-            }
-            
-            .control-btn {
-                width: 40px;
-                height: 40px;
-                font-size: 1rem;
-            }
-            
-            .control-btn.play-pause {
-                width: 50px;
-                height: 50px;
-            }
-            
-            .copy-icon {
-                margin-left: 0;
-                margin-top: 10px;
-            }
-        }
-    </style>
 </head>
 <body>
     <div class="container">
         <div class="mode-indicator" id="modeIndicator"></div>
-        
         <div class="notification" id="notification">
             <div class="notification-content">
                 <i class="fas fa-check-circle"></i>
                 <span id="notificationText"></span>
             </div>
         </div>
-        
         <header>
-            <h1>YouTube Sync Player</h1>
+            <h1>Sync Player</h1>
+            <div class="subtitle">Watch YouTube videos together in real-time</div>
         </header>
-        
         <div class="video-container" id="videoContainer">
-            <!-- Click blocker overlays -->
             <div class="click-blocker top"></div>
             <div class="click-blocker middle"></div>
             <div class="click-blocker bottom"></div>
-            
-            <div class="controls-container">
+            <div class="controls-container" id="controlsContainer">
                 <div class="controls">
                     <button class="control-btn backward" title="Backward 10s" id="backwardBtn">
                         <i class="fas fa-backward"></i>
@@ -406,6 +448,12 @@
                     <button class="control-btn forward" title="Forward 10s" id="forwardBtn">
                         <i class="fas fa-forward"></i>
                     </button>
+                    <button class="control-btn quality" title="Quality" id="qualityBtn">
+                        <i class="fas fa-cog"></i>
+                    </button>
+                    <button class="control-btn subtitle" title="Toggle Subtitle" id="subtitleBtn">
+                        <i class="fas fa-closed-captioning"></i>
+                    </button>
                     <button class="control-btn fullscreen" title="Fullscreen" id="fullscreenBtn">
                         <i class="fas fa-expand"></i>
                     </button>
@@ -413,42 +461,42 @@
             </div>
             <div id="player"></div>
         </div>
-        
         <div class="input-group" id="inputGroup">
             <div class="input-container">
-                <input type="text" id="videoUrl" placeholder="Enter YouTube URL">
-                <button id="loadVideo">Load Video</button>
-                <button class="copy-icon" id="copyRoomLink" style="display: none;">
+                <input type="url" id="videoUrl" placeholder="Enter YouTube URL" aria-label="YouTube video URL">
+                <button id="loadVideo">Load</button>
+                <button class="destroy-room-btn" id="destroyRoomBtn" title="Destroy Room" style="display: none;">
+                    <i class="fas fa-times"></i>
+                </button>
+                <button class="next-video-btn" id="nextVideoBtn" title="Manage Queue">
+                    <i class="fas fa-list-ul"></i>
+                    <span class="next-video-badge" id="nextVideoBadge">0</span>
+                </button>
+                <button class="copy-icon" id="copyRoomLink" title="Copy Room Link" style="display: none;">
                     <i class="fas fa-copy"></i>
                 </button>
-                <div class="copy-success" id="copySuccess">Copied to clipboard!</div>
+                <span class="copy-success" id="copySuccess">Room link copied to clipboard</span>
             </div>
         </div>
     </div>
 
-    <!-- YouTube IFrame API -->
     <script src="https://www.youtube.com/iframe_api"></script>
-    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
-    
     <script>
-        // Firebase configuration - REPLACE WITH YOUR OWN CONFIG
         const firebaseConfig = {
-        apiKey: "AIzaSyDsPjwl2fsQwua_HZTPJSDmtlgzRkgVXQ4",
-        authDomain: "sync-f5dd9.firebaseapp.com",
-        databaseURL: "https://sync-f5dd9-default-rtdb.firebaseio.com",
-        projectId: "sync-f5dd9",
-        storageBucket: "sync-f5dd9.firebasestorage.app",
-        messagingSenderId: "891545015962",
-        appId: "1:891545015962:web:e68867deec0117fe85f123"
+            apiKey: "AIzaSyDsPjwl2fsQwua_HZTPJSDmtlgzRkgVXQ4",
+            authDomain: "sync-f5dd9.firebaseapp.com",
+            databaseURL: "https://sync-f5dd9-default-rtdb.firebaseio.com",
+            projectId: "sync-f5dd9",
+            storageBucket: "sync-f5dd9.firebasestorage.app",
+            messagingSenderId: "891545015962",
+            appId: "1:891545015962:web:e68867deec0117fe85f123"
         };
-        
-        // Initialize Firebase
+
         const app = firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
-        
-        // Global variables
+
         let player;
         let isPlaying = false;
         let roomId = null;
@@ -461,24 +509,42 @@
         let apiReady = false;
         let syncInterval = null;
         let previousJoinerCount = 0;
-        
-        // DOM Elements
-        const videoUrlInput = document.getElementById('videoUrl');
-        const loadButton = document.getElementById('loadVideo');
-        const playPauseBtn = document.getElementById('playPauseBtn');
-        const backwardBtn = document.getElementById('backwardBtn');
-        const forwardBtn = document.getElementById('forwardBtn');
-        const fullscreenBtn = document.getElementById('fullscreenBtn');
-        const notification = document.getElementById('notification');
-        const notificationText = document.getElementById('notificationText');
-        const modeIndicator = document.getElementById('modeIndicator');
-        const inputGroup = document.getElementById('inputGroup');
-        const copyRoomLinkBtn = document.getElementById('copyRoomLink');
-        const copySuccess = document.getElementById('copySuccess');
+        let controlsTimeout = null;
+        let nextVideos = [];
+        let currentQuality = 'auto';
 
-        // YouTube API ready callback
-        window.onYouTubeIframeAPIReady = function() {
-            console.log("YouTube API is ready");
+        const elements = {
+            videoUrl: document.getElementById('videoUrl'),
+            loadVideo: document.getElementById('loadVideo'),
+            playPauseBtn: document.getElementById('playPauseBtn'),
+            backwardBtn: document.getElementById('backwardBtn'),
+            forwardBtn: document.getElementById('forwardBtn'),
+            qualityBtn: document.getElementById('qualityBtn'),
+            subtitleBtn: document.getElementById('subtitleBtn'),
+            nextVideoBtn: document.getElementById('nextVideoBtn'),
+            nextVideoBadge: document.getElementById('nextVideoBadge'),
+            fullscreenBtn: document.getElementById('fullscreenBtn'),
+            notification: document.getElementById('notification'),
+            notificationText: document.getElementById('notificationText'),
+            modeIndicator: document.getElementById('modeIndicator'),
+            inputGroup: document.getElementById('inputGroup'),
+            copyRoomLink: document.getElementById('copyRoomLink'),
+            copySuccess: document.getElementById('copySuccess'),
+            controlsContainer: document.getElementById('controlsContainer'),
+            videoContainer: document.getElementById('videoContainer'),
+            destroyRoomBtn: document.getElementById('destroyRoomBtn')
+        };
+
+        // Debounce utility
+        const debounce = (func, wait) => {
+            let timeout;
+            return (...args) => {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(this, args), wait);
+            };
+        };
+
+        window.onYouTubeIframeAPIReady = () => {
             apiReady = true;
             if (pendingVideoId) {
                 createPlayer(pendingVideoId);
@@ -486,356 +552,556 @@
             }
         };
 
-        // Create YouTube player
         function createPlayer(videoId) {
             if (!apiReady) {
-                console.log("YouTube API not ready yet, queuing video load");
                 pendingVideoId = videoId;
                 return;
             }
-
-            console.log("Creating YouTube player with video ID:", videoId);
-            player = new YT.Player('player', {
-                height: '100%',
-                width: '100%',
-                videoId: videoId,
-                playerVars: {
-                    'rel': 0,
-                    'modestbranding': 1,
-                    'playsinline': 1,
-                    'enablejsapi': 1
-                },
-                events: {
-                    'onReady': onPlayerReady,
-                    'onStateChange': onPlayerStateChange
-                }
-            });
+            try {
+                player = new YT.Player('player', {
+                    height: '100%',
+                    width: '100%',
+                    videoId,
+                    playerVars: {
+                        rel: 0,
+                        modestbranding: 1,
+                        playsinline: 1,
+                        enablejsapi: 1,
+                        controls: 0,
+                        cc_load_policy: 0,
+                        suggestedQuality: currentQuality
+                    },
+                    events: {
+                        onReady: onPlayerReady,
+                        onStateChange: onPlayerStateChange,
+                        onError: onPlayerError
+                    }
+                });
+            } catch (error) {
+                console.error('Error creating player:', error);
+                showNotification('Failed to initialize player');
+            }
         }
 
-        // Extract video ID from YouTube URL
         function extractVideoId(url) {
-            const regExp = /^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#\&\?]*).*/;
-            const match = url.match(regExp);
-            return (match && match[2].length === 11) ? match[2] : null;
+            try {
+                const regExp = /^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#\&\?]*).*/;
+                const match = url.match(regExp);
+                return (match && match[2].length === 11) ? match[2] : null;
+            } catch {
+                return null;
+            }
         }
-        
-        // Load video into player
+
         function loadVideo() {
-            const videoId = extractVideoId(videoUrlInput.value);
-            
-            if (videoId) {
-                console.log("Loading video with ID:", videoId);
+            const videoId = extractVideoId(elements.videoUrl.value);
+            if (!videoId) {
+                showNotification('Invalid YouTube URL');
+                return;
+            }
+            try {
                 if (player) {
-                    player.loadVideoById(videoId);
+                    player.loadVideoById({ videoId, suggestedQuality: currentQuality });
                 } else {
                     createPlayer(videoId);
                 }
                 isPlaying = false;
-                playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
-                
-                // If host, create a room
+                elements.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
                 if (!isJoiner) {
                     createRoom(videoId);
                 }
-            } else {
-                alert('Please enter a valid YouTube URL');
+            } catch (error) {
+                console.error('Error loading video:', error);
+                showNotification('Failed to load video');
             }
         }
-        
-        // Create a room in Firebase
+
         function createRoom(videoId) {
-            // Generate random room ID
-            roomId = Math.random().toString(36).substring(2, 10);
-            roomRef = database.ref('rooms/' + roomId);
-            
-            console.log("Creating room with ID:", roomId);
-            
-            // Set room data
-            roomRef.set({
-                videoId: videoId,
-                state: 'paused',
-                currentTime: 0,
-                hostActive: true,
-                joiners: 0,
-                lastUpdated: firebase.database.ServerValue.TIMESTAMP
-            });
-            
-            // Show copy icon with room link
-            const roomLink = window.location.href.split('?')[0] + '?roomId=' + roomId;
-            copyRoomLinkBtn.style.display = 'flex';
-            copyRoomLinkBtn.setAttribute('data-link', roomLink);
-            
-            // Set host mode
-            isHost = true;
-            modeIndicator.textContent = 'Host Mode';
-            modeIndicator.className = 'mode-indicator host-indicator';
-            modeIndicator.style.display = 'block';
-            
-            // Listen for joiner events
-            roomRef.child('joiners').on('value', (snapshot) => {
-                const count = snapshot.val() || 0;
-                
-                // Only show notification if the count increased
-                if (count > previousJoinerCount) {
-                    showNotification(count + " joiner(s) have joined");
-                }
-                
-                previousJoinerCount = count;
-                joinerCount = count;
-            });
-            
-            // Setup periodic sync
-            syncInterval = setInterval(() => {
-                if (isHost && player && player.getCurrentTime) {
-                    const currentTime = player.getCurrentTime();
-                    roomRef.update({ 
-                        currentTime: currentTime,
-                        state: isPlaying ? 'playing' : 'paused',
-                        lastUpdated: firebase.database.ServerValue.TIMESTAMP
-                    });
-                }
-            }, 1000);
-            
-            // Clean up on disconnect
-            window.addEventListener('beforeunload', cleanupRoom);
-            roomRef.child('hostActive').onDisconnect().set(false);
-        }
-        
-        // Clean up room resources
-        function cleanupRoom() {
-            if (syncInterval) {
-                clearInterval(syncInterval);
-            }
-            if (roomRef && isHost) {
-                roomRef.update({ hostActive: false });
-            }
-        }
-        
-        // Show notification
-        function showNotification(message) {
-            notificationText.textContent = message;
-            notification.classList.add('show');
-            
-            setTimeout(() => {
-                notification.classList.remove('show');
-            }, 3000);
-        }
-        
-        // Join a room
-        function joinRoom(roomId) {
-            roomRef = database.ref('rooms/' + roomId);
-            
-            console.log("Attempting to join room:", roomId);
-            
-            // Check if room exists
-            roomRef.once('value').then((snapshot) => {
-                if (!snapshot.exists() || !snapshot.val().hostActive) {
-                    alert('Room not found or host has disconnected');
-                    return;
-                }
-                
-                const roomData = snapshot.val();
-                console.log("Joining existing room with video:", roomData.videoId);
-                
-                // Set joiner mode
-                isJoiner = true;
-                modeIndicator.textContent = 'Joiner Mode';
-                modeIndicator.className = 'mode-indicator joiner-indicator';
-                modeIndicator.style.display = 'block';
-                
-                // Hide input controls
-                inputGroup.style.display = 'none';
-                
-                // Disable host controls for joiner
-                hostControls = false;
-                backwardBtn.style.display = 'none';
-                forwardBtn.style.display = 'none';
-                playPauseBtn.style.display = 'none';
-                
-                // Create player with the room's video
-                createPlayer(roomData.videoId);
-                
-                // Listen for room changes
-                roomRef.on('value', (snapshot) => {
-                    const roomData = snapshot.val();
-                    
-                    if (roomData && player && player.getCurrentTime) {
-                        const currentTime = player.getCurrentTime();
-                        
-                        // Only sync if difference is more than 1 second to prevent jitter
-                        if (Math.abs(currentTime - roomData.currentTime) > 1) {
-                            player.seekTo(roomData.currentTime, true);
-                        }
-                        
-                        // Sync play/pause state
-                        if (roomData.state === 'playing' && !isPlaying) {
-                            player.playVideo();
-                        } else if (roomData.state === 'paused' && isPlaying) {
-                            player.pauseVideo();
-                        }
+            try {
+                roomId = Math.random().toString(36).substring(2, 10);
+                roomRef = database.ref(`rooms/${roomId}`);
+                roomRef.set({
+                    videoId,
+                    state: 'paused',
+                    currentTime: 0,
+                    hostActive: true,
+                    joiners: 0,
+                    nextVideos: [],
+                    lastUpdated: firebase.database.ServerValue.TIMESTAMP
+                });
+                const roomLink = `${window.location.origin}${window.location.pathname}?roomId=${roomId}`;
+                elements.copyRoomLink.style.display = 'flex';
+                elements.copyRoomLink.setAttribute('data-link', roomLink);
+                elements.destroyRoomBtn.style.display = 'flex';
+                isHost = true;
+                elements.modeIndicator.textContent = 'Host Mode';
+                elements.modeIndicator.className = 'mode-indicator host-indicator';
+                elements.modeIndicator.style.display = 'block';
+                roomRef.child('joiners').on('value', (snapshot) => {
+                    const count = snapshot.val() || 0;
+                    if (count > previousJoinerCount) {
+                        showNotification(`${count} joiner(s) connected`);
                     }
+                    previousJoinerCount = count;
+                    joinerCount = count;
                 });
-                
-                // Increment joiner count
-                roomRef.child('joiners').transaction((count) => {
-                    return (count || 0) + 1;
+                roomRef.child('nextVideos').on('value', (snapshot) => {
+                    nextVideos = snapshot.val() || [];
+                    updateBadge();
                 });
-                
-                // Clean up on disconnect
-                window.addEventListener('beforeunload', () => {
-                    roomRef.child('joiners').transaction((count) => {
-                        return Math.max(0, (count || 0) - 1);
-                    });
-                });
-            });
+                syncInterval = setInterval(() => {
+                    if (isHost && player && player.getCurrentTime) {
+                        const currentTime = player.getCurrentTime();
+                        roomRef.update({
+                            currentTime,
+                            state: isPlaying ? 'playing' : 'paused',
+                            nextVideos,
+                            lastUpdated: firebase.database.ServerValue.TIMESTAMP
+                        });
+                    }
+                }, 1000);
+                window.addEventListener('beforeunload', cleanupRoom);
+                roomRef.child('hostActive').onDisconnect().set(false);
+            } catch (error) {
+                console.error('Error creating room:', error);
+                showNotification('Failed to create room');
+            }
         }
-        
-        // Player event handlers
-        function onPlayerReady(event) {
-            console.log("Player is ready");
-            if (isJoiner && roomRef) {
-                // For joiners, sync immediately with host's state
+
+        function cleanupRoom() {
+            try {
+                if (syncInterval) {
+                    clearInterval(syncInterval);
+                    syncInterval = null;
+                }
+                if (roomRef && isHost) {
+                    roomRef.update({ hostActive: false });
+                }
+            } catch (error) {
+                console.error('Error cleaning up room:', error);
+            }
+        }
+
+        function destroyRoom() {
+            if (!roomRef) return;
+            try {
+                roomRef.update({
+                    hostActive: false,
+                    destroyed: true,
+                    lastUpdated: firebase.database.ServerValue.TIMESTAMP
+                }).then(() => {
+                    roomRef.remove();
+                    showNotification('Room destroyed');
+                    resetAfterRoomDestroy();
+                    window.location.href = window.location.pathname;
+                });
+            } catch (error) {
+                console.error('Error destroying room:', error);
+                showNotification('Failed to destroy room');
+            }
+        }
+
+        function resetAfterRoomDestroy() {
+            try {
+                if (syncInterval) {
+                    clearInterval(syncInterval);
+                    syncInterval = null;
+                }
+                isHost = false;
+                isJoiner = false;
+                roomId = null;
+                roomRef = null;
+                elements.modeIndicator.style.display = 'none';
+                elements.copyRoomLink.style.display = 'none';
+                elements.destroyRoomBtn.style.display = 'none';
+                elements.inputGroup.style.display = 'flex';
+                nextVideos = [];
+                updateBadge();
+                if (player && player.pauseVideo) {
+                    player.pauseVideo();
+                }
+                elements.videoContainer.style.display = 'none';
+            } catch (error) {
+                console.error('Error resetting after room destroy:', error);
+            }
+        }
+
+        function showNotification(message, duration = 3000) {
+            elements.notificationText.textContent = message;
+            elements.notification.classList.add('show');
+            setTimeout(() => {
+                elements.notification.classList.remove('show');
+            }, duration);
+        }
+
+        function joinRoom(roomId) {
+            try {
+                roomRef = database.ref(`rooms/${roomId}`);
                 roomRef.once('value').then((snapshot) => {
                     const roomData = snapshot.val();
-                    if (roomData) {
-                        event.target.seekTo(roomData.currentTime, true);
-                        if (roomData.state === 'playing') {
-                            event.target.playVideo();
-                        } else {
-                            event.target.pauseVideo();
-                        }
+                    if (!roomData || !roomData.hostActive) {
+                        showNotification('Room not found or host disconnected');
+                        return;
                     }
+                    if (roomData.destroyed) {
+                        showNotification('Room has been destroyed');
+                        window.location.href = window.location.pathname;
+                        return;
+                    }
+                    isJoiner = true;
+                    elements.modeIndicator.textContent = 'Joiner Mode';
+                    elements.modeIndicator.className = 'mode-indicator joiner-indicator';
+                    elements.modeIndicator.style.display = 'block';
+                    elements.inputGroup.style.display = 'none';
+                    hostControls = false;
+                    elements.backwardBtn.style.display = 'none';
+                    elements.forwardBtn.style.display = 'none';
+                    elements.playPauseBtn.style.display = 'none';
+                    elements.qualityBtn.style.display = 'none';
+                    elements.subtitleBtn.style.display = 'none';
+                    createPlayer(roomData.videoId);
+                    roomRef.on('value', (snapshot) => {
+                        const roomData = snapshot.val();
+                        if (!roomData) {
+                            showNotification('Room disconnected');
+                            resetAfterRoomDestroy();
+                            window.location.href = window.location.pathname;
+                            return;
+                        }
+                        if (roomData.destroyed) {
+                            showNotification('Room destroyed by host');
+                            resetAfterRoomDestroy();
+                            window.location.href = window.location.pathname;
+                            return;
+                        }
+                        nextVideos = roomData.nextVideos || [];
+                        updateBadge();
+                        if (player && player.getCurrentTime) {
+                            const currentTime = player.getCurrentTime();
+                            if (Math.abs(currentTime - roomData.currentTime) > 1) {
+                                player.seekTo(roomData.currentTime, true);
+                            }
+                            if (roomData.state === 'playing' && !isPlaying) {
+                                player.playVideo();
+                            } else if (roomData.state === 'paused' && isPlaying) {
+                                player.pauseVideo();
+                            }
+                        }
+                    });
+                    roomRef.child('joiners').transaction((count) => (count || 0) + 1);
+                    window.addEventListener('beforeunload', () => {
+                        roomRef.child('joiners').transaction((count) => Math.max(0, (count || 0) - 1));
+                    });
                 });
+            } catch (error) {
+                console.error('Error joining room:', error);
+                showNotification('Failed to join room');
             }
         }
-        
+
+        function onPlayerReady(event) {
+            try {
+                if (isJoiner && roomRef) {
+                    roomRef.once('value').then((snapshot) => {
+                        const roomData = snapshot.val();
+                        if (roomData) {
+                            event.target.seekTo(roomData.currentTime, true);
+                            if (roomData.state === 'playing') {
+                                event.target.playVideo();
+                            } else {
+                                event.target.pauseVideo();
+                            }
+                        }
+                    });
+                }
+                resetControlsTimeout();
+            } catch (error) {
+                console.error('Error in onPlayerReady:', error);
+            }
+        }
+
         function onPlayerStateChange(event) {
-            console.log("Player state changed:", event.data);
-            if (event.data == YT.PlayerState.PLAYING) {
-                isPlaying = true;
-                playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
-                
-                // If host, update state in Firebase
-                if (isHost && roomRef) {
-                    roomRef.update({ 
-                        state: 'playing',
-                        currentTime: player.getCurrentTime(),
-                        lastUpdated: firebase.database.ServerValue.TIMESTAMP
-                    });
+            try {
+                if (event.data === YT.PlayerState.PLAYING) {
+                    isPlaying = true;
+                    elements.playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                    if (isHost && roomRef) {
+                        roomRef.update({
+                            state: 'playing',
+                            currentTime: player.getCurrentTime(),
+                            lastUpdated: firebase.database.ServerValue.TIMESTAMP
+                        });
+                    }
+                    resetControlsTimeout();
+                } else if (event.data === YT.PlayerState.PAUSED || event.data === YT.PlayerState.ENDED) {
+                    isPlaying = false;
+                    elements.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                    if (isHost && roomRef) {
+                        roomRef.update({
+                            state: 'paused',
+                            currentTime: player.getCurrentTime(),
+                            lastUpdated: firebase.database.ServerValue.TIMESTAMP
+                        });
+                    }
+                    showControls();
+                    if (event.data === YT.PlayerState.ENDED && nextVideos.length > 0) {
+                        const nextVideoId = nextVideos.shift();
+                        player.loadVideoById({ videoId: nextVideoId, suggestedQuality: currentQuality });
+                        if (isHost && roomRef) {
+                            roomRef.update({
+                                videoId: nextVideoId,
+                                nextVideos,
+                                lastUpdated: firebase.database.ServerValue.TIMESTAMP
+                            });
+                        }
+                        updateBadge();
+                    }
                 }
-            } else if (event.data == YT.PlayerState.PAUSED || event.data == YT.PlayerState.ENDED) {
-                isPlaying = false;
-                playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
-                
-                // If host, update state in Firebase
-                if (isHost && roomRef) {
-                    roomRef.update({ 
-                        state: 'paused',
-                        currentTime: player.getCurrentTime(),
-                        lastUpdated: firebase.database.ServerValue.TIMESTAMP
-                    });
-                }
+            } catch (error) {
+                console.error('Error in onPlayerStateChange:', error);
             }
         }
-        
-        // Toggle play/pause
+
+        function onPlayerError(event) {
+            console.error('Player error:', event.data);
+            const errorMessages = {
+                2: 'Invalid video URL',
+                5: 'HTML5 player error',
+                100: 'Video not found',
+                101: 'Video not allowed in embedded players',
+                150: 'Video not allowed in embedded players'
+            };
+            showNotification(errorMessages[event.data] || 'An error occurred');
+        }
+
         function togglePlayPause() {
             if (!player || !hostControls) return;
-            
-            if (isPlaying) {
-                player.pauseVideo();
-            } else {
-                player.playVideo();
+            try {
+                if (isPlaying) {
+                    player.pauseVideo();
+                } else {
+                    player.playVideo();
+                }
+                showControls();
+                resetControlsTimeout();
+            } catch (error) {
+                console.error('Error toggling play/pause:', error);
             }
         }
-        
-        // Skip forward by 10 seconds
+
         function skipForward() {
             if (!player || !hostControls) return;
-            
-            const currentTime = player.getCurrentTime();
-            player.seekTo(currentTime + 10, true);
-            
-            // Update Firebase if host
-            if (isHost && roomRef) {
-                roomRef.update({ 
-                    currentTime: currentTime + 10,
-                    lastUpdated: firebase.database.ServerValue.TIMESTAMP
-                });
+            try {
+                const currentTime = player.getCurrentTime();
+                player.seekTo(currentTime + 10, true);
+                if (isHost && roomRef) {
+                    roomRef.update({
+                        currentTime: currentTime + 10,
+                        lastUpdated: firebase.database.ServerValue.TIMESTAMP
+                    });
+                }
+                showControls();
+                resetControlsTimeout();
+            } catch (error) {
+                console.error('Error skipping forward:', error);
             }
         }
-        
-        // Skip backward by 10 seconds
+
         function skipBackward() {
             if (!player || !hostControls) return;
-            
-            const currentTime = player.getCurrentTime();
-            player.seekTo(Math.max(0, currentTime - 10), true);
-            
-            // Update Firebase if host
-            if (isHost && roomRef) {
-                roomRef.update({ 
-                    currentTime: Math.max(0, currentTime - 10),
-                    lastUpdated: firebase.database.ServerValue.TIMESTAMP
-                });
+            try {
+                const currentTime = player.getCurrentTime();
+                player.seekTo(Math.max(0, currentTime - 10), true);
+                if (isHost && roomRef) {
+                    roomRef.update({
+                        currentTime: Math.max(0, currentTime - 10),
+                        lastUpdated: firebase.database.ServerValue.TIMESTAMP
+                    });
+                }
+                showControls();
+                resetControlsTimeout();
+            } catch (error) {
+                console.error('Error skipping backward:', error);
             }
         }
-        
-        // Toggle fullscreen
+
+        function toggleQuality() {
+            if (!player || !hostControls) return;
+            try {
+                const qualities = ['auto', 'small', 'medium', 'large', 'hd720', 'hd1080', 'highres'];
+                const currentIndex = qualities.indexOf(currentQuality);
+                const nextIndex = (currentIndex + 1) % qualities.length;
+                currentQuality = qualities[nextIndex];
+                player.setPlaybackQuality(currentQuality);
+                showNotification(`Quality: ${currentQuality}`);
+                showControls();
+                resetControlsTimeout();
+            } catch (error) {
+                console.error('Error toggling quality:', error);
+            }
+        }
+
+        function toggleSubtitle() {
+            if (!player || !hostControls) return;
+            try {
+                const ccLoadPolicy = player.getOptions().indexOf('cc_load_policy') !== -1 ? 1 : 0;
+                player.setOption('cc_load_policy', ccLoadPolicy ? 0 : 1);
+                showNotification(`Subtitles ${ccLoadPolicy ? 'off' : 'on'}`);
+                showControls();
+                resetControlsTimeout();
+            } catch (error) {
+                console.error('Error toggling subtitles:', error);
+            }
+        }
+
+        function manageQueue() {
+            if (!hostControls) {
+                showNotification('Only hosts can manage the queue');
+                return;
+            }
+            try {
+                const action = nextVideos.length < 3 ? 'add' : 'remove';
+                let promptText = action === 'add' ? 'Enter YouTube URL for next video:' : `Queue full. Remove video at index (0-${nextVideos.length - 1}):`;
+                if (nextVideos.length >= 3 && !confirm('Queue full. Remove a video instead?')) return;
+                const input = prompt(promptText);
+                if (!input) return;
+                if (action === 'add') {
+                    const nextVideoId = extractVideoId(input);
+                    if (nextVideoId) {
+                        nextVideos.push(nextVideoId);
+                        if (isHost && roomRef) {
+                            roomRef.update({ nextVideos });
+                        }
+                        showNotification(`Added video. Queue: ${nextVideos.length}`);
+                    } else {
+                        showNotification('Invalid YouTube URL');
+                    }
+                } else {
+                    const index = parseInt(input);
+                    if (index >= 0 && index < nextVideos.length) {
+                        nextVideos.splice(index, 1);
+                        if (isHost && roomRef) {
+                            roomRef.update({ nextVideos });
+                        }
+                        showNotification(`Removed video. Queue: ${nextVideos.length}`);
+                    } else {
+                        showNotification('Invalid index');
+                    }
+                }
+                updateBadge();
+                showControls();
+                resetControlsTimeout();
+            } catch (error) {
+                console.error('Error managing queue:', error);
+                showNotification('Failed to manage queue');
+            }
+        }
+
+        function updateBadge() {
+            elements.nextVideoBadge.textContent = nextVideos.length;
+            elements.nextVideoBadge.style.display = nextVideos.length > 0 ? 'flex' : 'none';
+        }
+
         function toggleFullscreen() {
-            const videoContainer = document.getElementById('videoContainer');
-            
-            if (!document.fullscreenElement) {
-                videoContainer.requestFullscreen().catch(err => {
-                    alert(`Error attempting to enable fullscreen: ${err.message}`);
-                });
-                fullscreenBtn.innerHTML = '<i class="fas fa-compress"></i>';
-            } else {
-                document.exitFullscreen();
-                fullscreenBtn.innerHTML = '<i class="fas fa-expand"></i>';
+            try {
+                if (!document.fullscreenElement) {
+                    elements.videoContainer.requestFullscreen().catch(err => {
+                        showNotification(`Fullscreen error: ${err.message}`);
+                    });
+                    elements.fullscreenBtn.innerHTML = '<i class="fas fa-compress"></i>';
+                } else {
+                    document.exitFullscreen();
+                    elements.fullscreenBtn.innerHTML = '<i class="fas fa-expand"></i>';
+                }
+                showControls();
+                resetControlsTimeout();
+            } catch (error) {
+                console.error('Error toggling fullscreen:', error);
             }
         }
-        
-        // Copy room link to clipboard
+
         function copyRoomLink() {
-            const roomLink = copyRoomLinkBtn.getAttribute('data-link');
-            navigator.clipboard.writeText(roomLink).then(() => {
-                copySuccess.classList.add('show');
-                setTimeout(() => {
-                    copySuccess.classList.remove('show');
-                }, 2000);
-            }).catch(err => {
-                console.error('Failed to copy room link: ', err);
-            });
+            try {
+                const roomLink = elements.copyRoomLink.getAttribute('data-link');
+                navigator.clipboard.writeText(roomLink).then(() => {
+                    showNotification('Room link copied to clipboard');
+                }).catch(err => {
+                    console.error('Failed to copy room link:', err);
+                    showNotification('Failed to copy link');
+                });
+            } catch (error) {
+                console.error('Error copying room link:', error);
+            }
         }
-        
-        // Initialize the application
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log("DOM fully loaded");
-            
-            // Check if we're joining a room
+
+       function showControls() {
+    elements.controlsContainer.style.opacity = '1';
+    elements.controlsContainer.style.pointerEvents = 'auto';
+}
+
+function hideControls() {
+    elements.controlsContainer.style.opacity = '0';
+    elements.controlsContainer.style.pointerEvents = 'none';
+}
+
+function resetControlsTimeout() {
+    if (controlsTimeout) {
+        clearTimeout(controlsTimeout);
+    }
+    showControls();
+    controlsTimeout = setTimeout(hideControls, 3000);
+}
+
+        const handleInteraction = debounce(() => {
+            showControls();
+            resetControlsTimeout();
+        }, 100);
+
+        document.addEventListener('DOMContentLoaded', () => {
             const urlParams = new URLSearchParams(window.location.search);
             const joinRoomId = urlParams.get('roomId');
-            
             if (joinRoomId) {
-                console.log("Joining existing room:", joinRoomId);
                 joinRoom(joinRoomId);
             }
-            
-            // Event listeners
-            loadButton.addEventListener('click', loadVideo);
-            playPauseBtn.addEventListener('click', togglePlayPause);
-            backwardBtn.addEventListener('click', skipBackward);
-            forwardBtn.addEventListener('click', skipForward);
-            fullscreenBtn.addEventListener('click', toggleFullscreen);
-            copyRoomLinkBtn.addEventListener('click', copyRoomLink);
-            
-            // Support pressing Enter in input field
-            videoUrlInput.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    loadVideo();
-                }
+
+            elements.loadVideo.addEventListener('click', loadVideo);
+            elements.playPauseBtn.addEventListener('click', togglePlayPause);
+            elements.backwardBtn.addEventListener('click', skipBackward);
+            elements.forwardBtn.addEventListener('click', skipForward);
+            elements.qualityBtn.addEventListener('click', toggleQuality);
+            elements.subtitleBtn.addEventListener('click', toggleSubtitle);
+            elements.nextVideoBtn.addEventListener('click', manageQueue);
+            elements.fullscreenBtn.addEventListener('click', toggleFullscreen);
+            elements.copyRoomLink.addEventListener('click', copyRoomLink);
+            elements.destroyRoomBtn.addEventListener('click', destroyRoom);
+            elements.videoUrl.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') loadVideo();
             });
+            elements.videoContainer.addEventListener('mousemove', handleInteraction);
+            elements.videoContainer.addEventListener('touchstart', handleInteraction, { passive: true });
+            resetControlsTimeout();
+
+            document.addEventListener('fullscreenchange', () => {
+    if (document.fullscreenElement) {
+        elements.fullscreenBtn.innerHTML = '<i class="fas fa-compress"></i>';
+        showNotification('Entered fullscreen mode');
+    } else {
+        elements.fullscreenBtn.innerHTML = '<i class="fas fa-expand"></i>';
+        showNotification('Exited fullscreen mode');
+    }
+    showControls();
+    resetControlsTimeout();
+    const handleInteraction = debounce(() => {
+    if (!document.fullscreenElement) {
+        showControls();
+        resetControlsTimeout();
+    } else {
+        // In fullscreen, show controls immediately and hide after delay
+        showControls();
+        resetControlsTimeout();
+    }
+}, 100);
+});
         });
     </script>
 </body>
