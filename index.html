@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sync Player</title>
+    <title>YouTube Sync Player</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="icon" href="https://cdn3.iconfinder.com/data/icons/iconic-1/32/play_alt-1024.png" type="image/png">   
     <style>
         * {
             margin: 0;
@@ -84,7 +83,7 @@
             color: rgba(255, 255, 255, 0.6);
         }
         
-        #loadVideo {
+         #loadVideo {
             padding: 15px 30px;
             background: linear-gradient(45deg, #ff8a00, #e52e71);
             border: none;
@@ -137,16 +136,16 @@
             display: flex;
             justify-content: center;
             z-index: 10;
-            opacity: 0;
-            transition: all 0.3s ease;
-            pointer-events: none;
+            opacity: 1;
+            transform: translateY(0);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            pointer-events: auto;
         }
         
-        .video-container:hover .controls-container,
-        .video-container.touch-active .controls-container,
-        .controls-container.visible {
-            opacity: 1;
-            pointer-events: auto;
+        .controls-container.hidden {
+            opacity: 0;
+            transform: translateY(20px);
+            pointer-events: none;
         }
         
         .controls {
@@ -155,19 +154,18 @@
             border-radius: 50px;
             padding: 12px 25px;
             display: flex;
-            gap: 15px;
+            gap: 20px;
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
-            align-items: center;
         }
         
         .control-btn {
-            width: 40px;
-            height: 40px;
+            width: 50px;
+            height: 50px;
             border-radius: 50%;
             background: rgba(255, 255, 255, 0.15);
             border: none;
             color: white;
-            font-size: 1rem;
+            font-size: 1.2rem;
             cursor: pointer;
             display: flex;
             justify-content: center;
@@ -186,9 +184,9 @@
         
         .control-btn.play-pause {
             background: linear-gradient(45deg, #ff8a00, #e52e71);
-            width: 40px;
-            height: 40px;
-            font-size: 1.3rem;
+            width: 50px;
+            height: 50px;
+            font-size: 1.5rem;
         }
 
         /* Blocker overlays */
@@ -230,7 +228,7 @@
             height: 100%;
         }
         
-        .video-container:fullscreen .controls {
+        .video-container:fullscreen .controls-container {
             position: fixed;
             bottom: 20px;
             left: 50%;
@@ -262,52 +260,47 @@
             transform: scale(0.95);
         }
         
-        .copy-notification {
-            position: absolute;
-            top: -40px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.7);
-            padding: 8px 15px;
-            border-radius: 20px;
+        .copy-success {
             font-size: 0.9rem;
+            color: #4ade80;
             opacity: 0;
             transition: opacity 0.3s ease;
-            white-space: nowrap;
-            z-index: 10;
+            position: absolute;
+            right: 30px;
+            top: 50%;
+            transform: translateY(-50%);
         }
         
-        .copy-notification.show {
+        .copy-success.show {
             opacity: 1;
         }
         
         .notification {
             position: absolute;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            padding: 12px 20px;
-            background: rgba(0, 0, 0, 0.8);
-            border-radius: 8px;
+            top: 35px;
+            right: 65px;
+            padding: 15px 20px;
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 10px;
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
-            opacity: 0;
-            transition: opacity 0.3s ease;
+            transform: translateX(150%);
+            transition: transform 0.3s ease;
             z-index: 100;
-            max-width: 90%;
-            text-align: center;
-            backdrop-filter: blur(5px);
-            display: flex;
-            align-items: center;
-            gap: 8px;
         }
         
         .notification.show {
-            opacity: 1;
+            transform: translateX(0);
+        }
+        
+        .notification-content {
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
         
         .notification i {
             color: #4ade80;
-            font-size: 1rem;
+            font-size: 1.2rem;
         }
         
         .mode-indicator {
@@ -337,103 +330,6 @@
             width: 100%;
         }
         
-        .queue-container {
-            display: flex;
-            gap: 10px;
-            margin-top: 15px;
-            flex-wrap: wrap;
-        }
-        
-        .queue-item {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 8px 15px;
-            border-radius: 20px;
-            font-size: 0.9rem;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .queue-item .remove-btn {
-            background: none;
-            border: none;
-            color: rgba(255, 255, 255, 0.6);
-            cursor: pointer;
-            font-size: 0.8rem;
-        }
-        
-        .add-queue-btn {
-            background: rgba(255, 255, 255, 0.1);
-            border: none;
-            color: white;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-left: 10px;
-        }
-        
-        .add-queue-btn:hover {
-            background: rgba(255, 255, 255, 0.2);
-        }
-        
-        .control-dropdown {
-            position: relative;
-            display: inline-block;
-        }
-        
-        .dropdown-content {
-            display: none;
-            position: absolute;
-            bottom: 100%;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.8);
-            min-width: 120px;
-            border-radius: 8px;
-            padding: 10px 0;
-            z-index: 1;
-            margin-bottom: 10px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
-        }
-        
-        .dropdown-content button {
-            color: white;
-            padding: 8px 16px;
-            text-decoration: none;
-            display: block;
-            width: 100%;
-            text-align: left;
-            background: none;
-            border: none;
-            cursor: pointer;
-        }
-        
-        .dropdown-content button:hover {
-            background: rgba(255, 255, 255, 0.1);
-        }
-        
-        .control-dropdown:hover .dropdown-content {
-            display: block;
-        }
-        
-        .terminate-btn {
-            background: linear-gradient(45deg, #ff0000, #ff6b6b) !important;
-        }
-        
-        .leave-btn {
-            background: linear-gradient(45deg, #0072ff, #00c6ff) !important;
-        }
-        
-        .copy-btn-container {
-            position: relative;
-            display: inline-block;
-        }
-        
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
@@ -442,6 +338,9 @@
         @media (max-width: 600px) {
             .container {
                 padding: 20px;
+                border-radius: 0;
+                min-height: 100vh;
+                max-width: 100%;
             }
             
             h1 {
@@ -457,19 +356,19 @@
             }
             
             .controls {
-                gap: 8px;
+                gap: 10px;
                 padding: 10px 15px;
             }
             
             .control-btn {
-                width: 36px;
-                height: 36px;
-                font-size: 0.9rem;
+                width: 40px;
+                height: 40px;
+                font-size: 1rem;
             }
             
             .control-btn.play-pause {
-                width: 40px;
-                height: 40px;
+                width: 50px;
+                height: 50px;
             }
             
             .copy-icon {
@@ -477,15 +376,17 @@
                 margin-top: 10px;
             }
             
-            .dropdown-content {
-                min-width: 100px;
-                font-size: 0.9rem;
+            /* Fullscreen mobile styles */
+            .video-container:fullscreen {
+                width: 100vw;
+                height: 100vh;
+                padding-top: 0;
+                border-radius: 0;
             }
             
-            .notification {
-                max-width: 95%;
-                font-size: 0.9rem;
-                padding: 10px 15px;
+            .video-container:fullscreen #player {
+                width: 100%;
+                height: 100%;
             }
         }
     </style>
@@ -495,8 +396,10 @@
         <div class="mode-indicator" id="modeIndicator"></div>
         
         <div class="notification" id="notification">
-            <i class="fas fa-check-circle"></i>
-            <span id="notificationText"></span>
+            <div class="notification-content">
+                <i class="fas fa-check-circle"></i>
+                <span id="notificationText"></span>
+            </div>
         </div>
         
         <header>
@@ -520,41 +423,8 @@
                     <button class="control-btn forward" title="Forward 10s" id="forwardBtn">
                         <i class="fas fa-forward"></i>
                     </button>
-                    
-                    <div class="control-dropdown" id="qualityDropdown">
-                        <button class="control-btn" title="Quality" id="qualityBtn">
-                            <i class="fas fa-tachometer-alt"></i>
-                        </button>
-                        <div class="dropdown-content" id="qualityOptions">
-                            <button data-quality="default">Auto</button>
-                            <button data-quality="small">240p</button>
-                            <button data-quality="medium">360p</button>
-                            <button data-quality="large">480p</button>
-                            <button data-quality="hd720">720p</button>
-                            <button data-quality="hd1080">1080p</button>
-                            <button data-quality="highres">2080p</button>
-                        </div>
-                    </div>
-                    
-                    <div class="control-dropdown" id="subtitleDropdown">
-                        <button class="control-btn" title="Subtitles" id="subtitleBtn">
-                            <i class="fas fa-closed-captioning"></i>
-                        </button>
-                        <div class="dropdown-content" id="subtitleOptions">
-                            <button data-track="-1">Off</button>
-                            <button data-track="0">on</button>
-                        </div>
-                    </div>
-                    
                     <button class="control-btn fullscreen" title="Fullscreen" id="fullscreenBtn">
                         <i class="fas fa-expand"></i>
-                    </button>
-                    
-                    <button class="control-btn terminate-btn" title="Terminate Room" id="terminateBtn" style="display: none;">
-                        <i class="fas fa-power-off"></i>
-                    </button>
-                    <button class="control-btn leave-btn" title="Leave Room" id="leaveBtn" style="display: none;">
-                        <i class="fas fa-sign-out-alt"></i>
                     </button>
                 </div>
             </div>
@@ -565,21 +435,11 @@
             <div class="input-container">
                 <input type="text" id="videoUrl" placeholder="Enter YouTube URL">
                 <button id="loadVideo">Load Video</button>
-                <button class="add-queue-btn" id="addQueueBtn" title="Add to queue">
-                    <i class="fas fa-plus"></i>
+                <button class="copy-icon" id="copyRoomLink" style="display: none;">
+                    <i class="fas fa-copy"></i>
                 </button>
-                <div class="copy-btn-container">
-                    <button class="copy-icon" id="copyRoomLink" style="display: none;">
-                        <i class="fas fa-copy"></i>
-                        <span class="copy-notification" id="copyNotification">Copied!</span>
-                    </button>
-                </div>
+                <div class="copy-success" id="copySuccess">Copied to clipboard!</div>
             </div>
-        </div>
-        
-        <div class="queue-container" id="queueContainer" style="display: none;">
-            <h4>Upcoming:</h4>
-            <!-- Queue items will be added here -->
         </div>
     </div>
 
@@ -592,13 +452,13 @@
     <script>
         // Firebase configuration - REPLACE WITH YOUR OWN CONFIG
         const firebaseConfig = {
-            apiKey: "AIzaSyDsPjwl2fsQwua_HZTPJSDmtlgzRkgVXQ4",
-            authDomain: "sync-f5dd9.firebaseapp.com",
-            databaseURL: "https://sync-f5dd9-default-rtdb.firebaseio.com",
-            projectId: "sync-f5dd9",
-            storageBucket: "sync-f5dd9.firebasestorage.app",
-            messagingSenderId: "891545015962",
-            appId: "1:891545015962:web:e68867deec0117fe85f123"
+        apiKey: "AIzaSyDsPjwl2fsQwua_HZTPJSDmtlgzRkgVXQ4",
+        authDomain: "sync-f5dd9.firebaseapp.com",
+        databaseURL: "https://sync-f5dd9-default-rtdb.firebaseio.com",
+        projectId: "sync-f5dd9",
+        storageBucket: "sync-f5dd9.firebasestorage.app",
+        messagingSenderId: "891545015962",
+        appId: "1:891545015962:web:e68867deec0117fe85f123"
         };
         
         // Initialize Firebase
@@ -619,8 +479,8 @@
         let syncInterval = null;
         let previousJoinerCount = 0;
         let controlsTimeout = null;
-        let videoQueue = [];
-        let currentVideoId = null;
+        let isMouseMoving = false;
+        let lastMouseMoveTime = 0;
         
         // DOM Elements
         const videoUrlInput = document.getElementById('videoUrl');
@@ -634,16 +494,9 @@
         const modeIndicator = document.getElementById('modeIndicator');
         const inputGroup = document.getElementById('inputGroup');
         const copyRoomLinkBtn = document.getElementById('copyRoomLink');
-        const copyNotification = document.getElementById('copyNotification');
+        const copySuccess = document.getElementById('copySuccess');
         const controlsContainer = document.getElementById('controlsContainer');
-        const terminateBtn = document.getElementById('terminateBtn');
-        const leaveBtn = document.getElementById('leaveBtn');
-        const qualityBtn = document.getElementById('qualityBtn');
-        const qualityOptions = document.getElementById('qualityOptions');
-        const subtitleBtn = document.getElementById('subtitleBtn');
-        const subtitleOptions = document.getElementById('subtitleOptions');
-        const addQueueBtn = document.getElementById('addQueueBtn');
-        const queueContainer = document.getElementById('queueContainer');
+        const videoContainer = document.getElementById('videoContainer');
 
         // YouTube API ready callback
         window.onYouTubeIframeAPIReady = function() {
@@ -664,7 +517,6 @@
             }
 
             console.log("Creating YouTube player with video ID:", videoId);
-            currentVideoId = videoId;
             player = new YT.Player('player', {
                 height: '100%',
                 width: '100%',
@@ -674,12 +526,11 @@
                     'modestbranding': 1,
                     'playsinline': 1,
                     'enablejsapi': 1,
-                    'cc_load_policy': 1
+                    'controls': 0 // Hide YouTube's native controls
                 },
                 events: {
                     'onReady': onPlayerReady,
-                    'onStateChange': onPlayerStateChange,
-                    'onPlaybackQualityChange': onPlaybackQualityChange
+                    'onStateChange': onPlayerStateChange
                 }
             });
         }
@@ -710,7 +561,7 @@
                     createRoom(videoId);
                 }
             } else {
-                showNotification('Please enter a valid YouTube URL');
+                alert('Please enter a valid YouTube URL');
             }
         }
         
@@ -729,8 +580,7 @@
                 currentTime: 0,
                 hostActive: true,
                 joiners: 0,
-                lastUpdated: firebase.database.ServerValue.TIMESTAMP,
-                queue: []
+                lastUpdated: firebase.database.ServerValue.TIMESTAMP
             });
             
             // Show copy icon with room link
@@ -738,25 +588,11 @@
             copyRoomLinkBtn.style.display = 'flex';
             copyRoomLinkBtn.setAttribute('data-link', roomLink);
             
-            // Show queue container
-            queueContainer.style.display = 'flex';
-            
             // Set host mode
             isHost = true;
             modeIndicator.textContent = 'Host Mode';
             modeIndicator.className = 'mode-indicator host-indicator';
             modeIndicator.style.display = 'block';
-            
-            // Show terminate button
-            terminateBtn.style.display = 'flex';
-            leaveBtn.style.display = 'none';
-            
-            // Show all control buttons for host
-            backwardBtn.style.display = 'flex';
-            forwardBtn.style.display = 'flex';
-            playPauseBtn.style.display = 'flex';
-            qualityBtn.style.display = 'flex';
-            subtitleBtn.style.display = 'flex';
             
             // Listen for joiner events
             roomRef.child('joiners').on('value', (snapshot) => {
@@ -769,13 +605,6 @@
                 
                 previousJoinerCount = count;
                 joinerCount = count;
-            });
-            
-            // Listen for queue changes
-            roomRef.child('queue').on('value', (snapshot) => {
-                const queue = snapshot.val() || [];
-                videoQueue = queue;
-                updateQueueDisplay();
             });
             
             // Setup periodic sync
@@ -840,19 +669,11 @@
                 // Hide input controls
                 inputGroup.style.display = 'none';
                 
-                // Show leave button
-                leaveBtn.style.display = 'flex';
-                terminateBtn.style.display = 'none';
-                
-                // Show all control buttons for joiner (but they won't work unless host)
-                backwardBtn.style.display = 'flex';
-                forwardBtn.style.display = 'flex';
-                playPauseBtn.style.display = 'flex';
-                qualityBtn.style.display = 'flex';
-                subtitleBtn.style.display = 'flex';
-                
                 // Disable host controls for joiner
                 hostControls = false;
+                backwardBtn.style.display = 'none';
+                forwardBtn.style.display = 'none';
+                playPauseBtn.style.display = 'none';
                 
                 // Create player with the room's video
                 createPlayer(roomData.videoId);
@@ -875,12 +696,6 @@
                         } else if (roomData.state === 'paused' && isPlaying) {
                             player.pauseVideo();
                         }
-                        
-                        // Check if video changed
-                        if (roomData.videoId && roomData.videoId !== currentVideoId) {
-                            player.loadVideoById(roomData.videoId);
-                            currentVideoId = roomData.videoId;
-                        }
                     }
                 });
                 
@@ -901,10 +716,6 @@
         // Player event handlers
         function onPlayerReady(event) {
             console.log("Player is ready");
-            
-            // Show controls briefly when player is ready
-            showControlsTemporarily();
-            
             if (isJoiner && roomRef) {
                 // For joiners, sync immediately with host's state
                 roomRef.once('value').then((snapshot) => {
@@ -919,6 +730,9 @@
                     }
                 });
             }
+            
+            // Set up controls timeout
+            resetControlsTimeout();
         }
         
         function onPlayerStateChange(event) {
@@ -936,9 +750,9 @@
                     });
                 }
                 
-                // Show controls when playback starts
-                showControlsTemporarily();
-            } else if (event.data == YT.PlayerState.PAUSED) {
+                // Reset controls timeout when playing
+                resetControlsTimeout();
+            } else if (event.data == YT.PlayerState.PAUSED || event.data == YT.PlayerState.ENDED) {
                 isPlaying = false;
                 playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
                 
@@ -951,34 +765,9 @@
                     });
                 }
                 
-                // Show controls when playback pauses
-                showControlsTemporarily();
-            } else if (event.data == YT.PlayerState.ENDED) {
-                // If host, play next video in queue if available
-                if (isHost && videoQueue.length > 0) {
-                    playNextVideoInQueue();
-                }
+                // Show controls when paused
+                showControls();
             }
-        }
-        
-        function onPlaybackQualityChange(event) {
-            console.log("Playback quality changed:", event.data);
-            showNotification(`Quality changed to ${event.data}`);
-        }
-        
-        // Show controls temporarily
-        function showControlsTemporarily() {
-            controlsContainer.classList.add('visible');
-            
-            // Clear any existing timeout
-            if (controlsTimeout) {
-                clearTimeout(controlsTimeout);
-            }
-            
-            // Hide after 3 seconds
-            controlsTimeout = setTimeout(() => {
-                controlsContainer.classList.remove('visible');
-            }, 3000);
         }
         
         // Toggle play/pause
@@ -991,7 +780,9 @@
                 player.playVideo();
             }
             
-            showControlsTemporarily();
+            // Show controls when interacting
+            showControls();
+            resetControlsTimeout();
         }
         
         // Skip forward by 10 seconds
@@ -1009,7 +800,9 @@
                 });
             }
             
-            showControlsTemporarily();
+            // Show controls when interacting
+            showControls();
+            resetControlsTimeout();
         }
         
         // Skip backward by 10 seconds
@@ -1027,13 +820,13 @@
                 });
             }
             
-            showControlsTemporarily();
+            // Show controls when interacting
+            showControls();
+            resetControlsTimeout();
         }
         
         // Toggle fullscreen
         function toggleFullscreen() {
-            const videoContainer = document.getElementById('videoContainer');
-            
             if (!document.fullscreenElement) {
                 videoContainer.requestFullscreen().catch(err => {
                     alert(`Error attempting to enable fullscreen: ${err.message}`);
@@ -1044,135 +837,52 @@
                 fullscreenBtn.innerHTML = '<i class="fas fa-expand"></i>';
             }
             
-            showControlsTemporarily();
+            // Show controls when interacting
+            showControls();
+            resetControlsTimeout();
         }
         
         // Copy room link to clipboard
         function copyRoomLink() {
             const roomLink = copyRoomLinkBtn.getAttribute('data-link');
             navigator.clipboard.writeText(roomLink).then(() => {
-                copyNotification.classList.add('show');
+                copySuccess.classList.add('show');
                 setTimeout(() => {
-                    copyNotification.classList.remove('show');
+                    copySuccess.classList.remove('show');
                 }, 2000);
             }).catch(err => {
                 console.error('Failed to copy room link: ', err);
             });
-            
-            showControlsTemporarily();
         }
         
-        // Terminate room (host only)
-        function terminateRoom() {
-            if (isHost && roomRef) {
-                if (confirm('Are you sure you want to terminate this room? All joiners will be disconnected.')) {
-                    roomRef.remove();
-                    window.location.reload();
-                }
+        // Show controls
+        function showControls() {
+            controlsContainer.classList.remove('hidden');
+        }
+        
+        // Hide controls
+        function hideControls() {
+            controlsContainer.classList.add('hidden');
+        }
+        
+        // Reset the controls timeout
+        function resetControlsTimeout() {
+            if (controlsTimeout) {
+                clearTimeout(controlsTimeout);
             }
+            controlsTimeout = setTimeout(hideControls, 3000);
         }
         
-        // Leave room (joiner only)
-        function leaveRoom() {
-            if (isJoiner && roomRef) {
-                roomRef.child('joiners').transaction((count) => {
-                    return Math.max(0, (count || 0) - 1);
-                });
-                window.location.reload();
-            }
+        // Handle mouse movement to show controls
+        function handleMouseMove() {
+            showControls();
+            resetControlsTimeout();
         }
         
-        // Add video to queue
-        function addToQueue() {
-            const videoId = extractVideoId(videoUrlInput.value);
-            
-            if (videoId) {
-                if (videoQueue.length >= 4) {
-                    showNotification('Maximum of 4 videos in queue');
-                    return;
-                }
-                
-                videoQueue.push(videoId);
-                updateQueueDisplay();
-                
-                if (isHost && roomRef) {
-                    roomRef.child('queue').set(videoQueue);
-                }
-                
-                showNotification('Video added to queue');
-            } else {
-                showNotification('Please enter a valid YouTube URL');
-            }
-        }
-        
-        // Update queue display
-        function updateQueueDisplay() {
-            queueContainer.innerHTML = '<h4>Upcoming Videos:</h4>';
-            
-            videoQueue.forEach((videoId, index) => {
-                const queueItem = document.createElement('div');
-                queueItem.className = 'queue-item';
-                queueItem.textContent = `Video ${index + 1}`;
-                
-                const removeBtn = document.createElement('button');
-                removeBtn.className = 'remove-btn';
-                removeBtn.innerHTML = '<i class="fas fa-times"></i>';
-                removeBtn.onclick = () => removeFromQueue(index);
-                
-                queueItem.appendChild(removeBtn);
-                queueContainer.appendChild(queueItem);
-            });
-        }
-        
-        // Remove from queue
-        function removeFromQueue(index) {
-            videoQueue.splice(index, 1);
-            updateQueueDisplay();
-            
-            if (isHost && roomRef) {
-                roomRef.child('queue').set(videoQueue);
-            }
-        }
-        
-        // Play next video in queue
-        function playNextVideoInQueue() {
-            if (videoQueue.length > 0) {
-                const nextVideo = videoQueue.shift();
-                updateQueueDisplay();
-                
-                if (isHost && roomRef) {
-                    roomRef.update({
-                        videoId: nextVideo,
-                        state: 'playing',
-                        currentTime: 0,
-                        queue: videoQueue
-                    });
-                }
-                
-                player.loadVideoById(nextVideo);
-                currentVideoId = nextVideo;
-            }
-        }
-        
-        // Set playback quality
-        function setPlaybackQuality(quality) {
-            if (player && player.setPlaybackQuality) {
-                player.setPlaybackQuality(quality);
-                showNotification(`Quality set to ${quality}`);
-            }
-        }
-        
-        // Set subtitle track
-        function setSubtitleTrack(track) {
-            if (player && player.setOption) {
-                try {
-                    player.setOption('captions', 'track', {languageCode: track});
-                    showNotification(track === -1 ? 'Subtitles off' : 'Subtitles on');
-                } catch (e) {
-                    console.error('Error setting subtitles:', e);
-                    showNotification('Subtitles not available');
-                }
-            }
+        // Handle touch events to show controls
+        function handleTouch() {
+            showControls();
+            resetControlsTimeout();
         }
         
         // Initialize the application
@@ -1195,23 +905,6 @@
             forwardBtn.addEventListener('click', skipForward);
             fullscreenBtn.addEventListener('click', toggleFullscreen);
             copyRoomLinkBtn.addEventListener('click', copyRoomLink);
-            terminateBtn.addEventListener('click', terminateRoom);
-            leaveBtn.addEventListener('click', leaveRoom);
-            addQueueBtn.addEventListener('click', addToQueue);
-            
-            // Quality options
-            document.querySelectorAll('#qualityOptions button').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    setPlaybackQuality(btn.dataset.quality);
-                });
-            });
-            
-            // Subtitle options
-            document.querySelectorAll('#subtitleOptions button').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    setSubtitleTrack(parseInt(btn.dataset.track));
-                });
-            });
             
             // Support pressing Enter in input field
             videoUrlInput.addEventListener('keypress', function(e) {
@@ -1220,16 +913,12 @@
                 }
             });
             
-            // Show controls when mouse moves in video container
-            const videoContainer = document.getElementById('videoContainer');
-            videoContainer.addEventListener('mousemove', showControlsTemporarily);
-            videoContainer.addEventListener('click', showControlsTemporarily);
+            // Add event listeners for controls visibility
+            videoContainer.addEventListener('mousemove', handleMouseMove);
+            videoContainer.addEventListener('touchstart', handleTouch);
             
-            // Touch events for mobile
-            videoContainer.addEventListener('touchstart', function() {
-                videoContainer.classList.add('touch-active');
-                showControlsTemporarily();
-            });
+            // Hide controls after initial 3 seconds
+            resetControlsTimeout();
         });
     </script>
 </body>
