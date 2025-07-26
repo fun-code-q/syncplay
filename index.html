@@ -301,9 +301,9 @@
             font-size: 1.3rem;
         }
 
-        /* Notification styles */
+        /* Notification styles - moved inside video container */
         .notification {
-            position: fixed;
+            position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
@@ -497,22 +497,6 @@
             right: 0;
             bottom: 0;
         }
-
-        /* Fullscreen specific styles */
-        :fullscreen .notification,
-        :-webkit-full-screen .notification,
-        :-moz-full-screen .notification,
-        :-ms-fullscreen .notification {
-            position: fixed !important;
-            top: 50% !important;
-            left: 50% !important;
-            transform: translate(-50%, -50%) !important;
-            z-index: 2147483647 !important;
-        }
-
-        :fullscreen .video-container {
-            z-index: 2147483646;
-        }
     </style>
 </head>
 <body>
@@ -523,6 +507,14 @@
             <div class="subtitle">Watch YouTube videos together in real-time</div>
         </header>
         <div class="video-container" id="videoContainer">
+            <!-- Notification moved inside video container for fullscreen visibility -->
+            <div class="notification" id="notification">
+                <div class="notification-content">
+                    <i class="fas fa-check-circle"></i>
+                    <span id="notificationText"></span>
+                </div>
+            </div>
+            
             <div class="click-blocker top"></div>
             <div class="click-blocker middle"></div>
             <div class="click-blocker bottom"></div>
@@ -571,12 +563,6 @@
                 </div>
             </div>
             <div id="player"></div>
-            <div class="notification" id="notification">
-                <div class="notification-content">
-                    <i class="fas fa-check-circle"></i>
-                    <span id="notificationText"></span>
-                </div>
-            </div>
         </div>
         <div class="input-group" id="inputGroup">
             <div class="input-container">
@@ -634,6 +620,31 @@
         let playerReady = false;
         let lastRoomState = null;
         let playerLoadAttempts = 0;
+        let audioContext;
+        let beepBuffer;
+
+        // Initialize audio context for notification sounds
+        function initAudio() {
+            try {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                
+                // Create a simple beep sound
+                const duration = 0.1;
+                const sampleRate = audioContext.sampleRate;
+                const numFrames = duration * sampleRate;
+                const buffer = audioContext.createBuffer(1, numFrames, sampleRate);
+                const data = buffer.getChannelData(0);
+                
+                for (let i = 0; i < numFrames; i++) {
+                    const t = i / sampleRate;
+                    data[i] = Math.sin(t * 440 * 2 * Math.PI) * Math.exp(-t * 5);
+                }
+                
+                beepBuffer = buffer;
+            } catch (e) {
+                console.error('Audio initialization failed:', e);
+            }
+        }
 
         const elements = {
             videoUrl: document.getElementById('videoUrl'),
@@ -676,11 +687,19 @@
             };
         };
 
-        // Play beep sound
+        // Play beep sound using Web Audio API
         function playBeep() {
-            const beep = new Audio('data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU...');
-            beep.volume = 0.2;
-            beep.play().catch(e => console.log('Audio play failed:', e));
+            if (!audioContext) initAudio();
+            if (!beepBuffer) return;
+            
+            try {
+                const source = audioContext.createBufferSource();
+                source.buffer = beepBuffer;
+                source.connect(audioContext.destination);
+                source.start();
+            } catch (e) {
+                console.error('Error playing beep:', e);
+            }
         }
 
         window.onYouTubeIframeAPIReady = () => {
@@ -815,6 +834,7 @@
                     const count = snapshot.val() || 0;
                     if (count > previousJoinerCount) {
                         showNotification(`${count} joiner(s) connected`);
+                        playBeep();
                     }
                     previousJoinerCount = count;
                     joinerCount = count;
@@ -827,9 +847,13 @@
                 
                 roomRef.child('raiseHands').on('value', (snapshot) => {
                     raiseHandCount = snapshot.val() || 0;
-                    if (isHost && raiseHandCount > 0) {
-                        const message = isPlaying ? 'STOP' : 'CONTINUE';
-                        showNotification(message, 3000);
+                    if (isHost) {
+                        // Host sees joiner raise hand notifications
+                        if (raiseHandCount > 0) {
+                            const message = isPlaying ? 'STOP' : 'CONTINUE';
+                            showNotification(message, 3000);
+                            playBeep();
+                        }
                     }
                 });
                 
@@ -876,6 +900,7 @@
                 }).then(() => {
                     roomRef.remove();
                     showNotification('Room destroyed');
+                    playBeep();
                     resetAfterRoomDestroy();
                     window.location.href = window.location.pathname;
                 });
@@ -913,7 +938,6 @@
         function showNotification(message, duration = 3000) {
             elements.notificationText.textContent = message;
             elements.notification.classList.add('show');
-            playBeep();
             setTimeout(() => {
                 elements.notification.classList.remove('show');
             }, duration);
@@ -994,7 +1018,9 @@
                     roomRef.child('raiseHands').on('value', (snapshot) => {
                         raiseHandCount = snapshot.val() || 0;
                         if (isJoiner && raiseHandCount > 0) {
+                            // Joiner sees host response
                             showNotification('YES', 3000);
+                            playBeep();
                         }
                     });
                     
@@ -1011,26 +1037,16 @@
         function onPlayerReady(event) {
             playerReady = true;
             try {
-                // Apply stored room state
+                // Apply stored room state immediately without delay
                 if (lastRoomState) {
-                    setTimeout(() => {
-                        applyRoomState(lastRoomState);
-                    }, 500);
+                    event.target.seekTo(lastRoomState.currentTime, true);
+                    if (lastRoomState.state === 'playing') {
+                        event.target.playVideo();
+                    } else {
+                        event.target.pauseVideo();
+                    }
                 }
                 
-                if (isJoiner && roomRef) {
-                    roomRef.once('value').then((snapshot) => {
-                        const roomData = snapshot.val();
-                        if (roomData) {
-                            event.target.seekTo(roomData.currentTime, true);
-                            if (roomData.state === 'playing') {
-                                event.target.playVideo();
-                            } else {
-                                event.target.pauseVideo();
-                            }
-                        }
-                    });
-                }
                 resetControlsTimeout();
             } catch (error) {
                 console.error('Error in onPlayerReady:', error);
@@ -1288,7 +1304,9 @@
             try {
                 roomRef.child('raiseHands').transaction((count) => (count || 0) + 1);
                 if (isHost) {
+                    // Host sends "YES" to all joiners
                     showNotification('YES', 3000);
+                    playBeep();
                 }
             } catch (error) {
                 console.error('Error raising hand:', error);
@@ -1296,7 +1314,7 @@
             }
         }
 
-        function showControls() {
+       function showControls() {
             elements.controlsContainer.style.opacity = '1';
             elements.controlsContainer.style.pointerEvents = 'auto';
         }
@@ -1320,6 +1338,8 @@
         }, 100);
 
         document.addEventListener('DOMContentLoaded', () => {
+            initAudio(); // Initialize audio context on first user interaction
+            
             const urlParams = new URLSearchParams(window.location.search);
             const joinRoomId = urlParams.get('roomId');
             if (joinRoomId) {
