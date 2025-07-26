@@ -117,7 +117,6 @@
             color: rgba(255, 255, 255, 0.6);
         }
 
-        /* Buttons next to input (Load, Copy, Destroy, Manage Queue) */
         #loadVideo, .action-btn, .destroy-room-btn, .next-video-btn, .copy-icon {
             min-width: 44px;
             height: 44px;
@@ -364,30 +363,16 @@
             flex-shrink: 0;
         }
 
+        /* FIX: Fullscreen notification positioning */
         :fullscreen .notification,
         :-webkit-full-screen .notification,
         :-moz-full-screen .notification,
         :-ms-fullscreen .notification {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 2147483647;
-        }
-
-        @media (max-width: 768px) {
-            .notification {
-                padding: 10px 16px;
-                max-width: 95%;
-            }
-
-            .notification-content {
-                font-size: 0.85rem;
-            }
-
-            .notification i {
-                font-size: 1rem;
-            }
+            position: fixed !important;
+            top: 50% !important;
+            left: 50% !important;
+            transform: translate(-50%, -50%) !important;
+            z-index: 2147483647 !important;
         }
 
         .mode-indicator {
@@ -411,7 +396,6 @@
             background: linear-gradient(45deg, #00c6ff, #0072ff);
         }
 
-        /* Raise hand button */
         .feedback-container {
             position: absolute;
             top: 16px;
@@ -506,7 +490,6 @@
             }
         }
 
-        /* Blocker overlays */
         .click-blocker {
             position: absolute;
             left: 0;
@@ -531,7 +514,6 @@
             height: 50%;
         }
 
-        /* Full button clickable area */
         .full-button::after {
             content: '';
             position: absolute;
@@ -541,7 +523,6 @@
             bottom: 0;
         }
 
-        /* Countdown styles */
         .countdown-container {
             position: absolute;
             top: 0;
@@ -571,7 +552,6 @@
             text-shadow: 0 0 20px rgba(255, 138, 0, 0.8);
         }
 
-        /* Fullscreen notification */
         .notification.fullscreen-notification {
             top: 20px;
             left: 50%;
@@ -598,7 +578,6 @@
             }
         }
 
-        /* Mode indicator in fullscreen */
         :fullscreen .mode-indicator,
         :-webkit-full-screen .mode-indicator,
         :-moz-full-screen .mode-indicator {
@@ -607,6 +586,19 @@
             left: 10px;
             display: block !important;
             z-index: 2147483647;
+        }
+        
+        /* NEW: Fullscreen notification fix */
+        :fullscreen .notification,
+        :-webkit-full-screen .notification,
+        :-moz-full-screen .notification,
+        :-ms-fullscreen .notification {
+            z-index: 2147483647 !important;
+        }
+        
+        /* NEW: Fullscreen video container fix */
+        :fullscreen .video-container {
+            z-index: 2147483646;
         }
     </style>
 </head>
@@ -730,6 +722,8 @@
         let currentQuality = 'auto';
         let raiseHandCount = 0;
         let currentVideoIndex = 0;
+        let playerReady = false; // NEW: Player ready flag
+        let lastRoomState = null; // NEW: Last room state
 
         const elements = {
             videoUrl: document.getElementById('videoUrl'),
@@ -1006,6 +1000,24 @@
             }, duration);
         }
 
+        // NEW: Apply room state to player
+        function applyRoomState(roomData) {
+            if (!player || !player.getCurrentTime) return false;
+            
+            const currentTime = player.getCurrentTime();
+            if (Math.abs(currentTime - roomData.currentTime) > 1) {
+                player.seekTo(roomData.currentTime, true);
+            }
+            if (roomData.state === 'playing' && !isPlaying) {
+                player.playVideo();
+                return true;
+            } else if (roomData.state === 'paused' && isPlaying) {
+                player.pauseVideo();
+                return true;
+            }
+            return false;
+        }
+
         function joinRoom(roomId) {
             try {
                 roomRef = database.ref(`rooms/${roomId}`);
@@ -1030,7 +1042,14 @@
                     elements.joinerControls.style.display = 'flex';
                     elements.feedbackContainer.style.display = 'flex';
                     
-                    createPlayer(roomData.videoId);
+                    // NEW: Initialize player with a delay for synchronization
+                    setTimeout(() => {
+                        createPlayer(roomData.videoId);
+                    }, 3000); // Reduced from 30s to 3s
+                    
+                    // NEW: Store initial room state
+                    lastRoomState = roomData;
+                    
                     roomRef.on('value', (snapshot) => {
                         const roomData = snapshot.val();
                         if (!roomData) {
@@ -1047,16 +1066,11 @@
                         }
                         nextVideos = roomData.nextVideos || [];
                         updateBadge();
-                        if (player && player.getCurrentTime) {
-                            const currentTime = player.getCurrentTime();
-                            if (Math.abs(currentTime - roomData.currentTime) > 1) {
-                                player.seekTo(roomData.currentTime, true);
-                            }
-                            if (roomData.state === 'playing' && !isPlaying) {
-                                player.playVideo();
-                            } else if (roomData.state === 'paused' && isPlaying) {
-                                player.pauseVideo();
-                            }
+                        
+                        // NEW: Apply room state to player
+                        if (!applyRoomState(roomData)) {
+                            // If not applied, store for when player is ready
+                            lastRoomState = roomData;
                         }
                     });
                     
@@ -1078,6 +1092,13 @@
 
         function onPlayerReady(event) {
             try {
+                // NEW: Apply any stored room state
+                if (lastRoomState) {
+                    setTimeout(() => {
+                        applyRoomState(lastRoomState);
+                    }, 500);
+                }
+                
                 if (isJoiner && roomRef) {
                     roomRef.once('value').then((snapshot) => {
                         const roomData = snapshot.val();
