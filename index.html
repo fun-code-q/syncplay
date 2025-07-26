@@ -826,7 +826,7 @@
        
         <header>
             <h1>Sync Player Pro</h1>
-            <div class="subtitle">Watch videos together in real-time with support for 15+ platforms</div>
+            <div class="subtitle">Watch videos together in real-time with support for 10+ platforms</div>
         </header>
         
         <div class="video-container" id="videoContainer">
@@ -912,19 +912,13 @@
                 <i class="fab fa-youtube" title="YouTube"></i>
                 <i class="fab fa-vimeo" title="Vimeo"></i>
                 <i class="fab fa-dailymotion" title="Dailymotion"></i>
-                <i class="fab fa-twitch" title="Twitch"></i>
                 <i class="fab fa-soundcloud" title="SoundCloud"></i>
                 <i class="fas fa-video" title="Pexels"></i>
-                <i class="fas fa-image" title="Pixabay"></i>
                 <i class="fas fa-archive" title="Internet Archive"></i>
-                <i class="fab fa-deezer" title="Deezer"></i>
                 <i class="fab fa-spotify" title="Spotify"></i>
-                <i class="fas fa-music" title="Jamendo"></i>
                 <i class="fab fa-tiktok" title="TikTok"></i>
                 <i class="fab fa-facebook" title="Facebook"></i>
-                <i class="fab fa-snapchat" title="Snapchat"></i>
                 <i class="fab fa-instagram" title="Instagram"></i>
-                <i class="fab fa-linkedin" title="LinkedIn"></i>
             </div>
         </div>
     </div>
@@ -945,12 +939,6 @@
     
     <!-- SoundCloud API -->
     <script src="https://w.soundcloud.com/player/api.js"></script>
-    
-    <!-- Deezer SDK -->
-    <script src="https://cdns-files.dzcdn.net/js/min/dz.js"></script>
-    
-    <!-- Spotify Web Playback SDK -->
-    <script src="https://sdk.scdn.co/spotify-player.js"></script>
     
     <script>
         const firebaseConfig = {
@@ -991,8 +979,6 @@
         let audioContext;
         let beepBuffer;
         let soundCloudWidget;
-        let deezerPlayer;
-        let spotifyPlayer;
 
         // Initialize audio context for notification sounds
         function initAudio() {
@@ -1094,16 +1080,6 @@
                 }
             },
             { 
-                id: 'twitch', 
-                regex: /twitch\.tv/, 
-                name: 'Twitch',
-                extractId: (url) => {
-                    const twitchRegExp = /(?:twitch\.tv\/videos\/|twitch\.tv\/\w+\/clip\/)(\d+)/;
-                    const twitchMatch = url.match(twitchRegExp);
-                    return twitchMatch ? twitchMatch[1] : null;
-                }
-            },
-            { 
                 id: 'soundcloud', 
                 regex: /soundcloud\.com/, 
                 name: 'SoundCloud',
@@ -1116,26 +1092,10 @@
                 extractId: (url) => url // Use full URL for Pexels
             },
             { 
-                id: 'pixabay', 
-                regex: /pixabay\.com/, 
-                name: 'Pixabay',
-                extractId: (url) => url // Use full URL for Pixabay
-            },
-            { 
                 id: 'archive', 
                 regex: /archive\.org/, 
                 name: 'Internet Archive',
                 extractId: (url) => url // Use full URL for Internet Archive
-            },
-            { 
-                id: 'deezer', 
-                regex: /deezer\.com/, 
-                name: 'Deezer',
-                extractId: (url) => {
-                    const dzRegExp = /deezer\.com\/(?:[a-z]+\/)?(track|album|playlist)\/(\d+)/;
-                    const dzMatch = url.match(dzRegExp);
-                    return dzMatch ? { type: dzMatch[1], id: dzMatch[2] } : null;
-                }
             },
             { 
                 id: 'spotify', 
@@ -1145,16 +1105,6 @@
                     const spRegExp = /spotify\.com\/(track|album|playlist)\/([a-zA-Z0-9]+)/;
                     const spMatch = url.match(spRegExp);
                     return spMatch ? { type: spMatch[1], id: spMatch[2] } : null;
-                }
-            },
-            { 
-                id: 'jamendo', 
-                regex: /jamendo\.com/, 
-                name: 'Jamendo',
-                extractId: (url) => {
-                    const jamendoRegExp = /jamendo\.com\/track\/(\d+)/;
-                    const jamendoMatch = url.match(jamendoRegExp);
-                    return jamendoMatch ? jamendoMatch[1] : null;
                 }
             },
             { 
@@ -1178,16 +1128,6 @@
                 }
             },
             { 
-                id: 'snapchat', 
-                regex: /snapchat\.com/, 
-                name: 'Snapchat',
-                extractId: (url) => {
-                    const scRegExp = /snapchat\.com\/add\/[^\/]+\/([a-zA-Z0-9]+)/;
-                    const scMatch = url.match(scRegExp);
-                    return scMatch ? scMatch[1] : null;
-                }
-            },
-            { 
                 id: 'instagram', 
                 regex: /instagram\.com/, 
                 name: 'Instagram',
@@ -1195,16 +1135,6 @@
                     const igRegExp = /instagram\.com\/(?:p|reel)\/([a-zA-Z0-9_-]+)/;
                     const igMatch = url.match(igRegExp);
                     return igMatch ? igMatch[1] : null;
-                }
-            },
-            { 
-                id: 'linkedin', 
-                regex: /linkedin\.com/, 
-                name: 'LinkedIn',
-                extractId: (url) => {
-                    const liRegExp = /linkedin\.com\/posts\/[^\/]+\/([a-zA-Z0-9_-]+)/;
-                    const liMatch = url.match(liRegExp);
-                    return liMatch ? liMatch[1] : null;
                 }
             },
             { 
@@ -1557,65 +1487,6 @@
                 console.error('Error creating SoundCloud player:', error);
                 showNotification('Failed to initialize SoundCloud player');
                 retryPlayerCreation(url, { id: 'soundcloud', name: 'SoundCloud' });
-            }
-        }
-
-        // Create Deezer player
-        function createDeezerPlayer(trackId) {
-            try {
-                // Clear previous players
-                clearPlayer();
-                
-                // Deezer requires a container div
-                const playerContainer = document.getElementById('player');
-                playerContainer.innerHTML = '<div id="dz-root"></div><div id="dz-player"></div>';
-                
-                // Initialize Deezer SDK
-                DZ.init({
-                    appId: 'YOUR_DEEZER_APP_ID', // Replace with your Deezer app ID
-                    channelUrl: window.location.href + 'channel.html',
-                    player: {
-                        onload: function() {
-                            // Create player instance
-                            deezerPlayer = DZ.player.create('dz-player', {
-                                width: '100%',
-                                height: '100%',
-                                layout: 'dark',
-                                cover: false,
-                                playlist: false,
-                                autoplay: false,
-                                onload: function() {
-                                    // Load the track
-                                    DZ.player.playTracks([trackId.id], false, 0);
-                                    
-                                    playerReady = true;
-                                    isPlaying = false;
-                                    elements.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
-                                    
-                                    // Apply stored room state
-                                    if (lastRoomState) {
-                                        if (lastRoomState.state === 'playing') {
-                                            DZ.player.play();
-                                        } else {
-                                            DZ.player.pause();
-                                        }
-                                    }
-                                    
-                                    resetControlsTimeout();
-                                }
-                            });
-                            
-                            // Enable play/pause controls
-                            elements.playPauseBtn.style.display = 'flex';
-                            elements.backwardBtn.style.display = 'flex';
-                            elements.forwardBtn.style.display = 'flex';
-                        }
-                    }
-                });
-            } catch (error) {
-                console.error('Error creating Deezer player:', error);
-                showNotification('Failed to initialize Deezer player');
-                retryPlayerCreation(trackId, { id: 'deezer', name: 'Deezer' });
             }
         }
 
@@ -2074,14 +1945,6 @@
                     soundCloudWidget.unbind(SC.Widget.Events.FINISH);
                     soundCloudWidget = null;
                 }
-                if (deezerPlayer) {
-                    DZ.player.pause();
-                    deezerPlayer = null;
-                }
-                if (spotifyPlayer) {
-                    // Spotify doesn't provide a way to destroy the player
-                    spotifyPlayer = null;
-                }
                 
                 const playerContainer = document.getElementById('player');
                 playerContainer.innerHTML = '';
@@ -2113,10 +1976,6 @@
                     
                 case 'soundcloud':
                     createSoundCloudPlayer(videoId);
-                    break;
-                    
-                case 'deezer':
-                    createDeezerPlayer(videoId);
                     break;
                     
                 case 'spotify':
@@ -2412,9 +2271,6 @@
                 if (soundCloudWidget) {
                     soundCloudWidget.pause();
                 }
-                if (deezerPlayer) {
-                    DZ.player.pause();
-                }
                 
                 elements.videoContainer.style.display = 'none';
             } catch (error) {
@@ -2481,15 +2337,6 @@
                     return true;
                 } else if (roomData.state === 'paused' && isPlaying) {
                     soundCloudWidget.pause();
-                    return true;
-                }
-            } else if (deezerPlayer) {
-                // Deezer player
-                if (roomData.state === 'playing' && !isPlaying) {
-                    DZ.player.play();
-                    return true;
-                } else if (roomData.state === 'paused' && isPlaying) {
-                    DZ.player.pause();
                     return true;
                 }
             }
@@ -2697,13 +2544,6 @@
                     } else {
                         soundCloudWidget.play();
                     }
-                } else if (deezerPlayer) {
-                    // Deezer player
-                    if (isPlaying) {
-                        DZ.player.pause();
-                    } else {
-                        DZ.player.play();
-                    }
                 } else if (player && player.contentWindow) {
                     // Generic iframe - try to post message
                     player.contentWindow.postMessage(isPlaying ? 'pause' : 'play', '*');
@@ -2737,9 +2577,6 @@
                     // SoundCloud player - doesn't support seeking via API
                     showNotification('Seeking not supported for this platform');
                     return;
-                } else if (deezerPlayer) {
-                    // Deezer player
-                    DZ.player.seek(DZ.player.getPosition() + 10000); // Seek 10 seconds forward
                 }
                 
                 if (isHost && roomRef) {
@@ -2777,9 +2614,6 @@
                     // SoundCloud player - doesn't support seeking via API
                     showNotification('Seeking not supported for this platform');
                     return;
-                } else if (deezerPlayer) {
-                    // Deezer player
-                    DZ.player.seek(Math.max(0, DZ.player.getPosition() - 10000)); // Seek 10 seconds backward
                 }
                 
                 if (isHost && roomRef) {
