@@ -940,13 +940,16 @@
     <!-- SoundCloud API -->
     <script src="https://w.soundcloud.com/player/api.js"></script>
     
+    <!-- Vimeo Player API -->
+    <script src="https://player.vimeo.com/api/player.js"></script>
+    
     <script>
         const firebaseConfig = {
             apiKey: "AIzaSyDsPjwl2fsQwua_HZTPJSDmtlgzRkgVXQ4",
             authDomain: "sync-f5dd9.firebaseapp.com",
             databaseURL: "https://sync-f5dd9-default-rtdb.firebaseio.com",
             projectId: "sync-f5dd9",
-            storageBucket: "sync-f5dd9.firebasestorage.app",
+            storageBucket: "sync-f5dd9.appspot.com",
             messagingSenderId: "891545015962",
             appId: "1:891545015962:web:e68867deec0117fe85f123"
         };
@@ -979,6 +982,7 @@
         let audioContext;
         let beepBuffer;
         let soundCloudWidget;
+        let vimeoPlayer;
 
         // Initialize audio context for notification sounds
         function initAudio() {
@@ -1298,6 +1302,10 @@
                     soundCloudWidget.unbind(SC.Widget.Events.FINISH);
                     soundCloudWidget = null;
                 }
+                if (vimeoPlayer) {
+                    vimeoPlayer.unload();
+                    vimeoPlayer = null;
+                }
                 
                 player = new YT.Player('player', {
                     height: '100%',
@@ -1348,20 +1356,77 @@
                 document.getElementById('player').innerHTML = '';
                 document.getElementById('player').appendChild(iframe);
                 
-                // Vimeo API requires postMessage communication
-                playerReady = true;
-                isPlaying = false;
-                elements.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                // Initialize Vimeo Player
+                vimeoPlayer = new Vimeo.Player(iframe);
                 
-                // Store the iframe for later control
-                player = iframe;
+                vimeoPlayer.ready().then(() => {
+                    playerReady = true;
+                    isPlaying = false;
+                    elements.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                    
+                    // Set up event listeners
+                    vimeoPlayer.on('play', () => {
+                        isPlaying = true;
+                        elements.playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                        if (isHost && roomRef) {
+                            roomRef.update({
+                                state: 'playing',
+                                lastUpdated: firebase.database.ServerValue.TIMESTAMP
+                            });
+                        }
+                    });
+                    
+                    vimeoPlayer.on('pause', () => {
+                        isPlaying = false;
+                        elements.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                        if (isHost && roomRef) {
+                            roomRef.update({
+                                state: 'paused',
+                                lastUpdated: firebase.database.ServerValue.TIMESTAMP
+                            });
+                        }
+                    });
+                    
+                    vimeoPlayer.on('ended', () => {
+                        if (nextVideos.length > 0) {
+                            const nextVideo = nextVideos.shift();
+                            loadVideoByUrl(nextVideo.url);
+                            if (isHost && roomRef) {
+                                roomRef.update({
+                                    videoId: nextVideo.url,
+                                    nextVideos,
+                                    lastUpdated: firebase.database.ServerValue.TIMESTAMP
+                                });
+                            }
+                            currentVideoIndex++;
+                            updateBadge();
+                            updateQueueList();
+                        }
+                    });
+                    
+                    // Apply stored room state
+                    if (lastRoomState) {
+                        vimeoPlayer.setCurrentTime(lastRoomState.currentTime).then(() => {
+                            if (lastRoomState.state === 'playing') {
+                                vimeoPlayer.play();
+                            } else {
+                                vimeoPlayer.pause();
+                            }
+                        });
+                    }
+                    
+                    resetControlsTimeout();
+                }).catch(error => {
+                    console.error('Vimeo player error:', error);
+                    showNotification('Failed to initialize Vimeo player');
+                    retryPlayerCreation(videoId, { id: 'vimeo', name: 'Vimeo' });
+                });
                 
                 // Enable play/pause controls
                 elements.playPauseBtn.style.display = 'flex';
                 elements.backwardBtn.style.display = 'flex';
                 elements.forwardBtn.style.display = 'flex';
                 
-                resetControlsTimeout();
             } catch (error) {
                 console.error('Error creating Vimeo player:', error);
                 showNotification('Failed to initialize Vimeo player');
@@ -1555,8 +1620,8 @@
                 // Store the iframe for later control
                 player = iframe;
                 
-                // Disable controls since TikTok doesn't provide an API
-                elements.playPauseBtn.style.display = 'none';
+                // Show play/pause button but with limited functionality
+                elements.playPauseBtn.style.display = 'flex';
                 elements.backwardBtn.style.display = 'none';
                 elements.forwardBtn.style.display = 'none';
                 
@@ -1594,8 +1659,8 @@
                 // Store the iframe for later control
                 player = iframe;
                 
-                // Disable controls since Facebook doesn't provide an API
-                elements.playPauseBtn.style.display = 'none';
+                // Show play/pause button but with limited functionality
+                elements.playPauseBtn.style.display = 'flex';
                 elements.backwardBtn.style.display = 'none';
                 elements.forwardBtn.style.display = 'none';
                 
@@ -1633,8 +1698,8 @@
                 // Store the iframe for later control
                 player = iframe;
                 
-                // Disable controls since Instagram doesn't provide an API
-                elements.playPauseBtn.style.display = 'none';
+                // Show play/pause button but with limited functionality
+                elements.playPauseBtn.style.display = 'flex';
                 elements.backwardBtn.style.display = 'none';
                 elements.forwardBtn.style.display = 'none';
                 
@@ -1945,6 +2010,10 @@
                     soundCloudWidget.unbind(SC.Widget.Events.FINISH);
                     soundCloudWidget = null;
                 }
+                if (vimeoPlayer) {
+                    vimeoPlayer.unload();
+                    vimeoPlayer = null;
+                }
                 
                 const playerContainer = document.getElementById('player');
                 playerContainer.innerHTML = '';
@@ -2042,8 +2111,8 @@
                 // Store the iframe for later control
                 player = iframe;
                 
-                // Disable controls since we can't control generic iframes
-                elements.playPauseBtn.style.display = 'none';
+                // Show play/pause button but with limited functionality
+                elements.playPauseBtn.style.display = 'flex';
                 elements.backwardBtn.style.display = 'none';
                 elements.forwardBtn.style.display = 'none';
                 
@@ -2188,6 +2257,18 @@
                         } else if (soundCloudWidget) {
                             // SoundCloud player - can't get current time
                             state = isPlaying ? 'playing' : 'paused';
+                        } else if (vimeoPlayer) {
+                            // Vimeo player
+                            vimeoPlayer.getCurrentTime().then(time => {
+                                currentTime = time;
+                                roomRef.update({
+                                    currentTime,
+                                    state,
+                                    nextVideos,
+                                    lastUpdated: firebase.database.ServerValue.TIMESTAMP
+                                });
+                            });
+                            return;
                         }
                         
                         roomRef.update({
@@ -2271,6 +2352,9 @@
                 if (soundCloudWidget) {
                     soundCloudWidget.pause();
                 }
+                if (vimeoPlayer) {
+                    vimeoPlayer.pause();
+                }
                 
                 elements.videoContainer.style.display = 'none';
             } catch (error) {
@@ -2337,6 +2421,18 @@
                     return true;
                 } else if (roomData.state === 'paused' && isPlaying) {
                     soundCloudWidget.pause();
+                    return true;
+                }
+            } else if (vimeoPlayer) {
+                // Vimeo player
+                if (Math.abs(currentTime - roomData.currentTime) > 1) {
+                    vimeoPlayer.setCurrentTime(roomData.currentTime);
+                }
+                if (roomData.state === 'playing' && !isPlaying) {
+                    vimeoPlayer.play();
+                    return true;
+                } else if (roomData.state === 'paused' && isPlaying) {
+                    vimeoPlayer.pause();
                     return true;
                 }
             }
@@ -2544,6 +2640,13 @@
                     } else {
                         soundCloudWidget.play();
                     }
+                } else if (vimeoPlayer) {
+                    // Vimeo player
+                    if (isPlaying) {
+                        vimeoPlayer.pause();
+                    } else {
+                        vimeoPlayer.play();
+                    }
                 } else if (player && player.contentWindow) {
                     // Generic iframe - try to post message
                     player.contentWindow.postMessage(isPlaying ? 'pause' : 'play', '*');
@@ -2577,6 +2680,12 @@
                     // SoundCloud player - doesn't support seeking via API
                     showNotification('Seeking not supported for this platform');
                     return;
+                } else if (vimeoPlayer) {
+                    // Vimeo player
+                    vimeoPlayer.getCurrentTime().then(time => {
+                        currentTime = time;
+                        vimeoPlayer.setCurrentTime(currentTime + 10);
+                    });
                 }
                 
                 if (isHost && roomRef) {
@@ -2614,6 +2723,12 @@
                     // SoundCloud player - doesn't support seeking via API
                     showNotification('Seeking not supported for this platform');
                     return;
+                } else if (vimeoPlayer) {
+                    // Vimeo player
+                    vimeoPlayer.getCurrentTime().then(time => {
+                        currentTime = time;
+                        vimeoPlayer.setCurrentTime(Math.max(0, currentTime - 10));
+                    });
                 }
                 
                 if (isHost && roomRef) {
@@ -2835,50 +2950,50 @@
             }
         }
 
-       async function leaveRoom() {
-    if (!roomRef || !isJoiner) {
-        console.warn('Cannot leave room: Not a joiner or no room reference');
-        showNotification('You are not in a room');
-        return;
-    }
-
-    try {
-        // Update joiner count transactionally
-        await roomRef.child('joiners').transaction((count) => {
-            return Math.max(0, (count || 0) - 1);
-        }, (error, committed, snapshot) => {
-            if (error) {
-                console.error('Transaction failed:', error);
-                showNotification('Failed to leave room');
-            } else if (!committed) {
-                console.warn('Transaction aborted');
+        async function leaveRoom() {
+            if (!roomRef || !isJoiner) {
+                console.warn('Cannot leave room: Not a joiner or no room reference');
+                showNotification('You are not in a room');
+                return;
             }
-        });
 
-        // Clean up any joiner-specific Firebase listeners
-        if (roomRef) {
-            roomRef.off(); // Remove all listeners for this room
+            try {
+                // Update joiner count transactionally
+                await roomRef.child('joiners').transaction((count) => {
+                    return Math.max(0, (count || 0) - 1);
+                }, (error, committed, snapshot) => {
+                    if (error) {
+                        console.error('Transaction failed:', error);
+                        showNotification('Failed to leave room');
+                    } else if (!committed) {
+                        console.warn('Transaction aborted');
+                    }
+                });
+
+                // Clean up any joiner-specific Firebase listeners
+                if (roomRef) {
+                    roomRef.off(); // Remove all listeners for this room
+                }
+
+                // Notify user
+                showNotification('You have left the room');
+
+                // Reset local state
+                await resetAfterRoomDestroy();
+
+                // Navigate to base path without reloading (better for SPA)
+                history.pushState({}, '', window.location.pathname);
+
+                // Reset joiner state
+                isJoiner = false;
+                roomRef = null;
+                roomId = null;
+
+            } catch (error) {
+                console.error('Error leaving room:', error);
+                showNotification('Error leaving room');
+            }
         }
-
-        // Notify user
-        showNotification('You have left the room');
-
-        // Reset local state
-        await resetAfterRoomDestroy();
-
-        // Navigate to base path without reloading (better for SPA)
-        history.pushState({}, '', window.location.pathname);
-
-        // Reset joiner state
-        isJoiner = false;
-        roomRef = null;
-        roomId = null;
-
-    } catch (error) {
-        console.error('Error leaving room:', error);
-        showNotification('Error leaving room');
-    }
-}
 
         function raiseHand() {
             if (!roomRef) return;
