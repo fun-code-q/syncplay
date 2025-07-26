@@ -926,7 +926,6 @@
                 <i class="fab fa-instagram" title="Instagram"></i>
                 <i class="fab fa-linkedin" title="LinkedIn"></i>
             </div>
-            
         </div>
     </div>
 
@@ -943,6 +942,15 @@
     
     <!-- HLS.js for streaming support -->
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    
+    <!-- SoundCloud API -->
+    <script src="https://w.soundcloud.com/player/api.js"></script>
+    
+    <!-- Deezer SDK -->
+    <script src="https://cdns-files.dzcdn.net/js/min/dz.js"></script>
+    
+    <!-- Spotify Web Playback SDK -->
+    <script src="https://sdk.scdn.co/spotify-player.js"></script>
     
     <script>
         const firebaseConfig = {
@@ -982,6 +990,9 @@
         let playerLoadAttempts = 0;
         let audioContext;
         let beepBuffer;
+        let soundCloudWidget;
+        let deezerPlayer;
+        let spotifyPlayer;
 
         // Initialize audio context for notification sounds
         function initAudio() {
@@ -1050,25 +1061,158 @@
             videoSource: document.getElementById('videoSource')
         };
 
-        // Supported platforms with detection regex
+        // Supported platforms with detection regex and API integration
         const supportedPlatforms = [
-            { id: 'youtube', regex: /(youtube\.com|youtu\.be)/, name: 'YouTube' },
-            { id: 'vimeo', regex: /vimeo\.com/, name: 'Vimeo' },
-            { id: 'dailymotion', regex: /(dailymotion\.com|dai\.ly)/, name: 'Dailymotion' },
-            { id: 'twitch', regex: /twitch\.tv/, name: 'Twitch' },
-            { id: 'soundcloud', regex: /soundcloud\.com/, name: 'SoundCloud' },
-            { id: 'pexels', regex: /pexels\.com/, name: 'Pexels' },
-            { id: 'pixabay', regex: /pixabay\.com/, name: 'Pixabay' },
-            { id: 'archive', regex: /archive\.org/, name: 'Internet Archive' },
-            { id: 'deezer', regex: /deezer\.com/, name: 'Deezer' },
-            { id: 'spotify', regex: /spotify\.com/, name: 'Spotify' },
-            { id: 'jamendo', regex: /jamendo\.com/, name: 'Jamendo' },
-            { id: 'tiktok', regex: /tiktok\.com/, name: 'TikTok' },
-            { id: 'facebook', regex: /facebook\.com/, name: 'Facebook' },
-            { id: 'snapchat', regex: /snapchat\.com/, name: 'Snapchat' },
-            { id: 'instagram', regex: /instagram\.com/, name: 'Instagram' },
-            { id: 'linkedin', regex: /linkedin\.com/, name: 'LinkedIn' },
-            { id: 'direct', regex: /\.(mp4|m3u8|mov|avi|mkv|webm)$/i, name: 'Direct Video' }
+            { 
+                id: 'youtube', 
+                regex: /(youtube\.com|youtu\.be)/, 
+                name: 'YouTube',
+                extractId: (url) => {
+                    const ytRegExp = /^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#\&\?]*).*/;
+                    const ytMatch = url.match(ytRegExp);
+                    return (ytMatch && ytMatch[2].length === 11) ? ytMatch[2] : null;
+                }
+            },
+            { 
+                id: 'vimeo', 
+                regex: /vimeo\.com/, 
+                name: 'Vimeo',
+                extractId: (url) => {
+                    const vimeoRegExp = /(?:vimeo\.com\/|video\/)(\d+)/;
+                    const vimeoMatch = url.match(vimeoRegExp);
+                    return vimeoMatch ? vimeoMatch[1] : null;
+                }
+            },
+            { 
+                id: 'dailymotion', 
+                regex: /(dailymotion\.com|dai\.ly)/, 
+                name: 'Dailymotion',
+                extractId: (url) => {
+                    const dmRegExp = /(?:dailymotion\.com\/video\/|dai\.ly\/)([a-zA-Z0-9]+)/;
+                    const dmMatch = url.match(dmRegExp);
+                    return dmMatch ? dmMatch[1] : null;
+                }
+            },
+            { 
+                id: 'twitch', 
+                regex: /twitch\.tv/, 
+                name: 'Twitch',
+                extractId: (url) => {
+                    const twitchRegExp = /(?:twitch\.tv\/videos\/|twitch\.tv\/\w+\/clip\/)(\d+)/;
+                    const twitchMatch = url.match(twitchRegExp);
+                    return twitchMatch ? twitchMatch[1] : null;
+                }
+            },
+            { 
+                id: 'soundcloud', 
+                regex: /soundcloud\.com/, 
+                name: 'SoundCloud',
+                extractId: (url) => url // Use full URL for SoundCloud
+            },
+            { 
+                id: 'pexels', 
+                regex: /pexels\.com/, 
+                name: 'Pexels',
+                extractId: (url) => url // Use full URL for Pexels
+            },
+            { 
+                id: 'pixabay', 
+                regex: /pixabay\.com/, 
+                name: 'Pixabay',
+                extractId: (url) => url // Use full URL for Pixabay
+            },
+            { 
+                id: 'archive', 
+                regex: /archive\.org/, 
+                name: 'Internet Archive',
+                extractId: (url) => url // Use full URL for Internet Archive
+            },
+            { 
+                id: 'deezer', 
+                regex: /deezer\.com/, 
+                name: 'Deezer',
+                extractId: (url) => {
+                    const dzRegExp = /deezer\.com\/(?:[a-z]+\/)?(track|album|playlist)\/(\d+)/;
+                    const dzMatch = url.match(dzRegExp);
+                    return dzMatch ? { type: dzMatch[1], id: dzMatch[2] } : null;
+                }
+            },
+            { 
+                id: 'spotify', 
+                regex: /spotify\.com/, 
+                name: 'Spotify',
+                extractId: (url) => {
+                    const spRegExp = /spotify\.com\/(track|album|playlist)\/([a-zA-Z0-9]+)/;
+                    const spMatch = url.match(spRegExp);
+                    return spMatch ? { type: spMatch[1], id: spMatch[2] } : null;
+                }
+            },
+            { 
+                id: 'jamendo', 
+                regex: /jamendo\.com/, 
+                name: 'Jamendo',
+                extractId: (url) => {
+                    const jamendoRegExp = /jamendo\.com\/track\/(\d+)/;
+                    const jamendoMatch = url.match(jamendoRegExp);
+                    return jamendoMatch ? jamendoMatch[1] : null;
+                }
+            },
+            { 
+                id: 'tiktok', 
+                regex: /tiktok\.com/, 
+                name: 'TikTok',
+                extractId: (url) => {
+                    const tiktokRegExp = /tiktok\.com\/@.+\/video\/(\d+)/;
+                    const tiktokMatch = url.match(tiktokRegExp);
+                    return tiktokMatch ? tiktokMatch[1] : null;
+                }
+            },
+            { 
+                id: 'facebook', 
+                regex: /facebook\.com/, 
+                name: 'Facebook',
+                extractId: (url) => {
+                    const fbRegExp = /facebook\.com\/(?:[^\/]+\/videos\/|watch\/\?v=)(\d+)/;
+                    const fbMatch = url.match(fbRegExp);
+                    return fbMatch ? fbMatch[1] : null;
+                }
+            },
+            { 
+                id: 'snapchat', 
+                regex: /snapchat\.com/, 
+                name: 'Snapchat',
+                extractId: (url) => {
+                    const scRegExp = /snapchat\.com\/add\/[^\/]+\/([a-zA-Z0-9]+)/;
+                    const scMatch = url.match(scRegExp);
+                    return scMatch ? scMatch[1] : null;
+                }
+            },
+            { 
+                id: 'instagram', 
+                regex: /instagram\.com/, 
+                name: 'Instagram',
+                extractId: (url) => {
+                    const igRegExp = /instagram\.com\/(?:p|reel)\/([a-zA-Z0-9_-]+)/;
+                    const igMatch = url.match(igRegExp);
+                    return igMatch ? igMatch[1] : null;
+                }
+            },
+            { 
+                id: 'linkedin', 
+                regex: /linkedin\.com/, 
+                name: 'LinkedIn',
+                extractId: (url) => {
+                    const liRegExp = /linkedin\.com\/posts\/[^\/]+\/([a-zA-Z0-9_-]+)/;
+                    const liMatch = url.match(liRegExp);
+                    return liMatch ? liMatch[1] : null;
+                }
+            },
+            { 
+                id: 'direct', 
+                regex: /\.(mp4|m3u8|mov|avi|mkv|webm|mp3|wav|ogg)$/i, 
+                name: 'Direct Media',
+                extractId: (url) => url // Use full URL for direct media
+            }
         ];
 
         // Debounce utility
@@ -1129,37 +1273,6 @@
                 return true;
             } catch (e) {
                 return false;
-            }
-        }
-
-        // Extract video ID based on platform
-        function extractVideoId(url, platformId) {
-            try {
-                switch(platformId) {
-                    case 'youtube':
-                        const ytRegExp = /^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#\&\?]*).*/;
-                        const ytMatch = url.match(ytRegExp);
-                        return (ytMatch && ytMatch[2].length === 11) ? ytMatch[2] : null;
-                    case 'vimeo':
-                        const vimeoRegExp = /(?:vimeo\.com\/|video\/)(\d+)/;
-                        const vimeoMatch = url.match(vimeoRegExp);
-                        return vimeoMatch ? vimeoMatch[1] : null;
-                    case 'dailymotion':
-                        const dmRegExp = /(?:dailymotion\.com\/video\/|dai\.ly\/)([a-zA-Z0-9]+)/;
-                        const dmMatch = url.match(dmRegExp);
-                        return dmMatch ? dmMatch[1] : null;
-                    case 'twitch':
-                        const twitchRegExp = /(?:twitch\.tv\/videos\/|twitch\.tv\/\w+\/clip\/)(\d+)/;
-                        const twitchMatch = url.match(twitchRegExp);
-                        return twitchMatch ? twitchMatch[1] : null;
-                    case 'soundcloud':
-                        return url; // For now, just return the URL
-                    default:
-                        // For other platforms, return the URL itself
-                        return url;
-                }
-            } catch {
-                return null;
             }
         }
 
@@ -1233,6 +1346,7 @@
             }
         }
 
+        // Create YouTube player
         function createYouTubePlayer(videoId) {
             if (!apiReady) {
                 pendingVideoId = videoId;
@@ -1246,6 +1360,13 @@
                 }
                 if (videojsPlayer) {
                     videojsPlayer.dispose();
+                }
+                if (soundCloudWidget) {
+                    soundCloudWidget.unbind(SC.Widget.Events.READY);
+                    soundCloudWidget.unbind(SC.Widget.Events.PLAY);
+                    soundCloudWidget.unbind(SC.Widget.Events.PAUSE);
+                    soundCloudWidget.unbind(SC.Widget.Events.FINISH);
+                    soundCloudWidget = null;
                 }
                 
                 player = new YT.Player('player', {
@@ -1270,25 +1391,395 @@
                 
                 setTimeout(() => {
                     if (!playerReady) {
-                        retryPlayerCreation(videoId);
+                        retryPlayerCreation(videoId, { id: 'youtube', name: 'YouTube' });
                     }
                 }, 5000);
             } catch (error) {
                 console.error('Error creating YouTube player:', error);
                 showNotification('Failed to initialize YouTube player');
-                retryPlayerCreation(videoId);
+                retryPlayerCreation(videoId, { id: 'youtube', name: 'YouTube' });
             }
         }
 
+        // Create Vimeo player
+        function createVimeoPlayer(videoId) {
+            try {
+                // Clear previous players
+                clearPlayer();
+                
+                const iframe = document.createElement('iframe');
+                iframe.src = `https://player.vimeo.com/video/${videoId}?autoplay=0&loop=0&byline=0&portrait=0&title=0&background=0`;
+                iframe.width = '100%';
+                iframe.height = '100%';
+                iframe.frameBorder = '0';
+                iframe.allow = 'autoplay; fullscreen';
+                iframe.allowFullscreen = true;
+                
+                document.getElementById('player').innerHTML = '';
+                document.getElementById('player').appendChild(iframe);
+                
+                // Vimeo API requires postMessage communication
+                playerReady = true;
+                isPlaying = false;
+                elements.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                
+                // Store the iframe for later control
+                player = iframe;
+                
+                // Enable play/pause controls
+                elements.playPauseBtn.style.display = 'flex';
+                elements.backwardBtn.style.display = 'flex';
+                elements.forwardBtn.style.display = 'flex';
+                
+                resetControlsTimeout();
+            } catch (error) {
+                console.error('Error creating Vimeo player:', error);
+                showNotification('Failed to initialize Vimeo player');
+                retryPlayerCreation(videoId, { id: 'vimeo', name: 'Vimeo' });
+            }
+        }
+
+        // Create Dailymotion player
+        function createDailymotionPlayer(videoId) {
+            try {
+                // Clear previous players
+                clearPlayer();
+                
+                const iframe = document.createElement('iframe');
+                iframe.src = `https://www.dailymotion.com/embed/video/${videoId}?autoplay=false&mute=0&controls=0`;
+                iframe.width = '100%';
+                iframe.height = '100%';
+                iframe.frameBorder = '0';
+                iframe.allow = 'autoplay; fullscreen';
+                iframe.allowFullscreen = true;
+                
+                document.getElementById('player').innerHTML = '';
+                document.getElementById('player').appendChild(iframe);
+                
+                // Dailymotion API requires postMessage communication
+                playerReady = true;
+                isPlaying = false;
+                elements.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                
+                // Store the iframe for later control
+                player = iframe;
+                
+                // Enable play/pause controls
+                elements.playPauseBtn.style.display = 'flex';
+                elements.backwardBtn.style.display = 'flex';
+                elements.forwardBtn.style.display = 'flex';
+                
+                resetControlsTimeout();
+            } catch (error) {
+                console.error('Error creating Dailymotion player:', error);
+                showNotification('Failed to initialize Dailymotion player');
+                retryPlayerCreation(videoId, { id: 'dailymotion', name: 'Dailymotion' });
+            }
+        }
+
+        // Create SoundCloud player
+        function createSoundCloudPlayer(url) {
+            try {
+                // Clear previous players
+                clearPlayer();
+                
+                const iframe = document.createElement('iframe');
+                iframe.src = `https://w.soundcloud.com/player/?url=${encodeURIComponent(url)}&auto_play=false&hide_related=true&show_comments=false&show_user=false&show_reposts=false&visual=true`;
+                iframe.width = '100%';
+                iframe.height = '100%';
+                iframe.frameBorder = '0';
+                iframe.allow = 'autoplay';
+                
+                document.getElementById('player').innerHTML = '';
+                document.getElementById('player').appendChild(iframe);
+                
+                // Initialize SoundCloud Widget API
+                soundCloudWidget = SC.Widget(iframe);
+                
+                soundCloudWidget.bind(SC.Widget.Events.READY, () => {
+                    playerReady = true;
+                    soundCloudWidget.bind(SC.Widget.Events.PLAY, () => {
+                        isPlaying = true;
+                        elements.playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                        if (isHost && roomRef) {
+                            roomRef.update({
+                                state: 'playing',
+                                lastUpdated: firebase.database.ServerValue.TIMESTAMP
+                            });
+                        }
+                    });
+                    
+                    soundCloudWidget.bind(SC.Widget.Events.PAUSE, () => {
+                        isPlaying = false;
+                        elements.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                        if (isHost && roomRef) {
+                            roomRef.update({
+                                state: 'paused',
+                                lastUpdated: firebase.database.ServerValue.TIMESTAMP
+                            });
+                        }
+                    });
+                    
+                    soundCloudWidget.bind(SC.Widget.Events.FINISH, () => {
+                        if (nextVideos.length > 0) {
+                            const nextVideo = nextVideos.shift();
+                            loadVideoByUrl(nextVideo.url);
+                            if (isHost && roomRef) {
+                                roomRef.update({
+                                    videoId: nextVideo.url,
+                                    nextVideos,
+                                    lastUpdated: firebase.database.ServerValue.TIMESTAMP
+                                });
+                            }
+                            currentVideoIndex++;
+                            updateBadge();
+                            updateQueueList();
+                        }
+                    });
+                    
+                    // Apply stored room state
+                    if (lastRoomState) {
+                        if (lastRoomState.state === 'playing') {
+                            soundCloudWidget.play();
+                        } else {
+                            soundCloudWidget.pause();
+                        }
+                    }
+                    
+                    resetControlsTimeout();
+                });
+                
+                // Enable play/pause controls
+                elements.playPauseBtn.style.display = 'flex';
+                elements.backwardBtn.style.display = 'none'; // SoundCloud doesn't support seeking via API
+                elements.forwardBtn.style.display = 'none';
+            } catch (error) {
+                console.error('Error creating SoundCloud player:', error);
+                showNotification('Failed to initialize SoundCloud player');
+                retryPlayerCreation(url, { id: 'soundcloud', name: 'SoundCloud' });
+            }
+        }
+
+        // Create Deezer player
+        function createDeezerPlayer(trackId) {
+            try {
+                // Clear previous players
+                clearPlayer();
+                
+                // Deezer requires a container div
+                const playerContainer = document.getElementById('player');
+                playerContainer.innerHTML = '<div id="dz-root"></div><div id="dz-player"></div>';
+                
+                // Initialize Deezer SDK
+                DZ.init({
+                    appId: 'YOUR_DEEZER_APP_ID', // Replace with your Deezer app ID
+                    channelUrl: window.location.href + 'channel.html',
+                    player: {
+                        onload: function() {
+                            // Create player instance
+                            deezerPlayer = DZ.player.create('dz-player', {
+                                width: '100%',
+                                height: '100%',
+                                layout: 'dark',
+                                cover: false,
+                                playlist: false,
+                                autoplay: false,
+                                onload: function() {
+                                    // Load the track
+                                    DZ.player.playTracks([trackId.id], false, 0);
+                                    
+                                    playerReady = true;
+                                    isPlaying = false;
+                                    elements.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                                    
+                                    // Apply stored room state
+                                    if (lastRoomState) {
+                                        if (lastRoomState.state === 'playing') {
+                                            DZ.player.play();
+                                        } else {
+                                            DZ.player.pause();
+                                        }
+                                    }
+                                    
+                                    resetControlsTimeout();
+                                }
+                            });
+                            
+                            // Enable play/pause controls
+                            elements.playPauseBtn.style.display = 'flex';
+                            elements.backwardBtn.style.display = 'flex';
+                            elements.forwardBtn.style.display = 'flex';
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error('Error creating Deezer player:', error);
+                showNotification('Failed to initialize Deezer player');
+                retryPlayerCreation(trackId, { id: 'deezer', name: 'Deezer' });
+            }
+        }
+
+        // Create Spotify player
+        function createSpotifyPlayer(trackId) {
+            try {
+                // Clear previous players
+                clearPlayer();
+                
+                // Spotify requires an iframe
+                const iframe = document.createElement('iframe');
+                iframe.src = `https://open.spotify.com/embed/${trackId.type}/${trackId.id}`;
+                iframe.width = '100%';
+                iframe.height = '100%';
+                iframe.frameBorder = '0';
+                iframe.allow = 'autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture';
+                
+                document.getElementById('player').innerHTML = '';
+                document.getElementById('player').appendChild(iframe);
+                
+                // Spotify Web Playback SDK would be needed for full control
+                // This is a basic implementation with limited control
+                playerReady = true;
+                isPlaying = false;
+                elements.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                
+                // Store the iframe for later control
+                player = iframe;
+                
+                // Enable play/pause controls (limited functionality)
+                elements.playPauseBtn.style.display = 'flex';
+                elements.backwardBtn.style.display = 'none';
+                elements.forwardBtn.style.display = 'none';
+                
+                resetControlsTimeout();
+            } catch (error) {
+                console.error('Error creating Spotify player:', error);
+                showNotification('Failed to initialize Spotify player');
+                retryPlayerCreation(trackId, { id: 'spotify', name: 'Spotify' });
+            }
+        }
+
+        // Create TikTok player
+        function createTikTokPlayer(videoId) {
+            try {
+                // Clear previous players
+                clearPlayer();
+                
+                // TikTok requires an iframe
+                const iframe = document.createElement('iframe');
+                iframe.src = `https://www.tiktok.com/embed/v2/${videoId}`;
+                iframe.width = '100%';
+                iframe.height = '100%';
+                iframe.frameBorder = '0';
+                iframe.allow = 'autoplay; fullscreen';
+                iframe.allowFullscreen = true;
+                
+                document.getElementById('player').innerHTML = '';
+                document.getElementById('player').appendChild(iframe);
+                
+                // TikTok doesn't provide a public API for control
+                playerReady = true;
+                isPlaying = false;
+                elements.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                
+                // Store the iframe for later control
+                player = iframe;
+                
+                // Disable controls since TikTok doesn't provide an API
+                elements.playPauseBtn.style.display = 'none';
+                elements.backwardBtn.style.display = 'none';
+                elements.forwardBtn.style.display = 'none';
+                
+                resetControlsTimeout();
+            } catch (error) {
+                console.error('Error creating TikTok player:', error);
+                showNotification('Failed to initialize TikTok player');
+                retryPlayerCreation(videoId, { id: 'tiktok', name: 'TikTok' });
+            }
+        }
+
+        // Create Facebook player
+        function createFacebookPlayer(videoId) {
+            try {
+                // Clear previous players
+                clearPlayer();
+                
+                // Facebook requires an iframe
+                const iframe = document.createElement('iframe');
+                iframe.src = `https://www.facebook.com/plugins/video.php?href=https%3A%2F%2Fwww.facebook.com%2Fvideo.php%3Fv%3D${videoId}&show_text=false&width=560&height=315&appId`;
+                iframe.width = '100%';
+                iframe.height = '100%';
+                iframe.frameBorder = '0';
+                iframe.allow = 'autoplay; fullscreen';
+                iframe.allowFullscreen = true;
+                
+                document.getElementById('player').innerHTML = '';
+                document.getElementById('player').appendChild(iframe);
+                
+                // Facebook doesn't provide a public API for control
+                playerReady = true;
+                isPlaying = false;
+                elements.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                
+                // Store the iframe for later control
+                player = iframe;
+                
+                // Disable controls since Facebook doesn't provide an API
+                elements.playPauseBtn.style.display = 'none';
+                elements.backwardBtn.style.display = 'none';
+                elements.forwardBtn.style.display = 'none';
+                
+                resetControlsTimeout();
+            } catch (error) {
+                console.error('Error creating Facebook player:', error);
+                showNotification('Failed to initialize Facebook player');
+                retryPlayerCreation(videoId, { id: 'facebook', name: 'Facebook' });
+            }
+        }
+
+        // Create Instagram player
+        function createInstagramPlayer(mediaId) {
+            try {
+                // Clear previous players
+                clearPlayer();
+                
+                // Instagram requires an iframe
+                const iframe = document.createElement('iframe');
+                iframe.src = `https://www.instagram.com/p/${mediaId}/embed`;
+                iframe.width = '100%';
+                iframe.height = '100%';
+                iframe.frameBorder = '0';
+                iframe.allow = 'autoplay; fullscreen';
+                iframe.allowFullscreen = true;
+                
+                document.getElementById('player').innerHTML = '';
+                document.getElementById('player').appendChild(iframe);
+                
+                // Instagram doesn't provide a public API for control
+                playerReady = true;
+                isPlaying = false;
+                elements.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                
+                // Store the iframe for later control
+                player = iframe;
+                
+                // Disable controls since Instagram doesn't provide an API
+                elements.playPauseBtn.style.display = 'none';
+                elements.backwardBtn.style.display = 'none';
+                elements.forwardBtn.style.display = 'none';
+                
+                resetControlsTimeout();
+            } catch (error) {
+                console.error('Error creating Instagram player:', error);
+                showNotification('Failed to initialize Instagram player');
+                retryPlayerCreation(mediaId, { id: 'instagram', name: 'Instagram' });
+            }
+        }
+
+        // Create Video.js player for direct video/audio
         function createVideoJSPlayer(source) {
             try {
-                // Clear previous players if exist
-                if (player) {
-                    player.destroy();
-                }
-                if (videojsPlayer) {
-                    videojsPlayer.dispose();
-                }
+                // Clear previous players
+                clearPlayer();
                 
                 // Create Video.js player
                 const videoElement = document.createElement('video-js');
@@ -1370,22 +1861,24 @@
                     
                     resetControlsTimeout();
                 });
+                
+                // Enable all controls
+                elements.playPauseBtn.style.display = 'flex';
+                elements.backwardBtn.style.display = 'flex';
+                elements.forwardBtn.style.display = 'flex';
             } catch (error) {
                 console.error('Error creating Video.js player:', error);
                 showNotification('Failed to initialize player');
+                retryPlayerCreation(source, { id: 'direct', name: 'Direct Media' });
             }
         }
 
+        // Create HLS player for streaming
         function createHLSPlayer(url) {
             if (Hls.isSupported()) {
                 try {
-                    // Clear previous players if exist
-                    if (player) {
-                        player.destroy();
-                    }
-                    if (videojsPlayer) {
-                        videojsPlayer.dispose();
-                    }
+                    // Clear previous players
+                    clearPlayer();
                     
                     // Create video element
                     const videoElement = document.createElement('video');
@@ -1459,146 +1952,247 @@
                     }
                     
                     playerReady = true;
+                    
+                    // Enable all controls
+                    elements.playPauseBtn.style.display = 'flex';
+                    elements.backwardBtn.style.display = 'flex';
+                    elements.forwardBtn.style.display = 'flex';
+                    
                     resetControlsTimeout();
                 } catch (error) {
                     console.error('Error creating HLS player:', error);
                     showNotification('Failed to initialize player');
+                    retryPlayerCreation(url, { id: 'direct', name: 'Direct Media' });
                 }
             } else if (document.getElementById('player').canPlayType('application/vnd.apple.mpegurl')) {
                 // For Safari which supports HLS natively
-                const videoElement = document.createElement('video');
-                videoElement.id = 'hls-player';
-                videoElement.style.width = '100%';
-                videoElement.style.height = '100%';
-                videoElement.controls = false;
-                videoElement.src = url;
-                
-                const playerContainer = document.getElementById('player');
-                playerContainer.innerHTML = '';
-                playerContainer.appendChild(videoElement);
-                
-                videoElement.addEventListener('play', () => {
-                    isPlaying = true;
-                    elements.playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
-                    if (isHost && roomRef) {
-                        roomRef.update({
-                            state: 'playing',
-                            currentTime: videoElement.currentTime,
-                            lastUpdated: firebase.database.ServerValue.TIMESTAMP
-                        });
-                    }
-                });
-                
-                videoElement.addEventListener('pause', () => {
-                    isPlaying = false;
-                    elements.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
-                    if (isHost && roomRef) {
-                        roomRef.update({
-                            state: 'paused',
-                            currentTime: videoElement.currentTime,
-                            lastUpdated: firebase.database.ServerValue.TIMESTAMP
-                        });
-                    }
-                });
-                
-                videoElement.addEventListener('ended', () => {
-                    if (nextVideos.length > 0) {
-                        const nextVideo = nextVideos.shift();
-                        loadVideoByUrl(nextVideo.url);
+                try {
+                    const videoElement = document.createElement('video');
+                    videoElement.id = 'hls-player';
+                    videoElement.style.width = '100%';
+                    videoElement.style.height = '100%';
+                    videoElement.controls = false;
+                    videoElement.src = url;
+                    
+                    const playerContainer = document.getElementById('player');
+                    playerContainer.innerHTML = '';
+                    playerContainer.appendChild(videoElement);
+                    
+                    videoElement.addEventListener('play', () => {
+                        isPlaying = true;
+                        elements.playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
                         if (isHost && roomRef) {
                             roomRef.update({
-                                videoId: nextVideo.url,
-                                nextVideos,
+                                state: 'playing',
+                                currentTime: videoElement.currentTime,
                                 lastUpdated: firebase.database.ServerValue.TIMESTAMP
                             });
-                            
-                            if (currentVideoIndex > 0) {
+                        }
+                    });
+                    
+                    videoElement.addEventListener('pause', () => {
+                        isPlaying = false;
+                        elements.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                        if (isHost && roomRef) {
+                            roomRef.update({
+                                state: 'paused',
+                                currentTime: videoElement.currentTime,
+                                lastUpdated: firebase.database.ServerValue.TIMESTAMP
+                            });
+                        }
+                    });
+                    
+                    videoElement.addEventListener('ended', () => {
+                        if (nextVideos.length > 0) {
+                            const nextVideo = nextVideos.shift();
+                            loadVideoByUrl(nextVideo.url);
+                            if (isHost && roomRef) {
                                 roomRef.update({
-                                    currentHost: !roomRef.currentHost
+                                    videoId: nextVideo.url,
+                                    nextVideos,
+                                    lastUpdated: firebase.database.ServerValue.TIMESTAMP
                                 });
                             }
+                            currentVideoIndex++;
+                            updateBadge();
+                            updateQueueList();
                         }
-                        currentVideoIndex++;
-                        updateBadge();
-                        updateQueueList();
+                    });
+                    
+                    videoElement.addEventListener('error', () => {
+                        showNotification('Player error occurred');
+                    });
+                    
+                    if (lastRoomState) {
+                        videoElement.currentTime = lastRoomState.currentTime;
+                        if (lastRoomState.state === 'playing') {
+                            videoElement.play();
+                        } else {
+                            videoElement.pause();
+                        }
                     }
-                });
-                
-                videoElement.addEventListener('error', () => {
-                    showNotification('Player error occurred');
-                });
-                
-                if (lastRoomState) {
-                    videoElement.currentTime = lastRoomState.currentTime;
-                    if (lastRoomState.state === 'playing') {
-                        videoElement.play();
-                    } else {
-                        videoElement.pause();
-                    }
+                    
+                    playerReady = true;
+                    
+                    // Enable all controls
+                    elements.playPauseBtn.style.display = 'flex';
+                    elements.backwardBtn.style.display = 'flex';
+                    elements.forwardBtn.style.display = 'flex';
+                    
+                    resetControlsTimeout();
+                } catch (error) {
+                    console.error('Error creating native HLS player:', error);
+                    showNotification('Failed to initialize player');
+                    retryPlayerCreation(url, { id: 'direct', name: 'Direct Media' });
                 }
-                
-                playerReady = true;
-                resetControlsTimeout();
             } else {
                 showNotification('HLS is not supported in your browser');
             }
         }
 
+        // Clear all player instances
+        function clearPlayer() {
+            try {
+                if (player) {
+                    if (player.destroy) {
+                        player.destroy();
+                    }
+                    player = null;
+                }
+                if (videojsPlayer) {
+                    videojsPlayer.dispose();
+                    videojsPlayer = null;
+                }
+                if (hls) {
+                    hls.destroy();
+                    hls = null;
+                }
+                if (soundCloudWidget) {
+                    soundCloudWidget.unbind(SC.Widget.Events.READY);
+                    soundCloudWidget.unbind(SC.Widget.Events.PLAY);
+                    soundCloudWidget.unbind(SC.Widget.Events.PAUSE);
+                    soundCloudWidget.unbind(SC.Widget.Events.FINISH);
+                    soundCloudWidget = null;
+                }
+                if (deezerPlayer) {
+                    DZ.player.pause();
+                    deezerPlayer = null;
+                }
+                if (spotifyPlayer) {
+                    // Spotify doesn't provide a way to destroy the player
+                    spotifyPlayer = null;
+                }
+                
+                const playerContainer = document.getElementById('player');
+                playerContainer.innerHTML = '';
+                
+                playerReady = false;
+            } catch (error) {
+                console.error('Error clearing player:', error);
+            }
+        }
+
+        // Create appropriate player based on platform
         function createPlayer(videoId, platform) {
             playerReady = false;
             playerLoadAttempts = 0;
-            
+            console.log(`Creating player for ${platform.name} with ID: ${videoId}`);
+
             switch(platform.id) {
                 case 'youtube':
                     createYouTubePlayer(videoId);
                     break;
+                    
                 case 'vimeo':
-                    createVideoJSPlayer({
-                        src: `https://player.vimeo.com/video/${videoId}`,
-                        type: 'video/vimeo'
-                    });
+                    createVimeoPlayer(videoId);
                     break;
+                    
                 case 'dailymotion':
-                    createVideoJSPlayer({
-                        src: `https://www.dailymotion.com/embed/video/${videoId}`,
-                        type: 'video/dailymotion'
-                    });
+                    createDailymotionPlayer(videoId);
                     break;
-                case 'twitch':
-                    createHLSPlayer(`https://www.twitch.tv/videos/${videoId}`);
-                    break;
+                    
                 case 'soundcloud':
-                    createVideoJSPlayer({
-                        src: videoId, // This would be the full URL
-                        type: 'audio/soundcloud'
-                    });
+                    createSoundCloudPlayer(videoId);
                     break;
-                case 'pexels':
-                case 'pixabay':
-                case 'archive':
+                    
+                case 'deezer':
+                    createDeezerPlayer(videoId);
+                    break;
+                    
+                case 'spotify':
+                    createSpotifyPlayer(videoId);
+                    break;
+                    
+                case 'tiktok':
+                    createTikTokPlayer(videoId);
+                    break;
+                    
+                case 'facebook':
+                    createFacebookPlayer(videoId);
+                    break;
+                    
+                case 'instagram':
+                    createInstagramPlayer(videoId);
+                    break;
+                    
                 case 'direct':
-                    // For direct video links
-                    createHLSPlayer(videoId);
-                    break;
-                default:
-                    // For other platforms, try to use iframe embed
-                    try {
-                        // Clear the player container
-                        const playerContainer = document.getElementById('player');
-                        playerContainer.innerHTML = `
-                            <iframe src="${videoId}" 
-                                width="100%" 
-                                height="100%" 
-                                frameborder="0" 
-                                allow="autoplay; fullscreen" 
-                                allowfullscreen>
-                            </iframe>
-                        `;
-                        playerReady = true;
-                    } catch (error) {
-                        console.error('Error creating embed player:', error);
-                        showNotification('Failed to initialize player for this platform');
+                    if (videoId.match(/\.(mp4|webm|ogg|mov|avi|mkv)$/i)) {
+                        createVideoJSPlayer({
+                            src: videoId,
+                            type: `video/${videoId.split('.').pop().toLowerCase()}`
+                        });
+                    } else if (videoId.match(/\.(mp3|wav|ogg)$/i)) {
+                        createVideoJSPlayer({
+                            src: videoId,
+                            type: `audio/${videoId.split('.').pop().toLowerCase()}`
+                        });
+                    } else if (videoId.match(/\.m3u8$/i)) {
+                        createHLSPlayer(videoId);
+                    } else {
+                        showNotification('Unsupported direct URL format');
                     }
+                    break;
+                    
+                default:
+                    // Try as generic iframe embed
+                    createGenericIframePlayer(videoId, platform);
+            }
+        }
+
+        // Create generic iframe player for unsupported platforms
+        function createGenericIframePlayer(url, platform) {
+            try {
+                // Clear previous players
+                clearPlayer();
+                
+                const iframe = document.createElement('iframe');
+                iframe.src = url;
+                iframe.width = '100%';
+                iframe.height = '100%';
+                iframe.frameBorder = '0';
+                iframe.allow = 'autoplay; fullscreen';
+                iframe.allowFullscreen = true;
+                
+                document.getElementById('player').innerHTML = '';
+                document.getElementById('player').appendChild(iframe);
+                
+                playerReady = true;
+                isPlaying = false;
+                elements.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                
+                // Store the iframe for later control
+                player = iframe;
+                
+                // Disable controls since we can't control generic iframes
+                elements.playPauseBtn.style.display = 'none';
+                elements.backwardBtn.style.display = 'none';
+                elements.forwardBtn.style.display = 'none';
+                
+                resetControlsTimeout();
+            } catch (error) {
+                console.error('Error creating generic iframe player:', error);
+                showNotification(`Failed to initialize ${platform.name} player`);
+                retryPlayerCreation(url, platform);
             }
         }
 
@@ -1613,6 +2207,7 @@
             }
         }
 
+        // Load video by URL with platform detection
         function loadVideoByUrl(url) {
             const platform = detectPlatform(url);
             if (!platform) {
@@ -1620,10 +2215,16 @@
                 return;
             }
             
-            const videoId = extractVideoId(url, platform.id);
-            if (!videoId) {
-                showNotification(`Invalid ${platform.name} URL`);
-                return;
+            // Extract ID based on platform
+            let videoId;
+            if (platform.id === 'direct') {
+                videoId = url; // Use full URL for direct links
+            } else {
+                videoId = platform.extractId(url);
+                if (!videoId) {
+                    showNotification(`Invalid ${platform.name} URL`);
+                    return;
+                }
             }
             
             try {
@@ -1725,6 +2326,9 @@
                             const hlsPlayer = document.getElementById('hls-player');
                             currentTime = hlsPlayer.currentTime;
                             state = !hlsPlayer.paused ? 'playing' : 'paused';
+                        } else if (soundCloudWidget) {
+                            // SoundCloud player - can't get current time
+                            state = isPlaying ? 'playing' : 'paused';
                         }
                         
                         roomRef.update({
@@ -1805,6 +2409,12 @@
                 if (document.getElementById('hls-player')) {
                     document.getElementById('hls-player').pause();
                 }
+                if (soundCloudWidget) {
+                    soundCloudWidget.pause();
+                }
+                if (deezerPlayer) {
+                    DZ.player.pause();
+                }
                 
                 elements.videoContainer.style.display = 'none';
             } catch (error) {
@@ -1864,6 +2474,24 @@
                     hlsPlayer.pause();
                     return true;
                 }
+            } else if (soundCloudWidget) {
+                // SoundCloud player
+                if (roomData.state === 'playing' && !isPlaying) {
+                    soundCloudWidget.play();
+                    return true;
+                } else if (roomData.state === 'paused' && isPlaying) {
+                    soundCloudWidget.pause();
+                    return true;
+                }
+            } else if (deezerPlayer) {
+                // Deezer player
+                if (roomData.state === 'playing' && !isPlaying) {
+                    DZ.player.play();
+                    return true;
+                } else if (roomData.state === 'paused' && isPlaying) {
+                    DZ.player.pause();
+                    return true;
+                }
             }
             return false;
         }
@@ -1902,7 +2530,7 @@
                         createPlayer(roomData.videoId, platform);
                     } else {
                         // Try to play as direct video
-                        createPlayer(roomData.videoId, { id: 'direct', name: 'Direct Video' });
+                        createPlayer(roomData.videoId, { id: 'direct', name: 'Direct Media' });
                     }
                     
                     roomRef.on('value', (snapshot) => {
@@ -2015,12 +2643,6 @@
                                 nextVideos,
                                 lastUpdated: firebase.database.ServerValue.TIMESTAMP
                             });
-                            
-                            if (currentVideoIndex > 0) {
-                                roomRef.update({
-                                    currentHost: !roomRef.currentHost
-                                });
-                            }
                         }
                         currentVideoIndex++;
                         updateBadge();
@@ -2068,6 +2690,23 @@
                     } else {
                         hlsPlayer.pause();
                     }
+                } else if (soundCloudWidget) {
+                    // SoundCloud player
+                    if (isPlaying) {
+                        soundCloudWidget.pause();
+                    } else {
+                        soundCloudWidget.play();
+                    }
+                } else if (deezerPlayer) {
+                    // Deezer player
+                    if (isPlaying) {
+                        DZ.player.pause();
+                    } else {
+                        DZ.player.play();
+                    }
+                } else if (player && player.contentWindow) {
+                    // Generic iframe - try to post message
+                    player.contentWindow.postMessage(isPlaying ? 'pause' : 'play', '*');
                 }
                 
                 showControls();
@@ -2094,6 +2733,13 @@
                     const hlsPlayer = document.getElementById('hls-player');
                     currentTime = hlsPlayer.currentTime;
                     hlsPlayer.currentTime = currentTime + 10;
+                } else if (soundCloudWidget) {
+                    // SoundCloud player - doesn't support seeking via API
+                    showNotification('Seeking not supported for this platform');
+                    return;
+                } else if (deezerPlayer) {
+                    // Deezer player
+                    DZ.player.seek(DZ.player.getPosition() + 10000); // Seek 10 seconds forward
                 }
                 
                 if (isHost && roomRef) {
@@ -2127,6 +2773,13 @@
                     const hlsPlayer = document.getElementById('hls-player');
                     currentTime = hlsPlayer.currentTime;
                     hlsPlayer.currentTime = Math.max(0, currentTime - 10);
+                } else if (soundCloudWidget) {
+                    // SoundCloud player - doesn't support seeking via API
+                    showNotification('Seeking not supported for this platform');
+                    return;
+                } else if (deezerPlayer) {
+                    // Deezer player
+                    DZ.player.seek(Math.max(0, DZ.player.getPosition() - 10000)); // Seek 10 seconds backward
                 }
                 
                 if (isHost && roomRef) {
@@ -2348,13 +3001,50 @@
             }
         }
 
-        function leaveRoom() {
-            if (roomRef && isJoiner) {
-                roomRef.child('joiners').transaction((count) => Math.max(0, (count || 0) - 1));
-                resetAfterRoomDestroy();
-                window.location.href = window.location.pathname;
+       async function leaveRoom() {
+    if (!roomRef || !isJoiner) {
+        console.warn('Cannot leave room: Not a joiner or no room reference');
+        showNotification('You are not in a room');
+        return;
+    }
+
+    try {
+        // Update joiner count transactionally
+        await roomRef.child('joiners').transaction((count) => {
+            return Math.max(0, (count || 0) - 1);
+        }, (error, committed, snapshot) => {
+            if (error) {
+                console.error('Transaction failed:', error);
+                showNotification('Failed to leave room');
+            } else if (!committed) {
+                console.warn('Transaction aborted');
             }
+        });
+
+        // Clean up any joiner-specific Firebase listeners
+        if (roomRef) {
+            roomRef.off(); // Remove all listeners for this room
         }
+
+        // Notify user
+        showNotification('You have left the room');
+
+        // Reset local state
+        await resetAfterRoomDestroy();
+
+        // Navigate to base path without reloading (better for SPA)
+        history.pushState({}, '', window.location.pathname);
+
+        // Reset joiner state
+        isJoiner = false;
+        roomRef = null;
+        roomId = null;
+
+    } catch (error) {
+        console.error('Error leaving room:', error);
+        showNotification('Error leaving room');
+    }
+}
 
         function raiseHand() {
             if (!roomRef) return;
