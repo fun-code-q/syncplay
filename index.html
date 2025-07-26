@@ -301,9 +301,9 @@
             font-size: 1.3rem;
         }
 
-        /* FIXED: Notification positioning and z-index */
+        /* Notification styles */
         .notification {
-            position: fixed;
+            position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
@@ -314,7 +314,7 @@
             border-radius: 8px;
             box-shadow: var(--shadow);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            z-index: 2147483647; /* Max z-index */
+            z-index: 2147483647;
             display: none;
             max-width: 90%;
             text-align: center;
@@ -364,18 +364,7 @@
             flex-shrink: 0;
         }
 
-        /* FIXED: Fullscreen notification positioning */
-        :fullscreen .notification,
-        :-webkit-full-screen .notification,
-        :-moz-full-screen .notification,
-        :-ms-fullscreen .notification {
-            position: fixed !important;
-            top: 50% !important;
-            left: 50% !important;
-            transform: translate(-50%, -50%) !important;
-            z-index: 2147483647 !important;
-        }
-
+        /* Mode indicator styles */
         .mode-indicator {
             position: absolute;
             top: 16px;
@@ -395,6 +384,42 @@
 
         .joiner-indicator {
             background: linear-gradient(45deg, #00c6ff, #0072ff);
+        }
+
+        /* Fullscreen mode indicator */
+        .fullscreen-mode-indicator {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 37%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2147483646;
+            pointer-events: none;
+        }
+
+        .fullscreen-mode-indicator span {
+            background: var(--control-bg);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+
+        /* Fullscreen notification */
+        .fullscreen-notification-container {
+            position: absolute;
+            top: 37%;
+            left: 0;
+            width: 100%;
+            height: 30%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2147483647;
+            pointer-events: none;
         }
 
         .feedback-container {
@@ -524,6 +549,7 @@
             bottom: 0;
         }
 
+        /* Countdown styles */
         .countdown-container {
             position: absolute;
             top: 0;
@@ -553,59 +579,44 @@
             text-shadow: 0 0 20px rgba(255, 138, 0, 0.8);
         }
 
-        .notification.fullscreen-notification {
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            animation: slideInOut 3s ease;
-        }
-
-        @keyframes slideInOut {
-            0% {
-                opacity: 0;
-                transform: translateX(-50%) translateY(-20px);
-            }
-            10% {
-                opacity: 1;
-                transform: translateX(-50%);
-            }
-            90% {
-                opacity: 1;
-                transform: translateX(-50%);
-            }
-            100% {
-                opacity: 0;
-                transform: translateX(-50%) translateY(-20px);
-            }
-        }
-
-        :fullscreen .mode-indicator,
-        :-webkit-full-screen .mode-indicator,
-        :-moz-full-screen .mode-indicator {
+        /* Fullscreen specific styles */
+        :fullscreen .fullscreen-mode-indicator,
+        :-webkit-full-screen .fullscreen-mode-indicator,
+        :-moz-full-screen .fullscreen-mode-indicator {
             position: fixed;
             top: 10px;
-            left: 10px;
-            display: block !important;
+            left: 0;
+            width: 100%;
+            height: auto;
             z-index: 2147483647;
         }
-        
-        /* FIXED: Ensure video container doesn't interfere with notifications */
+
+        :fullscreen .fullscreen-notification-container,
+        :-webkit-full-screen .fullscreen-notification-container,
+        :-moz-full-screen .fullscreen-notification-container {
+            position: fixed;
+            top: 50%;
+            left: 0;
+            width: 100%;
+            height: auto;
+            transform: translateY(-50%);
+            z-index: 2147483647;
+        }
+
         :fullscreen .video-container {
             z-index: 2147483646;
         }
     </style>
 </head>
 <body>
-    <!-- Notification element moved outside container for better z-index control -->
-    <div class="notification" id="notification">
-        <div class="notification-content">
-            <i class="fas fa-check-circle"></i>
-            <span id="notificationText"></span>
-        </div>
-    </div>
-
     <div class="container">
         <div class="mode-indicator" id="modeIndicator"></div>
+        <div class="notification" id="notification">
+            <div class="notification-content">
+                <i class="fas fa-check-circle"></i>
+                <span id="notificationText"></span>
+            </div>
+        </div>
         <div class="countdown-container" id="countdownContainer">
             <div class="countdown" id="countdown">5</div>
         </div>
@@ -614,8 +625,21 @@
             <div class="subtitle">Watch YouTube videos together in real-time</div>
         </header>
         <div class="video-container" id="videoContainer">
-            <div class="click-blocker top"></div>
-            <div class="click-blocker middle"></div>
+            <div class="click-blocker top">
+                <div class="fullscreen-mode-indicator" id="fullscreenModeIndicator" style="display: none;">
+                    <span id="fullscreenModeText"></span>
+                </div>
+            </div>
+            <div class="click-blocker middle">
+                <div class="fullscreen-notification-container" id="fullscreenNotificationContainer" style="display: none;">
+                    <div class="notification fullscreen-notification" id="fullscreenNotification">
+                        <div class="notification-content">
+                            <i class="fas fa-check-circle"></i>
+                            <span id="fullscreenNotificationText"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <div class="click-blocker bottom"></div>
             <div class="feedback-container" id="feedbackContainer">
                 <button class="feedback-btn raise-hand full-button" id="raiseHandBtn" title="Raise Hand">
@@ -720,6 +744,7 @@
         let playerReady = false;
         let lastRoomState = null;
         let playerLoadAttempts = 0;
+        let initializationTimer = null;
 
         const elements = {
             videoUrl: document.getElementById('videoUrl'),
@@ -752,7 +777,12 @@
             raiseHandCount: document.getElementById('raiseHandCount'),
             feedbackContainer: document.getElementById('feedbackContainer'),
             countdownContainer: document.getElementById('countdownContainer'),
-            countdown: document.getElementById('countdown')
+            countdown: document.getElementById('countdown'),
+            fullscreenModeIndicator: document.getElementById('fullscreenModeIndicator'),
+            fullscreenModeText: document.getElementById('fullscreenModeText'),
+            fullscreenNotificationContainer: document.getElementById('fullscreenNotificationContainer'),
+            fullscreenNotification: document.getElementById('fullscreenNotification'),
+            fullscreenNotificationText: document.getElementById('fullscreenNotificationText')
         };
 
         // Debounce utility
@@ -878,8 +908,6 @@
                     lastUpdated: firebase.database.ServerValue.TIMESTAMP
                 });
                 
-                showCountdown();
-                
                 isHost = true;
                 elements.modeIndicator.textContent = 'Host Mode';
                 elements.modeIndicator.className = 'mode-indicator host-indicator';
@@ -887,6 +915,9 @@
                 elements.hostControls.style.display = 'flex';
                 elements.joinerControls.style.display = 'none';
                 elements.feedbackContainer.style.display = 'flex';
+                
+                // Show host initialization countdown
+                showInitializationCountdown();
                 
                 roomRef.child('joiners').on('value', (snapshot) => {
                     const count = snapshot.val() || 0;
@@ -926,17 +957,17 @@
             }
         }
 
-        function showCountdown() {
+        function showInitializationCountdown() {
             elements.countdownContainer.classList.add('show');
             let count = 5;
             elements.countdown.textContent = count;
             
-            const countdownInterval = setInterval(() => {
+            initializationTimer = setInterval(() => {
                 count--;
                 elements.countdown.textContent = count;
                 
                 if (count <= 0) {
-                    clearInterval(countdownInterval);
+                    clearInterval(initializationTimer);
                     elements.countdownContainer.classList.remove('show');
                     
                     const roomLink = `${window.location.origin}${window.location.pathname}?roomId=${roomId}`;
@@ -952,6 +983,10 @@
                 if (syncInterval) {
                     clearInterval(syncInterval);
                     syncInterval = null;
+                }
+                if (initializationTimer) {
+                    clearInterval(initializationTimer);
+                    initializationTimer = null;
                 }
                 if (roomRef && isHost) {
                     roomRef.update({ hostActive: false });
@@ -986,6 +1021,10 @@
                     clearInterval(syncInterval);
                     syncInterval = null;
                 }
+                if (initializationTimer) {
+                    clearInterval(initializationTimer);
+                    initializationTimer = null;
+                }
                 isHost = false;
                 isJoiner = false;
                 roomId = null;
@@ -1006,18 +1045,21 @@
         }
 
         function showNotification(message, duration = 3000, isFullscreen = false) {
-            elements.notificationText.textContent = message;
-            
             if (isFullscreen) {
-                elements.notification.classList.add('fullscreen-notification');
+                elements.fullscreenNotificationText.textContent = message;
+                elements.fullscreenNotificationContainer.style.display = 'flex';
+                elements.fullscreenNotification.classList.add('show');
+                setTimeout(() => {
+                    elements.fullscreenNotification.classList.remove('show');
+                    elements.fullscreenNotificationContainer.style.display = 'none';
+                }, duration);
             } else {
-                elements.notification.classList.remove('fullscreen-notification');
+                elements.notificationText.textContent = message;
+                elements.notification.classList.add('show');
+                setTimeout(() => {
+                    elements.notification.classList.remove('show');
+                }, duration);
             }
-            
-            elements.notification.classList.add('show');
-            setTimeout(() => {
-                elements.notification.classList.remove('show');
-            }, duration);
         }
 
         function applyRoomState(roomData) {
@@ -1061,8 +1103,8 @@
                     elements.joinerControls.style.display = 'flex';
                     elements.feedbackContainer.style.display = 'flex';
                     
-                    // Create player immediately with 5-second countdown
-                    showCountdown();
+                    // Show joiner initialization countdown
+                    showInitializationCountdown();
                     
                     // Store initial room state
                     lastRoomState = roomData;
@@ -1350,10 +1392,15 @@
                     });
                     elements.fullscreenBtn.innerHTML = '<i class="fas fa-compress"></i>';
                     elements.joinerFullscreenBtn.innerHTML = '<i class="fas fa-compress"></i>';
+                    
+                    // Update fullscreen mode indicator
+                    elements.fullscreenModeText.textContent = isHost ? 'Host Mode' : 'Joiner Mode';
+                    elements.fullscreenModeIndicator.style.display = 'flex';
                 } else {
                     document.exitFullscreen();
                     elements.fullscreenBtn.innerHTML = '<i class="fas fa-expand"></i>';
                     elements.joinerFullscreenBtn.innerHTML = '<i class="fas fa-expand"></i>';
+                    elements.fullscreenModeIndicator.style.display = 'none';
                 }
                 showControls();
                 resetControlsTimeout();
@@ -1460,11 +1507,13 @@
                     elements.joinerFullscreenBtn.innerHTML = '<i class="fas fa-compress"></i>';
                     showNotification('Entered fullscreen mode', 2000, true);
                     
-                    // Ensure mode indicator is visible
-                    elements.modeIndicator.style.display = 'block';
+                    // Update fullscreen mode indicator
+                    elements.fullscreenModeText.textContent = isHost ? 'Host Mode' : 'Joiner Mode';
+                    elements.fullscreenModeIndicator.style.display = 'flex';
                 } else {
                     elements.fullscreenBtn.innerHTML = '<i class="fas fa-expand"></i>';
                     elements.joinerFullscreenBtn.innerHTML = '<i class="fas fa-expand"></i>';
+                    elements.fullscreenModeIndicator.style.display = 'none';
                     showNotification('Exited fullscreen mode', 2000, true);
                 }
                 showControls();
