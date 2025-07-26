@@ -18,6 +18,7 @@
             --input-focus: rgba(255, 255, 255, 0.25);
             --shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
             --transition: all 0.3s ease;
+            --modal-bg: rgba(0, 0, 0, 0.85);
         }
 
         * {
@@ -53,6 +54,204 @@
             overflow: hidden;
         }
 
+        /* Modal styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--modal-bg);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal {
+            background: rgba(30, 30, 40, 0.95);
+            border-radius: 16px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+            padding: 24px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            transform: translateY(20px);
+            transition: transform 0.3s ease;
+            position: relative;
+        }
+
+        .modal-overlay.active .modal {
+            transform: translateY(0);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-color);
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .modal-close:hover {
+            color: #e52e71;
+            transform: rotate(90deg);
+        }
+
+        .queue-list {
+            margin-bottom: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .queue-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            margin-bottom: 8px;
+            transition: var(--transition);
+        }
+
+        .queue-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .queue-item-info {
+            flex: 1;
+            text-align: left;
+            margin-right: 10px;
+            overflow: hidden;
+        }
+
+        .queue-item-title {
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .queue-item-url {
+            font-size: 0.8rem;
+            opacity: 0.7;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .queue-item-remove {
+            background: rgba(255, 0, 0, 0.3);
+            border: none;
+            color: var(--text-color);
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .queue-item-remove:hover {
+            background: rgba(255, 0, 0, 0.5);
+            transform: scale(1.1);
+        }
+
+        .queue-empty {
+            padding: 20px;
+            opacity: 0.7;
+            font-style: italic;
+        }
+
+        .queue-form {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .queue-input {
+            flex: 1;
+            padding: 12px 16px;
+            border: none;
+            border-radius: 8px;
+            background: var(--input-bg);
+            color: var(--text-color);
+            outline: none;
+            transition: var(--transition);
+        }
+
+        .queue-input:focus {
+            background: var(--input-focus);
+            box-shadow: 0 0 0 2px rgba(255, 138, 0, 0.3);
+        }
+
+        .queue-input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .queue-submit {
+            padding: 0 20px;
+            background: var(--primary-gradient);
+            border: none;
+            border-radius: 8px;
+            color: var(--text-color);
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .queue-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(229, 46, 113, 0.4);
+        }
+
+        .queue-submit:disabled {
+            background: rgba(255, 255, 255, 0.1);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .queue-limit {
+            font-size: 0.9rem;
+            margin-top: 10px;
+            opacity: 0.7;
+        }
+
+        /* Rest of your existing styles... */
         header {
             margin-bottom: 24px;
         }
@@ -463,6 +662,23 @@
                 height: 32px;
                 font-size: 0.9rem;
             }
+            
+            .modal {
+                width: 95%;
+                padding: 16px;
+            }
+            
+            .queue-item {
+                padding: 10px 12px;
+            }
+            
+            .queue-form {
+                flex-direction: column;
+            }
+            
+            .queue-submit {
+                padding: 12px;
+            }
         }
 
         .click-blocker {
@@ -501,6 +717,23 @@
 </head>
 <body>
     <div class="container">
+        <!-- Queue Management Modal -->
+        <div class="modal-overlay" id="queueModal">
+            <div class="modal">
+                <div class="modal-header">
+                    <h3 class="modal-title">Video Queue</h3>
+                    <button class="modal-close" id="closeQueueModal">&times;</button>
+                </div>
+                <div class="queue-list" id="queueList">
+                    <div class="queue-empty">Queue is empty</div>
+                </div>
+                <div class="queue-form">
+                    <input type="text" class="queue-input" id="queueInput" placeholder="Enter YouTube URL">
+                    <button class="queue-submit" id="queueSubmit">Add</button>
+                </div>
+                <div class="queue-limit">Max 3 videos in queue</div>
+            </div>
+        </div>
        
         <header>
             <h1>Sync Player</h1>
@@ -676,7 +909,13 @@
             joinerFullscreenBtn: document.getElementById('joinerFullscreenBtn'),
             raiseHandBtn: document.getElementById('raiseHandBtn'),
             raiseHandCount: document.getElementById('raiseHandCount'),
-            feedbackContainer: document.getElementById('feedbackContainer')
+            feedbackContainer: document.getElementById('feedbackContainer'),
+            // New modal elements
+            queueModal: document.getElementById('queueModal'),
+            closeQueueModal: document.getElementById('closeQueueModal'),
+            queueList: document.getElementById('queueList'),
+            queueInput: document.getElementById('queueInput'),
+            queueSubmit: document.getElementById('queueSubmit')
         };
 
         // Debounce utility
@@ -844,6 +1083,7 @@
                 roomRef.child('nextVideos').on('value', (snapshot) => {
                     nextVideos = snapshot.val() || [];
                     updateBadge();
+                    updateQueueList();
                 });
                 
                 roomRef.child('raiseHands').on('value', (snapshot) => {
@@ -927,6 +1167,7 @@
                 elements.inputGroup.style.display = 'flex';
                 nextVideos = [];
                 updateBadge();
+                updateQueueList();
                 if (player && player.pauseVideo) {
                     player.pauseVideo();
                 }
@@ -1008,6 +1249,7 @@
                         }
                         nextVideos = roomData.nextVideos || [];
                         updateBadge();
+                        updateQueueList();
                         
                         // Apply room state to player
                         if (!applyRoomState(roomData)) {
@@ -1096,6 +1338,7 @@
                         }
                         currentVideoIndex++;
                         updateBadge();
+                        updateQueueList();
                     }
                 }
             } catch (error) {
@@ -1195,61 +1438,130 @@
             }
         }
 
-        function manageQueue() {
+        function updateQueueList() {
+            elements.queueList.innerHTML = '';
+            
+            if (nextVideos.length === 0) {
+                elements.queueList.innerHTML = '<div class="queue-empty">Queue is empty</div>';
+                return;
+            }
+            
+            nextVideos.forEach((videoId, index) => {
+                const item = document.createElement('div');
+                item.className = 'queue-item';
+                
+                const info = document.createElement('div');
+                info.className = 'queue-item-info';
+                
+                const title = document.createElement('div');
+                title.className = 'queue-item-title';
+                title.textContent = `Video ${index + 1}`;
+                
+                const url = document.createElement('div');
+                url.className = 'queue-item-url';
+                url.textContent = `https://youtu.be/${videoId}`;
+                
+                info.appendChild(title);
+                info.appendChild(url);
+                
+                const removeBtn = document.createElement('button');
+                removeBtn.className = 'queue-item-remove';
+                removeBtn.innerHTML = '<i class="fas fa-trash"></i>';
+                removeBtn.title = 'Remove from queue';
+                removeBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    removeFromQueue(index);
+                });
+                
+                item.appendChild(info);
+                item.appendChild(removeBtn);
+                
+                elements.queueList.appendChild(item);
+            });
+        }
+
+        function removeFromQueue(index) {
+            if (index < 0 || index >= nextVideos.length) return;
+            
+            nextVideos.splice(index, 1);
+            
+            if (isHost && roomRef) {
+                roomRef.update({ nextVideos });
+            } else if (isJoiner && roomRef) {
+                roomRef.child('nextVideos').transaction((queue) => {
+                    const newQueue = queue || [];
+                    if (index >= 0 && index < newQueue.length) {
+                        newQueue.splice(index, 1);
+                        return newQueue;
+                    }
+                    return queue;
+                });
+            }
+            
+            updateBadge();
+            updateQueueList();
+            showNotification('Video removed from queue');
+        }
+
+        function addToQueue(videoId) {
+            if (!videoId) return;
+            
             if (isJoiner && nextVideos.length >= 3) {
                 showNotification('Queue is full (max 3 videos)');
                 return;
             }
             
-            try {
-                const action = isJoiner ? 'add' : (nextVideos.length < 3 ? 'add' : 'remove');
-                let promptText = action === 'add' ? 'Enter YouTube URL for next video:' : `Queue full. Remove video at index (0-${nextVideos.length - 1}):`;
-                
-                if (action === 'add') {
-                    const input = prompt(promptText);
-                    if (!input) return;
-                    
-                    const nextVideoId = extractVideoId(input);
-                    if (nextVideoId) {
-                        if (isJoiner) {
-                            roomRef.child('nextVideos').transaction((queue) => {
-                                const newQueue = queue || [];
-                                if (newQueue.length < 3) {
-                                    newQueue.push(nextVideoId);
-                                    return newQueue;
-                                }
-                                return queue;
-                            });
-                            showNotification('Video added to queue');
-                        } else {
-                            nextVideos.push(nextVideoId);
-                            if (roomRef) {
-                                roomRef.update({ nextVideos });
-                            }
-                            showNotification(`Added video. Queue: ${nextVideos.length}`);
-                        }
-                    } else {
-                        showNotification('Invalid YouTube URL');
+            if (isHost) {
+                if (nextVideos.length < 3) {
+                    nextVideos.push(videoId);
+                    if (roomRef) {
+                        roomRef.update({ nextVideos });
                     }
+                    showNotification('Video added to queue');
+                    updateBadge();
+                    updateQueueList();
                 } else {
-                    const index = parseInt(prompt(promptText));
-                    if (index >= 0 && index < nextVideos.length) {
-                        nextVideos.splice(index, 1);
-                        if (roomRef) {
-                            roomRef.update({ nextVideos });
-                        }
-                        showNotification(`Removed video. Queue: ${nextVideos.length}`);
-                    } else {
-                        showNotification('Invalid index');
-                    }
+                    showNotification('Queue is full (max 3 videos)');
                 }
-                updateBadge();
-                showControls();
-                resetControlsTimeout();
-            } catch (error) {
-                console.error('Error managing queue:', error);
-                showNotification('Failed to manage queue');
+            } else if (isJoiner && roomRef) {
+                roomRef.child('nextVideos').transaction((queue) => {
+                    const newQueue = queue || [];
+                    if (newQueue.length < 3) {
+                        newQueue.push(videoId);
+                        return newQueue;
+                    }
+                    return queue;
+                });
+                showNotification('Video added to queue');
             }
+        }
+
+        function openQueueModal() {
+            elements.queueModal.classList.add('active');
+            elements.queueInput.value = '';
+            elements.queueInput.focus();
+            showControls();
+            resetControlsTimeout();
+        }
+
+        function closeQueueModal() {
+            elements.queueModal.classList.remove('active');
+            showControls();
+            resetControlsTimeout();
+        }
+
+        function handleQueueSubmit() {
+            const videoId = extractVideoId(elements.queueInput.value);
+            if (videoId) {
+                addToQueue(videoId);
+                elements.queueInput.value = '';
+            } else {
+                showNotification('Invalid YouTube URL');
+            }
+        }
+
+        function manageQueue() {
+            openQueueModal();
         }
 
         function updateBadge() {
@@ -1354,6 +1666,7 @@
             elements.qualityBtn.addEventListener('click', toggleQuality);
             elements.subtitleBtn.addEventListener('click', toggleSubtitle);
             elements.nextVideoBtn.addEventListener('click', manageQueue);
+            elements.joinerNextVideoBtn.addEventListener('click', manageQueue);
             elements.fullscreenBtn.addEventListener('click', toggleFullscreen);
             elements.copyRoomLink.addEventListener('click', copyRoomLink);
             elements.destroyRoomBtn.addEventListener('click', destroyRoom);
@@ -1364,7 +1677,6 @@
             elements.videoContainer.addEventListener('touchstart', handleInteraction, { passive: true });
             
             // Joiner controls
-            elements.joinerNextVideoBtn.addEventListener('click', manageQueue);
             elements.joinerQualityBtn.addEventListener('click', toggleQuality);
             elements.joinerSubtitleBtn.addEventListener('click', toggleSubtitle);
             elements.leaveRoomBtn.addEventListener('click', leaveRoom);
@@ -1372,6 +1684,18 @@
             
             // Raise hand button
             elements.raiseHandBtn.addEventListener('click', raiseHand);
+            
+            // Queue modal controls
+            elements.closeQueueModal.addEventListener('click', closeQueueModal);
+            elements.queueSubmit.addEventListener('click', handleQueueSubmit);
+            elements.queueInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') handleQueueSubmit();
+            });
+            elements.queueModal.addEventListener('click', (e) => {
+                if (e.target === elements.queueModal) {
+                    closeQueueModal();
+                }
+            });
             
             resetControlsTimeout();
 
