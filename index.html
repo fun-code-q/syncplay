@@ -518,12 +518,6 @@
 <body>
     <div class="container">
         <div class="mode-indicator" id="modeIndicator"></div>
-        <div class="notification" id="notification">
-            <div class="notification-content">
-                <i class="fas fa-check-circle"></i>
-                <span id="notificationText"></span>
-            </div>
-        </div>
         <header>
             <h1>Sync Player</h1>
             <div class="subtitle">Watch YouTube videos together in real-time</div>
@@ -577,6 +571,12 @@
                 </div>
             </div>
             <div id="player"></div>
+            <div class="notification" id="notification">
+                <div class="notification-content">
+                    <i class="fas fa-check-circle"></i>
+                    <span id="notificationText"></span>
+                </div>
+            </div>
         </div>
         <div class="input-group" id="inputGroup">
             <div class="input-container">
@@ -827,13 +827,9 @@
                 
                 roomRef.child('raiseHands').on('value', (snapshot) => {
                     raiseHandCount = snapshot.val() || 0;
-                    if (isHost) {
-                        // Host sees joiner raise hand notifications
-                        if (raiseHandCount > 0) {
-                            const message = isPlaying ? 'STOP' : 'CONTINUE';
-                            showNotification(message, 3000);
-                            playBeep();
-                        }
+                    if (isHost && raiseHandCount > 0) {
+                        const message = isPlaying ? 'STOP' : 'CONTINUE';
+                        showNotification(message, 3000);
                     }
                 });
                 
@@ -917,6 +913,7 @@
         function showNotification(message, duration = 3000) {
             elements.notificationText.textContent = message;
             elements.notification.classList.add('show');
+            playBeep();
             setTimeout(() => {
                 elements.notification.classList.remove('show');
             }, duration);
@@ -997,9 +994,7 @@
                     roomRef.child('raiseHands').on('value', (snapshot) => {
                         raiseHandCount = snapshot.val() || 0;
                         if (isJoiner && raiseHandCount > 0) {
-                            // Joiner sees host response
                             showNotification('YES', 3000);
-                            playBeep();
                         }
                     });
                     
@@ -1293,9 +1288,7 @@
             try {
                 roomRef.child('raiseHands').transaction((count) => (count || 0) + 1);
                 if (isHost) {
-                    // Host sends "YES" to all joiners
                     showNotification('YES', 3000);
-                    playBeep();
                 }
             } catch (error) {
                 console.error('Error raising hand:', error);
@@ -1303,7 +1296,7 @@
             }
         }
 
-       function showControls() {
+        function showControls() {
             elements.controlsContainer.style.opacity = '1';
             elements.controlsContainer.style.pointerEvents = 'auto';
         }
