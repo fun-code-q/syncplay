@@ -303,7 +303,7 @@
 
         /* Notification styles */
         .notification {
-            position: absolute;
+            position: fixed;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
@@ -350,7 +350,8 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            font-size: 0.9rem;
+            font-size: 1.5rem;
+            font-weight: bold;
             color: var(--text-color);
             max-width: 100%;
             overflow: hidden;
@@ -360,7 +361,7 @@
 
         .notification i {
             color: #4ade80;
-            font-size: 1.1rem;
+            font-size: 1.5rem;
             flex-shrink: 0;
         }
 
@@ -384,42 +385,6 @@
 
         .joiner-indicator {
             background: linear-gradient(45deg, #00c6ff, #0072ff);
-        }
-
-        /* Fullscreen mode indicator */
-        .fullscreen-mode-indicator {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 37%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 2147483646;
-            pointer-events: none;
-        }
-
-        .fullscreen-mode-indicator span {
-            background: var(--control-bg);
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-weight: 600;
-            font-size: 0.85rem;
-        }
-
-        /* Fullscreen notification */
-        .fullscreen-notification-container {
-            position: absolute;
-            top: 37%;
-            left: 0;
-            width: 100%;
-            height: 30%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 2147483647;
-            pointer-events: none;
         }
 
         .feedback-container {
@@ -452,22 +417,6 @@
 
         .feedback-btn.raise-hand {
             color: #4ade80;
-        }
-
-        .feedback-count {
-            position: absolute;
-            bottom: -8px;
-            right: -8px;
-            background: rgba(255, 255, 255, 0.9);
-            color: #1a2a6c;
-            border-radius: 50%;
-            width: 18px;
-            height: 18px;
-            font-size: 0.7rem;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-weight: bold;
         }
 
         @media (max-width: 768px) {
@@ -549,58 +498,16 @@
             bottom: 0;
         }
 
-        /* Countdown styles */
-        .countdown-container {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 20;
-            border-radius: 12px;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.3s ease;
-        }
-
-        .countdown-container.show {
-            opacity: 1;
-            pointer-events: auto;
-        }
-
-        .countdown {
-            font-size: 6rem;
-            font-weight: bold;
-            color: white;
-            text-shadow: 0 0 20px rgba(255, 138, 0, 0.8);
-        }
-
         /* Fullscreen specific styles */
-        :fullscreen .fullscreen-mode-indicator,
-        :-webkit-full-screen .fullscreen-mode-indicator,
-        :-moz-full-screen .fullscreen-mode-indicator {
-            position: fixed;
-            top: 10px;
-            left: 0;
-            width: 100%;
-            height: auto;
-            z-index: 2147483647;
-        }
-
-        :fullscreen .fullscreen-notification-container,
-        :-webkit-full-screen .fullscreen-notification-container,
-        :-moz-full-screen .fullscreen-notification-container {
-            position: fixed;
-            top: 50%;
-            left: 0;
-            width: 100%;
-            height: auto;
-            transform: translateY(-50%);
-            z-index: 2147483647;
+        :fullscreen .notification,
+        :-webkit-full-screen .notification,
+        :-moz-full-screen .notification,
+        :-ms-fullscreen .notification {
+            position: fixed !important;
+            top: 50% !important;
+            left: 50% !important;
+            transform: translate(-50%, -50%) !important;
+            z-index: 2147483647 !important;
         }
 
         :fullscreen .video-container {
@@ -617,34 +524,17 @@
                 <span id="notificationText"></span>
             </div>
         </div>
-        <div class="countdown-container" id="countdownContainer">
-            <div class="countdown" id="countdown">5</div>
-        </div>
         <header>
             <h1>Sync Player</h1>
             <div class="subtitle">Watch YouTube videos together in real-time</div>
         </header>
         <div class="video-container" id="videoContainer">
-            <div class="click-blocker top">
-                <div class="fullscreen-mode-indicator" id="fullscreenModeIndicator" style="display: none;">
-                    <span id="fullscreenModeText"></span>
-                </div>
-            </div>
-            <div class="click-blocker middle">
-                <div class="fullscreen-notification-container" id="fullscreenNotificationContainer" style="display: none;">
-                    <div class="notification fullscreen-notification" id="fullscreenNotification">
-                        <div class="notification-content">
-                            <i class="fas fa-check-circle"></i>
-                            <span id="fullscreenNotificationText"></span>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <div class="click-blocker top"></div>
+            <div class="click-blocker middle"></div>
             <div class="click-blocker bottom"></div>
             <div class="feedback-container" id="feedbackContainer">
                 <button class="feedback-btn raise-hand full-button" id="raiseHandBtn" title="Raise Hand">
                     <i class="fas fa-hand-paper"></i>
-                    <span class="feedback-count" id="raiseHandCount">0</span>
                 </button>
             </div>
             <div class="controls-container" id="controlsContainer">
@@ -744,7 +634,6 @@
         let playerReady = false;
         let lastRoomState = null;
         let playerLoadAttempts = 0;
-        let initializationTimer = null;
 
         const elements = {
             videoUrl: document.getElementById('videoUrl'),
@@ -775,14 +664,7 @@
             joinerFullscreenBtn: document.getElementById('joinerFullscreenBtn'),
             raiseHandBtn: document.getElementById('raiseHandBtn'),
             raiseHandCount: document.getElementById('raiseHandCount'),
-            feedbackContainer: document.getElementById('feedbackContainer'),
-            countdownContainer: document.getElementById('countdownContainer'),
-            countdown: document.getElementById('countdown'),
-            fullscreenModeIndicator: document.getElementById('fullscreenModeIndicator'),
-            fullscreenModeText: document.getElementById('fullscreenModeText'),
-            fullscreenNotificationContainer: document.getElementById('fullscreenNotificationContainer'),
-            fullscreenNotification: document.getElementById('fullscreenNotification'),
-            fullscreenNotificationText: document.getElementById('fullscreenNotificationText')
+            feedbackContainer: document.getElementById('feedbackContainer')
         };
 
         // Debounce utility
@@ -793,6 +675,13 @@
                 timeout = setTimeout(() => func.apply(this, args), wait);
             };
         };
+
+        // Play beep sound
+        function playBeep() {
+            const beep = new Audio('data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU...');
+            beep.volume = 0.2;
+            beep.play().catch(e => console.log('Audio play failed:', e));
+        }
 
         window.onYouTubeIframeAPIReady = () => {
             apiReady = true;
@@ -916,8 +805,11 @@
                 elements.joinerControls.style.display = 'none';
                 elements.feedbackContainer.style.display = 'flex';
                 
-                // Show host initialization countdown
-                showInitializationCountdown();
+                // Show copy and destroy buttons immediately
+                const roomLink = `${window.location.origin}${window.location.pathname}?roomId=${roomId}`;
+                elements.copyRoomLink.style.display = 'flex';
+                elements.copyRoomLink.setAttribute('data-link', roomLink);
+                elements.destroyRoomBtn.style.display = 'flex';
                 
                 roomRef.child('joiners').on('value', (snapshot) => {
                     const count = snapshot.val() || 0;
@@ -935,7 +827,14 @@
                 
                 roomRef.child('raiseHands').on('value', (snapshot) => {
                     raiseHandCount = snapshot.val() || 0;
-                    elements.raiseHandCount.textContent = raiseHandCount;
+                    if (isHost) {
+                        // Host sees joiner raise hand notifications
+                        if (raiseHandCount > 0) {
+                            const message = isPlaying ? 'STOP' : 'CONTINUE';
+                            showNotification(message, 3000);
+                            playBeep();
+                        }
+                    }
                 });
                 
                 syncInterval = setInterval(() => {
@@ -957,36 +856,11 @@
             }
         }
 
-        function showInitializationCountdown() {
-            elements.countdownContainer.classList.add('show');
-            let count = 5;
-            elements.countdown.textContent = count;
-            
-            initializationTimer = setInterval(() => {
-                count--;
-                elements.countdown.textContent = count;
-                
-                if (count <= 0) {
-                    clearInterval(initializationTimer);
-                    elements.countdownContainer.classList.remove('show');
-                    
-                    const roomLink = `${window.location.origin}${window.location.pathname}?roomId=${roomId}`;
-                    elements.copyRoomLink.style.display = 'flex';
-                    elements.copyRoomLink.setAttribute('data-link', roomLink);
-                    elements.destroyRoomBtn.style.display = 'flex';
-                }
-            }, 1000);
-        }
-
         function cleanupRoom() {
             try {
                 if (syncInterval) {
                     clearInterval(syncInterval);
                     syncInterval = null;
-                }
-                if (initializationTimer) {
-                    clearInterval(initializationTimer);
-                    initializationTimer = null;
                 }
                 if (roomRef && isHost) {
                     roomRef.update({ hostActive: false });
@@ -1021,10 +895,6 @@
                     clearInterval(syncInterval);
                     syncInterval = null;
                 }
-                if (initializationTimer) {
-                    clearInterval(initializationTimer);
-                    initializationTimer = null;
-                }
                 isHost = false;
                 isJoiner = false;
                 roomId = null;
@@ -1044,22 +914,12 @@
             }
         }
 
-        function showNotification(message, duration = 3000, isFullscreen = false) {
-            if (isFullscreen) {
-                elements.fullscreenNotificationText.textContent = message;
-                elements.fullscreenNotificationContainer.style.display = 'flex';
-                elements.fullscreenNotification.classList.add('show');
-                setTimeout(() => {
-                    elements.fullscreenNotification.classList.remove('show');
-                    elements.fullscreenNotificationContainer.style.display = 'none';
-                }, duration);
-            } else {
-                elements.notificationText.textContent = message;
-                elements.notification.classList.add('show');
-                setTimeout(() => {
-                    elements.notification.classList.remove('show');
-                }, duration);
-            }
+        function showNotification(message, duration = 3000) {
+            elements.notificationText.textContent = message;
+            elements.notification.classList.add('show');
+            setTimeout(() => {
+                elements.notification.classList.remove('show');
+            }, duration);
         }
 
         function applyRoomState(roomData) {
@@ -1103,9 +963,6 @@
                     elements.joinerControls.style.display = 'flex';
                     elements.feedbackContainer.style.display = 'flex';
                     
-                    // Show joiner initialization countdown
-                    showInitializationCountdown();
-                    
                     // Store initial room state
                     lastRoomState = roomData;
                     
@@ -1139,7 +996,11 @@
                     roomRef.child('joiners').transaction((count) => (count || 0) + 1);
                     roomRef.child('raiseHands').on('value', (snapshot) => {
                         raiseHandCount = snapshot.val() || 0;
-                        elements.raiseHandCount.textContent = raiseHandCount;
+                        if (isJoiner && raiseHandCount > 0) {
+                            // Joiner sees host response
+                            showNotification('YES', 3000);
+                            playBeep();
+                        }
                     });
                     
                     window.addEventListener('beforeunload', () => {
@@ -1392,15 +1253,10 @@
                     });
                     elements.fullscreenBtn.innerHTML = '<i class="fas fa-compress"></i>';
                     elements.joinerFullscreenBtn.innerHTML = '<i class="fas fa-compress"></i>';
-                    
-                    // Update fullscreen mode indicator
-                    elements.fullscreenModeText.textContent = isHost ? 'Host Mode' : 'Joiner Mode';
-                    elements.fullscreenModeIndicator.style.display = 'flex';
                 } else {
                     document.exitFullscreen();
                     elements.fullscreenBtn.innerHTML = '<i class="fas fa-expand"></i>';
                     elements.joinerFullscreenBtn.innerHTML = '<i class="fas fa-expand"></i>';
-                    elements.fullscreenModeIndicator.style.display = 'none';
                 }
                 showControls();
                 resetControlsTimeout();
@@ -1436,7 +1292,11 @@
             
             try {
                 roomRef.child('raiseHands').transaction((count) => (count || 0) + 1);
-                showNotification('Raised hand!');
+                if (isHost) {
+                    // Host sends "YES" to all joiners
+                    showNotification('YES', 3000);
+                    playBeep();
+                }
             } catch (error) {
                 console.error('Error raising hand:', error);
                 showNotification('Failed to raise hand');
@@ -1505,16 +1365,11 @@
                 if (document.fullscreenElement) {
                     elements.fullscreenBtn.innerHTML = '<i class="fas fa-compress"></i>';
                     elements.joinerFullscreenBtn.innerHTML = '<i class="fas fa-compress"></i>';
-                    showNotification('Entered fullscreen mode', 2000, true);
-                    
-                    // Update fullscreen mode indicator
-                    elements.fullscreenModeText.textContent = isHost ? 'Host Mode' : 'Joiner Mode';
-                    elements.fullscreenModeIndicator.style.display = 'flex';
+                    showNotification('Entered fullscreen mode', 2000);
                 } else {
                     elements.fullscreenBtn.innerHTML = '<i class="fas fa-expand"></i>';
                     elements.joinerFullscreenBtn.innerHTML = '<i class="fas fa-expand"></i>';
-                    elements.fullscreenModeIndicator.style.display = 'none';
-                    showNotification('Exited fullscreen mode', 2000, true);
+                    showNotification('Exited fullscreen mode', 2000);
                 }
                 showControls();
                 resetControlsTimeout();
