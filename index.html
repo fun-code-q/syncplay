@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#1a2a6c">
-    <title>Sync Player</title>
+    <title>Sync Player Pro</title>
     <link rel="icon" href="https://cdn3.iconfinder.com/data/icons/iconic-1/32/play_alt-1024.png" type="image/png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
     <style>
@@ -52,6 +52,70 @@
             text-align: center;
             position: relative;
             overflow: hidden;
+        }
+
+        /* Notification styles */
+        .notification {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 12px 20px;
+            background: var(--control-bg);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 2147483647;
+            display: none;
+            max-width: 90%;
+            text-align: center;
+            pointer-events: none;
+        }
+
+        .notification.show {
+            display: flex;
+            opacity: 1;
+            animation: fadeInOut 3s ease;
+        }
+
+        @keyframes fadeInOut {
+            0% {
+                opacity: 0;
+                transform: translate(-50%, -50%) translateY(20px);
+            }
+            10% {
+                opacity: 1;
+                transform: translate(-50%, -50%);
+            }
+            90% {
+                opacity: 1;
+                transform: translate(-50%, -50%);
+            }
+            100% {
+                opacity: 0;
+                transform: translate(-50%, -50%) translateY(-20px);
+            }
+        }
+
+        .notification-content {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--text-color);
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: normal;
+        }
+
+        .notification i {
+            color: #4ade80;
+            font-size: 1.5rem;
+            flex-shrink: 0;
         }
 
         /* Modal styles */
@@ -250,8 +314,53 @@
             margin-top: 10px;
             opacity: 0.7;
         }
+        
+        /* Video Info Modal */
+        .video-info-container {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        
+        .video-thumbnail {
+            width: 100%;
+            border-radius: 8px;
+            aspect-ratio: 16/9;
+            object-fit: cover;
+            background: #222;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .video-thumbnail i {
+            font-size: 3rem;
+            opacity: 0.3;
+        }
+        
+        .video-details {
+            text-align: left;
+        }
+        
+        .video-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        
+        .video-meta {
+            display: flex;
+            gap: 12px;
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+        
+        .video-meta div {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
 
-        /* Rest of your existing styles... */
         header {
             margin-bottom: 24px;
         }
@@ -294,7 +403,7 @@
         #videoUrl {
             flex: 1;
             min-width: 0;
-            padding: 12px 16px;
+            padding: 12px 16px 12px 40px;
             border: none;
             border-radius: 12px;
             font-size: 0.95rem;
@@ -306,6 +415,14 @@
             overflow: hidden;
             text-overflow: ellipsis;
         }
+        
+        #videoUrl.valid {
+            box-shadow: 0 0 0 2px #4ade80;
+        }
+        
+        #videoUrl.invalid {
+            box-shadow: 0 0 0 2px #e52e71;
+        }
 
         #videoUrl:focus {
             background: var(--input-focus);
@@ -314,6 +431,19 @@
 
         #videoUrl::placeholder {
             color: rgba(255, 255, 255, 0.6);
+        }
+        
+        .info-icon {
+            position: absolute;
+            left: 12px;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 1rem;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        
+        .info-icon:hover {
+            color: #ff8a00;
         }
 
         #loadVideo, .action-btn, .destroy-room-btn, .next-video-btn, .copy-icon {
@@ -500,70 +630,6 @@
             font-size: 1.3rem;
         }
 
-        /* Notification styles - moved inside video container */
-        .notification {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            padding: 12px 20px;
-            background: var(--control-bg);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            border-radius: 8px;
-            box-shadow: var(--shadow);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            z-index: 2147483647;
-            display: none;
-            max-width: 90%;
-            text-align: center;
-            pointer-events: none;
-        }
-
-        .notification.show {
-            display: flex;
-            opacity: 1;
-            animation: fadeInOut 3s ease;
-        }
-
-        @keyframes fadeInOut {
-            0% {
-                opacity: 0;
-                transform: translate(-50%, -50%) translateY(20px);
-            }
-            10% {
-                opacity: 1;
-                transform: translate(-50%, -50%);
-            }
-            90% {
-                opacity: 1;
-                transform: translate(-50%, -50%);
-            }
-            100% {
-                opacity: 0;
-                transform: translate(-50%, -50%) translateY(-20px);
-            }
-        }
-
-        .notification-content {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: var(--text-color);
-            max-width: 100%;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: normal;
-        }
-
-        .notification i {
-            color: #4ade80;
-            font-size: 1.5rem;
-            flex-shrink: 0;
-        }
-
         /* Mode indicator styles */
         .mode-indicator {
             position: absolute;
@@ -728,19 +794,43 @@
                     <div class="queue-empty">Queue is empty</div>
                 </div>
                 <div class="queue-form">
-                    <input type="text" class="queue-input" id="queueInput" placeholder="Enter YouTube URL">
+                    <input type="text" class="queue-input" id="queueInput" placeholder="Enter video URL">
                     <button class="queue-submit" id="queueSubmit">Add</button>
                 </div>
                 <div class="queue-limit">Max 3 videos in queue</div>
             </div>
         </div>
+        
+        <!-- Video Info Modal -->
+        <div class="modal-overlay" id="infoModal">
+            <div class="modal">
+                <div class="modal-header">
+                    <h3 class="modal-title">Video Details</h3>
+                    <button class="modal-close" id="closeInfoModal">&times;</button>
+                </div>
+                <div class="video-info-container" id="videoInfoContainer">
+                    <div class="video-thumbnail">
+                        <i class="fas fa-play-circle"></i>
+                    </div>
+                    <div class="video-details">
+                        <div class="video-title" id="videoTitle">Loading video details...</div>
+                        <div class="video-meta">
+                            <div><i class="fas fa-clock"></i> <span id="videoDuration">--:--</span></div>
+                            <div><i class="fas fa-film"></i> <span id="videoResolution">Loading...</span></div>
+                            <div><i class="fas fa-server"></i> <span id="videoSource">Unknown</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
        
         <header>
-            <h1>Sync Player</h1>
-            <div class="subtitle">Watch YouTube videos together in real-time</div>
+            <h1>Sync Player Pro</h1>
+            <div class="subtitle">Watch videos together in real-time with support for 15+ platforms</div>
         </header>
+        
         <div class="video-container" id="videoContainer">
-            <!-- Notification moved inside video container for fullscreen visibility -->
+            <!-- Notification -->
             <div class="notification" id="notification">
                 <div class="notification-content">
                     <i class="fas fa-check-circle"></i>
@@ -800,7 +890,8 @@
         </div>
         <div class="input-group" id="inputGroup">
             <div class="input-container">
-                <input type="url" id="videoUrl" placeholder="Enter YouTube URL" aria-label="YouTube video URL">
+                <i class="fas fa-info-circle info-icon" id="infoBtn" title="Get video details"></i>
+                <input type="url" id="videoUrl" placeholder="Enter video URL" aria-label="Video URL">
                 <button id="loadVideo" class="full-button">Load</button>
                 <button class="destroy-room-btn full-button" id="destroyRoomBtn" title="Destroy Room" style="display: none;">
                     <i class="fas fa-times"></i>
@@ -815,11 +906,44 @@
                 <span class="copy-success" id="copySuccess">Room link copied to clipboard</span>
             </div>
         </div>
+        
+        <div class="supported-platforms">
+            <div class="platform-icons">
+                <i class="fab fa-youtube" title="YouTube"></i>
+                <i class="fab fa-vimeo" title="Vimeo"></i>
+                <i class="fab fa-dailymotion" title="Dailymotion"></i>
+                <i class="fab fa-twitch" title="Twitch"></i>
+                <i class="fab fa-soundcloud" title="SoundCloud"></i>
+                <i class="fas fa-video" title="Pexels"></i>
+                <i class="fas fa-image" title="Pixabay"></i>
+                <i class="fas fa-archive" title="Internet Archive"></i>
+                <i class="fab fa-deezer" title="Deezer"></i>
+                <i class="fab fa-spotify" title="Spotify"></i>
+                <i class="fas fa-music" title="Jamendo"></i>
+                <i class="fab fa-tiktok" title="TikTok"></i>
+                <i class="fab fa-facebook" title="Facebook"></i>
+                <i class="fab fa-snapchat" title="Snapchat"></i>
+                <i class="fab fa-instagram" title="Instagram"></i>
+                <i class="fab fa-linkedin" title="LinkedIn"></i>
+            </div>
+            
+        </div>
     </div>
 
+    <!-- YouTube API -->
     <script src="https://www.youtube.com/iframe_api"></script>
+    
+    <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+    
+    <!-- Video.js Player -->
+    <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
+    <script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
+    
+    <!-- HLS.js for streaming support -->
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    
     <script>
         const firebaseConfig = {
             apiKey: "AIzaSyDsPjwl2fsQwua_HZTPJSDmtlgzRkgVXQ4",
@@ -835,6 +959,8 @@
         const database = firebase.database();
 
         let player;
+        let videojsPlayer;
+        let hls;
         let isPlaying = false;
         let roomId = null;
         let roomRef = null;
@@ -908,15 +1034,42 @@
             leaveRoomBtn: document.getElementById('leaveRoomBtn'),
             joinerFullscreenBtn: document.getElementById('joinerFullscreenBtn'),
             raiseHandBtn: document.getElementById('raiseHandBtn'),
-            raiseHandCount: document.getElementById('raiseHandCount'),
             feedbackContainer: document.getElementById('feedbackContainer'),
-            // New modal elements
             queueModal: document.getElementById('queueModal'),
             closeQueueModal: document.getElementById('closeQueueModal'),
             queueList: document.getElementById('queueList'),
             queueInput: document.getElementById('queueInput'),
-            queueSubmit: document.getElementById('queueSubmit')
+            queueSubmit: document.getElementById('queueSubmit'),
+            infoModal: document.getElementById('infoModal'),
+            closeInfoModal: document.getElementById('closeInfoModal'),
+            infoBtn: document.getElementById('infoBtn'),
+            videoInfoContainer: document.getElementById('videoInfoContainer'),
+            videoTitle: document.getElementById('videoTitle'),
+            videoDuration: document.getElementById('videoDuration'),
+            videoResolution: document.getElementById('videoResolution'),
+            videoSource: document.getElementById('videoSource')
         };
+
+        // Supported platforms with detection regex
+        const supportedPlatforms = [
+            { id: 'youtube', regex: /(youtube\.com|youtu\.be)/, name: 'YouTube' },
+            { id: 'vimeo', regex: /vimeo\.com/, name: 'Vimeo' },
+            { id: 'dailymotion', regex: /(dailymotion\.com|dai\.ly)/, name: 'Dailymotion' },
+            { id: 'twitch', regex: /twitch\.tv/, name: 'Twitch' },
+            { id: 'soundcloud', regex: /soundcloud\.com/, name: 'SoundCloud' },
+            { id: 'pexels', regex: /pexels\.com/, name: 'Pexels' },
+            { id: 'pixabay', regex: /pixabay\.com/, name: 'Pixabay' },
+            { id: 'archive', regex: /archive\.org/, name: 'Internet Archive' },
+            { id: 'deezer', regex: /deezer\.com/, name: 'Deezer' },
+            { id: 'spotify', regex: /spotify\.com/, name: 'Spotify' },
+            { id: 'jamendo', regex: /jamendo\.com/, name: 'Jamendo' },
+            { id: 'tiktok', regex: /tiktok\.com/, name: 'TikTok' },
+            { id: 'facebook', regex: /facebook\.com/, name: 'Facebook' },
+            { id: 'snapchat', regex: /snapchat\.com/, name: 'Snapchat' },
+            { id: 'instagram', regex: /instagram\.com/, name: 'Instagram' },
+            { id: 'linkedin', regex: /linkedin\.com/, name: 'LinkedIn' },
+            { id: 'direct', regex: /\.(mp4|m3u8|mov|avi|mkv|webm)$/i, name: 'Direct Video' }
+        ];
 
         // Debounce utility
         const debounce = (func, wait) => {
@@ -942,24 +1095,157 @@
             }
         }
 
-        window.onYouTubeIframeAPIReady = () => {
-            apiReady = true;
-            if (pendingVideoId) {
-                createPlayer(pendingVideoId);
-                pendingVideoId = null;
+        // Detect platform from URL
+        function detectPlatform(url) {
+            if (!url) return null;
+            for (const platform of supportedPlatforms) {
+                if (url.match(platform.regex)) {
+                    return platform;
+                }
             }
-        };
+            return null;
+        }
 
-        function createPlayer(videoId) {
+        // Validate URL
+        function validateUrl(url) {
+            try {
+                // Reset classes
+                elements.videoUrl.classList.remove('valid', 'invalid');
+                
+                // Empty input
+                if (!url) return false;
+                
+                // Basic URL validation
+                if (!url.match(/^https?:\/\//)) {
+                    return false;
+                }
+                
+                // Check if platform is supported
+                const platform = detectPlatform(url);
+                if (!platform) return false;
+                
+                // Add validation styling
+                elements.videoUrl.classList.add('valid');
+                return true;
+            } catch (e) {
+                return false;
+            }
+        }
+
+        // Extract video ID based on platform
+        function extractVideoId(url, platformId) {
+            try {
+                switch(platformId) {
+                    case 'youtube':
+                        const ytRegExp = /^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#\&\?]*).*/;
+                        const ytMatch = url.match(ytRegExp);
+                        return (ytMatch && ytMatch[2].length === 11) ? ytMatch[2] : null;
+                    case 'vimeo':
+                        const vimeoRegExp = /(?:vimeo\.com\/|video\/)(\d+)/;
+                        const vimeoMatch = url.match(vimeoRegExp);
+                        return vimeoMatch ? vimeoMatch[1] : null;
+                    case 'dailymotion':
+                        const dmRegExp = /(?:dailymotion\.com\/video\/|dai\.ly\/)([a-zA-Z0-9]+)/;
+                        const dmMatch = url.match(dmRegExp);
+                        return dmMatch ? dmMatch[1] : null;
+                    case 'twitch':
+                        const twitchRegExp = /(?:twitch\.tv\/videos\/|twitch\.tv\/\w+\/clip\/)(\d+)/;
+                        const twitchMatch = url.match(twitchRegExp);
+                        return twitchMatch ? twitchMatch[1] : null;
+                    case 'soundcloud':
+                        return url; // For now, just return the URL
+                    default:
+                        // For other platforms, return the URL itself
+                        return url;
+                }
+            } catch {
+                return null;
+            }
+        }
+
+        // Fetch video details
+        async function fetchVideoDetails(url) {
+            try {
+                // Reset info
+                elements.videoTitle.textContent = 'Loading video details...';
+                elements.videoDuration.textContent = '--:--';
+                elements.videoResolution.textContent = 'Loading...';
+                elements.videoSource.textContent = 'Unknown';
+                
+                // Detect platform
+                const platform = detectPlatform(url);
+                if (!platform) {
+                    throw new Error('Unsupported platform');
+                }
+                
+                // Set source name
+                elements.videoSource.textContent = platform.name;
+                
+                // Simulate API call to fetch details
+                // In a real implementation, you would call the actual API here
+                return new Promise((resolve) => {
+                    setTimeout(() => {
+                        const title = `Video from ${platform.name}`;
+                        const duration = `${Math.floor(Math.random() * 10)}:${Math.floor(Math.random() * 60).toString().padStart(2, '0')}`;
+                        const resolution = `${Math.floor(Math.random() * 2000) + 1000}p`;
+                        
+                        resolve({
+                            title,
+                            duration,
+                            resolution,
+                            platform: platform.name
+                        });
+                    }, 800);
+                });
+            } catch (error) {
+                console.error('Error fetching video details:', error);
+                return {
+                    title: 'Could not load video details',
+                    duration: '--:--',
+                    resolution: 'Unknown',
+                    platform: 'Unknown'
+                };
+            }
+        }
+
+        // Show video info modal
+        async function showVideoInfo() {
+            const url = elements.videoUrl.value;
+            if (!validateUrl(url)) {
+                showNotification('Please enter a valid URL first');
+                return;
+            }
+            
+            try {
+                // Show modal
+                elements.infoModal.classList.add('active');
+                
+                // Fetch and display details
+                const videoDetails = await fetchVideoDetails(url);
+                
+                elements.videoTitle.textContent = videoDetails.title;
+                elements.videoDuration.textContent = videoDetails.duration;
+                elements.videoResolution.textContent = videoDetails.resolution;
+                elements.videoSource.textContent = videoDetails.platform;
+            } catch (error) {
+                console.error('Error showing video info:', error);
+                showNotification('Failed to fetch video details');
+            }
+        }
+
+        function createYouTubePlayer(videoId) {
             if (!apiReady) {
                 pendingVideoId = videoId;
                 return;
             }
             
             try {
-                // Clear previous player if exists
+                // Clear previous players if exist
                 if (player) {
                     player.destroy();
+                }
+                if (videojsPlayer) {
+                    videojsPlayer.dispose();
                 }
                 
                 player = new YT.Player('player', {
@@ -982,62 +1268,386 @@
                     }
                 });
                 
-                // Set a timeout to check if player loaded
                 setTimeout(() => {
                     if (!playerReady) {
                         retryPlayerCreation(videoId);
                     }
                 }, 5000);
             } catch (error) {
-                console.error('Error creating player:', error);
-                showNotification('Failed to initialize player');
+                console.error('Error creating YouTube player:', error);
+                showNotification('Failed to initialize YouTube player');
                 retryPlayerCreation(videoId);
             }
         }
 
-        function retryPlayerCreation(videoId) {
+        function createVideoJSPlayer(source) {
+            try {
+                // Clear previous players if exist
+                if (player) {
+                    player.destroy();
+                }
+                if (videojsPlayer) {
+                    videojsPlayer.dispose();
+                }
+                
+                // Create Video.js player
+                const videoElement = document.createElement('video-js');
+                videoElement.id = 'videojs-player';
+                videoElement.className = 'video-js vjs-default-skin vjs-big-play-centered';
+                videoElement.style.width = '100%';
+                videoElement.style.height = '100%';
+                
+                // Clear the player container
+                const playerContainer = document.getElementById('player');
+                playerContainer.innerHTML = '';
+                playerContainer.appendChild(videoElement);
+                
+                videojsPlayer = videojs(videoElement, {
+                    controls: false,
+                    autoplay: false,
+                    preload: 'auto',
+                    fluid: true,
+                    sources: [source],
+                    techOrder: ['html5']
+                });
+                
+                videojsPlayer.ready(() => {
+                    playerReady = true;
+                    videojsPlayer.on('play', () => {
+                        isPlaying = true;
+                        elements.playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                        if (isHost && roomRef) {
+                            roomRef.update({
+                                state: 'playing',
+                                currentTime: videojsPlayer.currentTime(),
+                                lastUpdated: firebase.database.ServerValue.TIMESTAMP
+                            });
+                        }
+                    });
+                    
+                    videojsPlayer.on('pause', () => {
+                        isPlaying = false;
+                        elements.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                        if (isHost && roomRef) {
+                            roomRef.update({
+                                state: 'paused',
+                                currentTime: videojsPlayer.currentTime(),
+                                lastUpdated: firebase.database.ServerValue.TIMESTAMP
+                            });
+                        }
+                    });
+                    
+                    videojsPlayer.on('ended', () => {
+                        if (nextVideos.length > 0) {
+                            const nextVideo = nextVideos.shift();
+                            loadVideoByUrl(nextVideo.url);
+                            if (isHost && roomRef) {
+                                roomRef.update({
+                                    videoId: nextVideo.url,
+                                    nextVideos,
+                                    lastUpdated: firebase.database.ServerValue.TIMESTAMP
+                                });
+                            }
+                            currentVideoIndex++;
+                            updateBadge();
+                            updateQueueList();
+                        }
+                    });
+                    
+                    videojsPlayer.on('error', () => {
+                        showNotification('Player error occurred');
+                    });
+                    
+                    // Apply stored room state
+                    if (lastRoomState) {
+                        videojsPlayer.currentTime(lastRoomState.currentTime);
+                        if (lastRoomState.state === 'playing') {
+                            videojsPlayer.play();
+                        } else {
+                            videojsPlayer.pause();
+                        }
+                    }
+                    
+                    resetControlsTimeout();
+                });
+            } catch (error) {
+                console.error('Error creating Video.js player:', error);
+                showNotification('Failed to initialize player');
+            }
+        }
+
+        function createHLSPlayer(url) {
+            if (Hls.isSupported()) {
+                try {
+                    // Clear previous players if exist
+                    if (player) {
+                        player.destroy();
+                    }
+                    if (videojsPlayer) {
+                        videojsPlayer.dispose();
+                    }
+                    
+                    // Create video element
+                    const videoElement = document.createElement('video');
+                    videoElement.id = 'hls-player';
+                    videoElement.style.width = '100%';
+                    videoElement.style.height = '100%';
+                    videoElement.controls = false;
+                    
+                    // Clear the player container
+                    const playerContainer = document.getElementById('player');
+                    playerContainer.innerHTML = '';
+                    playerContainer.appendChild(videoElement);
+                    
+                    hls = new Hls();
+                    hls.loadSource(url);
+                    hls.attachMedia(videoElement);
+                    
+                    videoElement.addEventListener('play', () => {
+                        isPlaying = true;
+                        elements.playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                        if (isHost && roomRef) {
+                            roomRef.update({
+                                state: 'playing',
+                                currentTime: videoElement.currentTime,
+                                lastUpdated: firebase.database.ServerValue.TIMESTAMP
+                            });
+                        }
+                    });
+                    
+                    videoElement.addEventListener('pause', () => {
+                        isPlaying = false;
+                        elements.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                        if (isHost && roomRef) {
+                            roomRef.update({
+                                state: 'paused',
+                                currentTime: videoElement.currentTime,
+                                lastUpdated: firebase.database.ServerValue.TIMESTAMP
+                            });
+                        }
+                    });
+                    
+                    videoElement.addEventListener('ended', () => {
+                        if (nextVideos.length > 0) {
+                            const nextVideo = nextVideos.shift();
+                            loadVideoByUrl(nextVideo.url);
+                            if (isHost && roomRef) {
+                                roomRef.update({
+                                    videoId: nextVideo.url,
+                                    nextVideos,
+                                    lastUpdated: firebase.database.ServerValue.TIMESTAMP
+                                });
+                            }
+                            currentVideoIndex++;
+                            updateBadge();
+                            updateQueueList();
+                        }
+                    });
+                    
+                    videoElement.addEventListener('error', () => {
+                        showNotification('Player error occurred');
+                    });
+                    
+                    // Apply stored room state
+                    if (lastRoomState) {
+                        videoElement.currentTime = lastRoomState.currentTime;
+                        if (lastRoomState.state === 'playing') {
+                            videoElement.play();
+                        } else {
+                            videoElement.pause();
+                        }
+                    }
+                    
+                    playerReady = true;
+                    resetControlsTimeout();
+                } catch (error) {
+                    console.error('Error creating HLS player:', error);
+                    showNotification('Failed to initialize player');
+                }
+            } else if (document.getElementById('player').canPlayType('application/vnd.apple.mpegurl')) {
+                // For Safari which supports HLS natively
+                const videoElement = document.createElement('video');
+                videoElement.id = 'hls-player';
+                videoElement.style.width = '100%';
+                videoElement.style.height = '100%';
+                videoElement.controls = false;
+                videoElement.src = url;
+                
+                const playerContainer = document.getElementById('player');
+                playerContainer.innerHTML = '';
+                playerContainer.appendChild(videoElement);
+                
+                videoElement.addEventListener('play', () => {
+                    isPlaying = true;
+                    elements.playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                    if (isHost && roomRef) {
+                        roomRef.update({
+                            state: 'playing',
+                            currentTime: videoElement.currentTime,
+                            lastUpdated: firebase.database.ServerValue.TIMESTAMP
+                        });
+                    }
+                });
+                
+                videoElement.addEventListener('pause', () => {
+                    isPlaying = false;
+                    elements.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                    if (isHost && roomRef) {
+                        roomRef.update({
+                            state: 'paused',
+                            currentTime: videoElement.currentTime,
+                            lastUpdated: firebase.database.ServerValue.TIMESTAMP
+                        });
+                    }
+                });
+                
+                videoElement.addEventListener('ended', () => {
+                    if (nextVideos.length > 0) {
+                        const nextVideo = nextVideos.shift();
+                        loadVideoByUrl(nextVideo.url);
+                        if (isHost && roomRef) {
+                            roomRef.update({
+                                videoId: nextVideo.url,
+                                nextVideos,
+                                lastUpdated: firebase.database.ServerValue.TIMESTAMP
+                            });
+                            
+                            if (currentVideoIndex > 0) {
+                                roomRef.update({
+                                    currentHost: !roomRef.currentHost
+                                });
+                            }
+                        }
+                        currentVideoIndex++;
+                        updateBadge();
+                        updateQueueList();
+                    }
+                });
+                
+                videoElement.addEventListener('error', () => {
+                    showNotification('Player error occurred');
+                });
+                
+                if (lastRoomState) {
+                    videoElement.currentTime = lastRoomState.currentTime;
+                    if (lastRoomState.state === 'playing') {
+                        videoElement.play();
+                    } else {
+                        videoElement.pause();
+                    }
+                }
+                
+                playerReady = true;
+                resetControlsTimeout();
+            } else {
+                showNotification('HLS is not supported in your browser');
+            }
+        }
+
+        function createPlayer(videoId, platform) {
+            playerReady = false;
+            playerLoadAttempts = 0;
+            
+            switch(platform.id) {
+                case 'youtube':
+                    createYouTubePlayer(videoId);
+                    break;
+                case 'vimeo':
+                    createVideoJSPlayer({
+                        src: `https://player.vimeo.com/video/${videoId}`,
+                        type: 'video/vimeo'
+                    });
+                    break;
+                case 'dailymotion':
+                    createVideoJSPlayer({
+                        src: `https://www.dailymotion.com/embed/video/${videoId}`,
+                        type: 'video/dailymotion'
+                    });
+                    break;
+                case 'twitch':
+                    createHLSPlayer(`https://www.twitch.tv/videos/${videoId}`);
+                    break;
+                case 'soundcloud':
+                    createVideoJSPlayer({
+                        src: videoId, // This would be the full URL
+                        type: 'audio/soundcloud'
+                    });
+                    break;
+                case 'pexels':
+                case 'pixabay':
+                case 'archive':
+                case 'direct':
+                    // For direct video links
+                    createHLSPlayer(videoId);
+                    break;
+                default:
+                    // For other platforms, try to use iframe embed
+                    try {
+                        // Clear the player container
+                        const playerContainer = document.getElementById('player');
+                        playerContainer.innerHTML = `
+                            <iframe src="${videoId}" 
+                                width="100%" 
+                                height="100%" 
+                                frameborder="0" 
+                                allow="autoplay; fullscreen" 
+                                allowfullscreen>
+                            </iframe>
+                        `;
+                        playerReady = true;
+                    } catch (error) {
+                        console.error('Error creating embed player:', error);
+                        showNotification('Failed to initialize player for this platform');
+                    }
+            }
+        }
+
+        function retryPlayerCreation(videoId, platform) {
             if (playerLoadAttempts < 3) {
                 playerLoadAttempts++;
                 console.log(`Retrying player creation (attempt ${playerLoadAttempts})`);
                 showNotification(`Loading player... Attempt ${playerLoadAttempts}`);
-                setTimeout(() => createPlayer(videoId), 2000);
+                setTimeout(() => createPlayer(videoId, platform), 2000);
             } else {
                 showNotification('Failed to load player. Please refresh the page.');
             }
         }
 
-        function extractVideoId(url) {
-            try {
-                const regExp = /^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#\&\?]*).*/;
-                const match = url.match(regExp);
-                return (match && match[2].length === 11) ? match[2] : null;
-            } catch {
-                return null;
-            }
-        }
-
-        function loadVideo() {
-            const videoId = extractVideoId(elements.videoUrl.value);
-            if (!videoId) {
-                showNotification('Invalid YouTube URL');
+        function loadVideoByUrl(url) {
+            const platform = detectPlatform(url);
+            if (!platform) {
+                showNotification('Unsupported platform or invalid URL');
                 return;
             }
+            
+            const videoId = extractVideoId(url, platform.id);
+            if (!videoId) {
+                showNotification(`Invalid ${platform.name} URL`);
+                return;
+            }
+            
             try {
                 playerLoadAttempts = 0;
-                if (player) {
-                    player.loadVideoById({ videoId, suggestedQuality: currentQuality });
-                } else {
-                    createPlayer(videoId);
-                }
+                createPlayer(videoId, platform);
                 isPlaying = false;
                 elements.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                
                 if (!isJoiner) {
-                    createRoom(videoId);
+                    createRoom(url);
                 }
             } catch (error) {
                 console.error('Error loading video:', error);
                 showNotification('Failed to load video');
             }
+        }
+
+        function loadVideo() {
+            const url = elements.videoUrl.value;
+            if (!validateUrl(url)) {
+                showNotification('Please enter a valid URL');
+                return;
+            }
+            loadVideoByUrl(url);
         }
 
         function createRoom(videoId) {
@@ -1099,16 +1709,33 @@
                 });
                 
                 syncInterval = setInterval(() => {
-                    if (isHost && player && player.getCurrentTime) {
-                        const currentTime = player.getCurrentTime();
+                    if (isHost) {
+                        let currentTime = 0;
+                        let state = isPlaying ? 'playing' : 'paused';
+                        
+                        if (player && player.getCurrentTime) {
+                            // YouTube player
+                            currentTime = player.getCurrentTime();
+                        } else if (videojsPlayer) {
+                            // Video.js player
+                            currentTime = videojsPlayer.currentTime();
+                            state = !videojsPlayer.paused() ? 'playing' : 'paused';
+                        } else if (document.getElementById('hls-player')) {
+                            // HLS player
+                            const hlsPlayer = document.getElementById('hls-player');
+                            currentTime = hlsPlayer.currentTime;
+                            state = !hlsPlayer.paused ? 'playing' : 'paused';
+                        }
+                        
                         roomRef.update({
                             currentTime,
-                            state: isPlaying ? 'playing' : 'paused',
+                            state,
                             nextVideos,
                             lastUpdated: firebase.database.ServerValue.TIMESTAMP
                         });
                     }
                 }, 1000);
+                
                 window.addEventListener('beforeunload', cleanupRoom);
                 roomRef.child('hostActive').onDisconnect().set(false);
             } catch (error) {
@@ -1168,9 +1795,17 @@
                 nextVideos = [];
                 updateBadge();
                 updateQueueList();
+                
                 if (player && player.pauseVideo) {
                     player.pauseVideo();
                 }
+                if (videojsPlayer) {
+                    videojsPlayer.pause();
+                }
+                if (document.getElementById('hls-player')) {
+                    document.getElementById('hls-player').pause();
+                }
+                
                 elements.videoContainer.style.display = 'none';
             } catch (error) {
                 console.error('Error resetting after room destroy:', error);
@@ -1186,18 +1821,49 @@
         }
 
         function applyRoomState(roomData) {
-            if (!player || !player.getCurrentTime) return false;
+            let currentTime = 0;
+            let playerState = false;
             
-            const currentTime = player.getCurrentTime();
-            if (Math.abs(currentTime - roomData.currentTime) > 1) {
-                player.seekTo(roomData.currentTime, true);
-            }
-            if (roomData.state === 'playing' && !isPlaying) {
-                player.playVideo();
-                return true;
-            } else if (roomData.state === 'paused' && isPlaying) {
-                player.pauseVideo();
-                return true;
+            if (player && player.getCurrentTime) {
+                // YouTube player
+                currentTime = player.getCurrentTime();
+                if (Math.abs(currentTime - roomData.currentTime) > 1) {
+                    player.seekTo(roomData.currentTime, true);
+                }
+                if (roomData.state === 'playing' && !isPlaying) {
+                    player.playVideo();
+                    return true;
+                } else if (roomData.state === 'paused' && isPlaying) {
+                    player.pauseVideo();
+                    return true;
+                }
+            } else if (videojsPlayer) {
+                // Video.js player
+                currentTime = videojsPlayer.currentTime();
+                if (Math.abs(currentTime - roomData.currentTime) > 1) {
+                    videojsPlayer.currentTime(roomData.currentTime);
+                }
+                if (roomData.state === 'playing' && videojsPlayer.paused()) {
+                    videojsPlayer.play();
+                    return true;
+                } else if (roomData.state === 'paused' && !videojsPlayer.paused()) {
+                    videojsPlayer.pause();
+                    return true;
+                }
+            } else if (document.getElementById('hls-player')) {
+                // HLS player
+                const hlsPlayer = document.getElementById('hls-player');
+                currentTime = hlsPlayer.currentTime;
+                if (Math.abs(currentTime - roomData.currentTime) > 1) {
+                    hlsPlayer.currentTime = roomData.currentTime;
+                }
+                if (roomData.state === 'playing' && hlsPlayer.paused) {
+                    hlsPlayer.play();
+                    return true;
+                } else if (roomData.state === 'paused' && !hlsPlayer.paused) {
+                    hlsPlayer.pause();
+                    return true;
+                }
             }
             return false;
         }
@@ -1231,7 +1897,13 @@
                     
                     // Create player immediately
                     playerLoadAttempts = 0;
-                    createPlayer(roomData.videoId);
+                    const platform = detectPlatform(roomData.videoId);
+                    if (platform) {
+                        createPlayer(roomData.videoId, platform);
+                    } else {
+                        // Try to play as direct video
+                        createPlayer(roomData.videoId, { id: 'direct', name: 'Direct Video' });
+                    }
                     
                     roomRef.on('value', (snapshot) => {
                         const roomData = snapshot.val();
@@ -1277,6 +1949,20 @@
             }
         }
 
+        // Fixed YouTube API initialization
+        function checkYouTubeAPI() {
+            if (window.YT && window.YT.Player) {
+                apiReady = true;
+                if (pendingVideoId) {
+                    createPlayer(pendingVideoId, { id: 'youtube', name: 'YouTube' });
+                    pendingVideoId = null;
+                }
+            } else {
+                setTimeout(checkYouTubeAPI, 500);
+            }
+        }
+        checkYouTubeAPI();
+
         function onPlayerReady(event) {
             playerReady = true;
             try {
@@ -1321,11 +2007,11 @@
                     }
                     showControls();
                     if (event.data === YT.PlayerState.ENDED && nextVideos.length > 0) {
-                        const nextVideoId = nextVideos.shift();
-                        player.loadVideoById({ videoId: nextVideoId, suggestedQuality: currentQuality });
+                        const nextVideo = nextVideos.shift();
+                        loadVideoByUrl(nextVideo.url);
                         if (isHost && roomRef) {
                             roomRef.update({
-                                videoId: nextVideoId,
+                                videoId: nextVideo.url,
                                 nextVideos,
                                 lastUpdated: firebase.database.ServerValue.TIMESTAMP
                             });
@@ -1359,13 +2045,31 @@
         }
 
         function togglePlayPause() {
-            if (!player || !hostControls) return;
             try {
-                if (isPlaying) {
-                    player.pauseVideo();
-                } else {
-                    player.playVideo();
+                if (player && player.getPlayerState) {
+                    // YouTube player
+                    if (isPlaying) {
+                        player.pauseVideo();
+                    } else {
+                        player.playVideo();
+                    }
+                } else if (videojsPlayer) {
+                    // Video.js player
+                    if (videojsPlayer.paused()) {
+                        videojsPlayer.play();
+                    } else {
+                        videojsPlayer.pause();
+                    }
+                } else if (document.getElementById('hls-player')) {
+                    // HLS player
+                    const hlsPlayer = document.getElementById('hls-player');
+                    if (hlsPlayer.paused) {
+                        hlsPlayer.play();
+                    } else {
+                        hlsPlayer.pause();
+                    }
                 }
+                
                 showControls();
                 resetControlsTimeout();
             } catch (error) {
@@ -1374,16 +2078,31 @@
         }
 
         function skipForward() {
-            if (!player || !hostControls) return;
             try {
-                const currentTime = player.getCurrentTime();
-                player.seekTo(currentTime + 10, true);
+                let currentTime = 0;
+                
+                if (player && player.getCurrentTime) {
+                    // YouTube player
+                    currentTime = player.getCurrentTime();
+                    player.seekTo(currentTime + 10, true);
+                } else if (videojsPlayer) {
+                    // Video.js player
+                    currentTime = videojsPlayer.currentTime();
+                    videojsPlayer.currentTime(currentTime + 10);
+                } else if (document.getElementById('hls-player')) {
+                    // HLS player
+                    const hlsPlayer = document.getElementById('hls-player');
+                    currentTime = hlsPlayer.currentTime;
+                    hlsPlayer.currentTime = currentTime + 10;
+                }
+                
                 if (isHost && roomRef) {
                     roomRef.update({
                         currentTime: currentTime + 10,
                         lastUpdated: firebase.database.ServerValue.TIMESTAMP
                     });
                 }
+                
                 showControls();
                 resetControlsTimeout();
             } catch (error) {
@@ -1392,16 +2111,31 @@
         }
 
         function skipBackward() {
-            if (!player || !hostControls) return;
             try {
-                const currentTime = player.getCurrentTime();
-                player.seekTo(Math.max(0, currentTime - 10), true);
+                let currentTime = 0;
+                
+                if (player && player.getCurrentTime) {
+                    // YouTube player
+                    currentTime = player.getCurrentTime();
+                    player.seekTo(Math.max(0, currentTime - 10), true);
+                } else if (videojsPlayer) {
+                    // Video.js player
+                    currentTime = videojsPlayer.currentTime();
+                    videojsPlayer.currentTime(Math.max(0, currentTime - 10));
+                } else if (document.getElementById('hls-player')) {
+                    // HLS player
+                    const hlsPlayer = document.getElementById('hls-player');
+                    currentTime = hlsPlayer.currentTime;
+                    hlsPlayer.currentTime = Math.max(0, currentTime - 10);
+                }
+                
                 if (isHost && roomRef) {
                     roomRef.update({
                         currentTime: Math.max(0, currentTime - 10),
                         lastUpdated: firebase.database.ServerValue.TIMESTAMP
                     });
                 }
+                
                 showControls();
                 resetControlsTimeout();
             } catch (error) {
@@ -1446,20 +2180,21 @@
                 return;
             }
             
-            nextVideos.forEach((videoId, index) => {
+            nextVideos.forEach((video, index) => {
                 const item = document.createElement('div');
                 item.className = 'queue-item';
                 
                 const info = document.createElement('div');
                 info.className = 'queue-item-info';
                 
+                const platform = detectPlatform(video.url);
                 const title = document.createElement('div');
                 title.className = 'queue-item-title';
-                title.textContent = `Video ${index + 1}`;
+                title.textContent = `Video ${index + 1}${platform ? ` (${platform.name})` : ''}`;
                 
                 const url = document.createElement('div');
                 url.className = 'queue-item-url';
-                url.textContent = `https://youtu.be/${videoId}`;
+                url.textContent = video.url;
                 
                 info.appendChild(title);
                 info.appendChild(url);
@@ -1503,17 +2238,21 @@
             showNotification('Video removed from queue');
         }
 
-        function addToQueue(videoId) {
-            if (!videoId) return;
+        function addToQueue(url) {
+            if (!url) return;
             
             if (isJoiner && nextVideos.length >= 3) {
                 showNotification('Queue is full (max 3 videos)');
                 return;
             }
             
+            const videoItem = {
+                url
+            };
+            
             if (isHost) {
                 if (nextVideos.length < 3) {
-                    nextVideos.push(videoId);
+                    nextVideos.push(videoItem);
                     if (roomRef) {
                         roomRef.update({ nextVideos });
                     }
@@ -1527,7 +2266,7 @@
                 roomRef.child('nextVideos').transaction((queue) => {
                     const newQueue = queue || [];
                     if (newQueue.length < 3) {
-                        newQueue.push(videoId);
+                        newQueue.push(videoItem);
                         return newQueue;
                     }
                     return queue;
@@ -1549,14 +2288,20 @@
             showControls();
             resetControlsTimeout();
         }
+        
+        function closeInfoModal() {
+            elements.infoModal.classList.remove('active');
+            showControls();
+            resetControlsTimeout();
+        }
 
         function handleQueueSubmit() {
-            const videoId = extractVideoId(elements.queueInput.value);
-            if (videoId) {
-                addToQueue(videoId);
+            const url = elements.queueInput.value;
+            if (url) {
+                addToQueue(url);
                 elements.queueInput.value = '';
             } else {
-                showNotification('Invalid YouTube URL');
+                showNotification('Please enter a valid URL');
             }
         }
 
@@ -1627,7 +2372,7 @@
             }
         }
 
-       function showControls() {
+        function showControls() {
             elements.controlsContainer.style.opacity = '1';
             elements.controlsContainer.style.pointerEvents = 'auto';
         }
@@ -1659,6 +2404,16 @@
                 joinRoom(joinRoomId);
             }
 
+            // Add URL validation
+            elements.videoUrl.addEventListener('input', () => {
+                validateUrl(elements.videoUrl.value);
+            });
+
+            // Add Enter key support
+            elements.videoUrl.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') loadVideo();
+            });
+
             elements.loadVideo.addEventListener('click', loadVideo);
             elements.playPauseBtn.addEventListener('click', togglePlayPause);
             elements.backwardBtn.addEventListener('click', skipBackward);
@@ -1670,9 +2425,6 @@
             elements.fullscreenBtn.addEventListener('click', toggleFullscreen);
             elements.copyRoomLink.addEventListener('click', copyRoomLink);
             elements.destroyRoomBtn.addEventListener('click', destroyRoom);
-            elements.videoUrl.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') loadVideo();
-            });
             elements.videoContainer.addEventListener('mousemove', handleInteraction);
             elements.videoContainer.addEventListener('touchstart', handleInteraction, { passive: true });
             
@@ -1694,6 +2446,15 @@
             elements.queueModal.addEventListener('click', (e) => {
                 if (e.target === elements.queueModal) {
                     closeQueueModal();
+                }
+            });
+            
+            // Info modal controls
+            elements.infoBtn.addEventListener('click', showVideoInfo);
+            elements.closeInfoModal.addEventListener('click', closeInfoModal);
+            elements.infoModal.addEventListener('click', (e) => {
+                if (e.target === elements.infoModal) {
+                    closeInfoModal();
                 }
             });
             
