@@ -936,1699 +936,1730 @@
     
     <script>
         // Firebase configuration
-const firebaseConfig = {
-    apiKey: "AIzaSyDsPjwl2fsQwua_HZTPJSDmtlgzRkgVXQ4",
-    authDomain: "sync-f5dd9.firebaseapp.com",
-    databaseURL: "https://sync-f5dd9-default-rtdb.firebaseio.com",
-    projectId: "sync-f5dd9",
-    storageBucket: "sync-f5dd9.appspot.com",
-    messagingSenderId: "891545015962",
-    appId: "1:891545015962:web:e68867deec0117fe85f123"
-};
+        const firebaseConfig = {
+            apiKey: "AIzaSyDsPjwl2fsQwua_HZTPJSDmtlgzRkgVXQ4",
+            authDomain: "sync-f5dd9.firebaseapp.com",
+            databaseURL: "https://sync-f5dd9-default-rtdb.firebaseio.com",
+            projectId: "sync-f5dd9",
+            storageBucket: "sync-f5dd9.appspot.com",
+            messagingSenderId: "891545015962",
+            appId: "1:891545015962:web:e68867deec0117fe85f123"
+        };
 
-// Initialize Firebase
-const app = firebase.initializeApp(firebaseConfig);
-const database = firebase.database();
+        // Initialize Firebase
+        const app = firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
 
-// Global variables
-let player;
-let videojsPlayer;
-let hls;
-let isPlaying = false;
-let roomId = null;
-let roomRef = null;
-let isHost = false;
-let isJoiner = false;
-let hostControls = true;
-let joinerCount = 0;
-let pendingVideoId = null;
-let apiReady = false;
-let syncInterval = null;
-let previousJoinerCount = 0;
-let controlsTimeout = null;
-let nextVideos = [];
-let currentQuality = 'auto';
-let raiseHandCount = 0;
-let currentVideoIndex = 0;
-let playerReady = false;
-let lastRoomState = null;
-let playerLoadAttempts = 0;
-let audioContext;
-let beepBuffer;
-let soundCloudWidget;
-let vimeoPlayer;
+        // Global variables
+        let player;
+        let videojsPlayer;
+        let hls;
+        let isPlaying = false;
+        let roomId = null;
+        let roomRef = null;
+        let isHost = false;
+        let isJoiner = false;
+        let hostControls = true;
+        let joinerCount = 0;
+        let pendingVideoId = null;
+        let apiReady = false;
+        let syncInterval = null;
+        let previousJoinerCount = 0;
+        let controlsTimeout = null;
+        let nextVideos = [];
+        let currentQuality = 'auto';
+        let raiseHandCount = 0;
+        let currentVideoIndex = 0;
+        let playerReady = false;
+        let lastRoomState = null;
+        let playerLoadAttempts = 0;
+        let audioContext;
+        let beepBuffer;
+        let soundCloudWidget;
+        let vimeoPlayer;
+        let currentPlatform = null;
 
-// DOM elements
-const elements = {
-    videoUrl: document.getElementById('videoUrl'),
-    loadVideo: document.getElementById('loadVideo'),
-    playPauseBtn: document.getElementById('playPauseBtn'),
-    backwardBtn: document.getElementById('backwardBtn'),
-    forwardBtn: document.getElementById('forwardBtn'),
-    qualityBtn: document.getElementById('qualityBtn'),
-    subtitleBtn: document.getElementById('subtitleBtn'),
-    nextVideoBtn: document.getElementById('nextVideoBtn'),
-    nextVideoBadge: document.getElementById('nextVideoBadge'),
-    fullscreenBtn: document.getElementById('fullscreenBtn'),
-    notification: document.getElementById('notification'),
-    notificationText: document.getElementById('notificationText'),
-    modeIndicator: document.getElementById('modeIndicator'),
-    inputGroup: document.getElementById('inputGroup'),
-    copyRoomLink: document.getElementById('copyRoomLink'),
-    copySuccess: document.getElementById('copySuccess'),
-    controlsContainer: document.getElementById('controlsContainer'),
-    videoContainer: document.getElementById('videoContainer'),
-    destroyRoomBtn: document.getElementById('destroyRoomBtn'),
-    hostControls: document.getElementById('hostControls'),
-    joinerControls: document.getElementById('joinerControls'),
-    joinerNextVideoBtn: document.getElementById('joinerNextVideoBtn'),
-    joinerQualityBtn: document.getElementById('joinerQualityBtn'),
-    joinerSubtitleBtn: document.getElementById('joinerSubtitleBtn'),
-    leaveRoomBtn: document.getElementById('leaveRoomBtn'),
-    joinerFullscreenBtn: document.getElementById('joinerFullscreenBtn'),
-    raiseHandBtn: document.getElementById('raiseHandBtn'),
-    feedbackContainer: document.getElementById('feedbackContainer'),
-    queueModal: document.getElementById('queueModal'),
-    closeQueueModal: document.getElementById('closeQueueModal'),
-    queueList: document.getElementById('queueList'),
-    queueInput: document.getElementById('queueInput'),
-    queueSubmit: document.getElementById('queueSubmit')
-};
+        // DOM elements
+        const elements = {
+            videoUrl: document.getElementById('videoUrl'),
+            loadVideo: document.getElementById('loadVideo'),
+            playPauseBtn: document.getElementById('playPauseBtn'),
+            backwardBtn: document.getElementById('backwardBtn'),
+            forwardBtn: document.getElementById('forwardBtn'),
+            qualityBtn: document.getElementById('qualityBtn'),
+            subtitleBtn: document.getElementById('subtitleBtn'),
+            nextVideoBtn: document.getElementById('nextVideoBtn'),
+            nextVideoBadge: document.getElementById('nextVideoBadge'),
+            fullscreenBtn: document.getElementById('fullscreenBtn'),
+            notification: document.getElementById('notification'),
+            notificationText: document.getElementById('notificationText'),
+            modeIndicator: document.getElementById('modeIndicator'),
+            inputGroup: document.getElementById('inputGroup'),
+            copyRoomLink: document.getElementById('copyRoomLink'),
+            copySuccess: document.getElementById('copySuccess'),
+            controlsContainer: document.getElementById('controlsContainer'),
+            videoContainer: document.getElementById('videoContainer'),
+            destroyRoomBtn: document.getElementById('destroyRoomBtn'),
+            hostControls: document.getElementById('hostControls'),
+            joinerControls: document.getElementById('joinerControls'),
+            joinerNextVideoBtn: document.getElementById('joinerNextVideoBtn'),
+            joinerQualityBtn: document.getElementById('joinerQualityBtn'),
+            joinerSubtitleBtn: document.getElementById('joinerSubtitleBtn'),
+            leaveRoomBtn: document.getElementById('leaveRoomBtn'),
+            joinerFullscreenBtn: document.getElementById('joinerFullscreenBtn'),
+            raiseHandBtn: document.getElementById('raiseHandBtn'),
+            feedbackContainer: document.getElementById('feedbackContainer'),
+            queueModal: document.getElementById('queueModal'),
+            closeQueueModal: document.getElementById('closeQueueModal'),
+            queueList: document.getElementById('queueList'),
+            queueInput: document.getElementById('queueInput'),
+            queueSubmit: document.getElementById('queueSubmit')
+        };
 
-// Supported platforms with detection regex and API integration
-const supportedPlatforms = [
-    { 
-        id: 'youtube', 
-        regex: /(youtube\.com|youtu\.be)/, 
-        name: 'YouTube',
-        extractId: (url) => {
-            const ytRegExp = /^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#\&\?]*).*/;
-            const ytMatch = url.match(ytRegExp);
-            return (ytMatch && ytMatch[2].length === 11) ? ytMatch[2] : null;
-        }
-    },
-    { 
-        id: 'vimeo', 
-        regex: /vimeo\.com/, 
-        name: 'Vimeo',
-        extractId: (url) => {
-            const vimeoRegExp = /(?:vimeo\.com\/|video\/)(\d+)/;
-            const vimeoMatch = url.match(vimeoRegExp);
-            return vimeoMatch ? vimeoMatch[1] : null;
-        }
-    },
-    { 
-        id: 'soundcloud', 
-        regex: /soundcloud\.com/, 
-        name: 'SoundCloud',
-        extractId: (url) => url // Use full URL for SoundCloud
-    },
-    { 
-        id: 'direct', 
-        regex: /\.(mp4|m3u8|mov|avi|mkv|webm|mp3|wav|ogg)$/i, 
-        name: 'Direct Media',
-        extractId: (url) => url // Use full URL for direct media
-    }
-];
-
-// Debounce utility
-const debounce = (func, wait) => {
-    let timeout;
-    return (...args) => {
-        clearTimeout(timeout);
-        timeout = setTimeout(() => func.apply(this, args), wait);
-    };
-};
-
-// Play beep sound using Web Audio API
-function playBeep() {
-    if (!audioContext) initAudio();
-    if (!beepBuffer) return;
-    
-    try {
-        const source = audioContext.createBufferSource();
-        source.buffer = beepBuffer;
-        source.connect(audioContext.destination);
-        source.start();
-    } catch (e) {
-        console.error('Error playing beep:', e);
-    }
-}
-
-// Initialize audio context for notification sounds
-function initAudio() {
-    try {
-        audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        const duration = 0.1;
-        const sampleRate = audioContext.sampleRate;
-        const numFrames = duration * sampleRate;
-        const buffer = audioContext.createBuffer(1, numFrames, sampleRate);
-        const data = buffer.getChannelData(0);
-        
-        for (let i = 0; i < numFrames; i++) {
-            const t = i / sampleRate;
-            data[i] = Math.sin(t * 440 * 2 * Math.PI) * Math.exp(-t * 5);
-        }
-        
-        beepBuffer = buffer;
-    } catch (e) {
-        console.error('Audio initialization failed:', e);
-    }
-}
-
-// Detect platform from URL
-function detectPlatform(url) {
-    if (!url) return null;
-    for (const platform of supportedPlatforms) {
-        if (url.match(platform.regex)) {
-            return platform;
-        }
-    }
-    return null;
-}
-
-// Validate URL
-function validateUrl(url) {
-    try {
-        elements.videoUrl.classList.remove('valid', 'invalid');
-        if (!url) return false;
-        if (!url.match(/^https?:\/\//)) {
-            elements.videoUrl.classList.add('invalid');
-            return false;
-        }
-        const platform = detectPlatform(url);
-        if (!platform) {
-            elements.videoUrl.classList.add('invalid');
-            return false;
-        }
-        elements.videoUrl.classList.add('valid');
-        return true;
-    } catch (e) {
-        elements.videoUrl.classList.add('invalid');
-        return false;
-    }
-}
-
-// Create YouTube player
-function createYouTubePlayer(videoId) {
-    if (!apiReady) {
-        pendingVideoId = videoId;
-        return;
-    }
-    
-    try {
-        clearPlayer();
-        player = new YT.Player('player', {
-            height: '100%',
-            width: '100%',
-            videoId,
-            playerVars: {
-                rel: 0,
-                modestbranding: 1,
-                playsinline: 1,
-                enablejsapi: 1,
-                controls: 0,
-                cc_load_policy: 0,
-                suggestedQuality: currentQuality
+        // Supported platforms with detection regex and API integration
+        const supportedPlatforms = [
+            { 
+                id: 'youtube', 
+                regex: /(youtube\.com|youtu\.be)/, 
+                name: 'YouTube',
+                extractId: (url) => {
+                    const ytRegExp = /^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#\&\?]*).*/;
+                    const ytMatch = url.match(ytRegExp);
+                    return (ytMatch && ytMatch[2].length === 11) ? ytMatch[2] : null;
+                }
             },
-            events: {
-                onReady: onPlayerReady,
-                onStateChange: onPlayerStateChange,
-                onError: onPlayerError
+            { 
+                id: 'vimeo', 
+                regex: /vimeo\.com/, 
+                name: 'Vimeo',
+                extractId: (url) => {
+                    const vimeoRegExp = /(?:vimeo\.com\/|video\/)(\d+)/;
+                    const vimeoMatch = url.match(vimeoRegExp);
+                    return vimeoMatch ? vimeoMatch[1] : null;
+                }
+            },
+            { 
+                id: 'soundcloud', 
+                regex: /soundcloud\.com/, 
+                name: 'SoundCloud',
+                extractId: (url) => url // Use full URL for SoundCloud
+            },
+            { 
+                id: 'direct', 
+                regex: /\.(mp4|m3u8|mov|avi|mkv|webm|mp3|wav|ogg)$/i, 
+                name: 'Direct Media',
+                extractId: (url) => url // Use full URL for direct media
             }
-        });
-        
-        setTimeout(() => {
-            if (!playerReady) {
+        ];
+
+        // Debounce utility
+        const debounce = (func, wait) => {
+            let timeout;
+            return (...args) => {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(this, args), wait);
+            };
+        };
+
+        // Play beep sound using Web Audio API
+        function playBeep() {
+            if (!audioContext) initAudio();
+            if (!beepBuffer) return;
+            
+            try {
+                const source = audioContext.createBufferSource();
+                source.buffer = beepBuffer;
+                source.connect(audioContext.destination);
+                source.start();
+            } catch (e) {
+                console.error('Error playing beep:', e);
+            }
+        }
+
+        // Initialize audio context for notification sounds
+        function initAudio() {
+            try {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const duration = 0.1;
+                const sampleRate = audioContext.sampleRate;
+                const numFrames = duration * sampleRate;
+                const buffer = audioContext.createBuffer(1, numFrames, sampleRate);
+                const data = buffer.getChannelData(0);
+                
+                for (let i = 0; i < numFrames; i++) {
+                    const t = i / sampleRate;
+                    data[i] = Math.sin(t * 440 * 2 * Math.PI) * Math.exp(-t * 5);
+                }
+                
+                beepBuffer = buffer;
+            } catch (e) {
+                console.error('Audio initialization failed:', e);
+            }
+        }
+
+        // Detect platform from URL
+        function detectPlatform(url) {
+            if (!url) return null;
+            for (const platform of supportedPlatforms) {
+                if (url.match(platform.regex)) {
+                    return platform;
+                }
+            }
+            return null;
+        }
+
+        // Validate URL
+        function validateUrl(url) {
+            try {
+                elements.videoUrl.classList.remove('valid', 'invalid');
+                if (!url) return false;
+                if (!url.match(/^https?:\/\//)) {
+                    elements.videoUrl.classList.add('invalid');
+                    return false;
+                }
+                const platform = detectPlatform(url);
+                if (!platform) {
+                    elements.videoUrl.classList.add('invalid');
+                    return false;
+                }
+                elements.videoUrl.classList.add('valid');
+                return true;
+            } catch (e) {
+                elements.videoUrl.classList.add('invalid');
+                return false;
+            }
+        }
+
+        // Create YouTube player
+        function createYouTubePlayer(videoId) {
+            if (!apiReady) {
+                pendingVideoId = videoId;
+                return;
+            }
+            
+            try {
+                clearPlayer();
+                currentPlatform = 'youtube';
+                player = new YT.Player('player', {
+                    height: '100%',
+                    width: '100%',
+                    videoId,
+                    playerVars: {
+                        rel: 0,
+                        modestbranding: 1,
+                        playsinline: 1,
+                        enablejsapi: 1,
+                        controls: 0,
+                        cc_load_policy: 0,
+                        suggestedQuality: currentQuality
+                    },
+                    events: {
+                        onReady: onPlayerReady,
+                        onStateChange: onPlayerStateChange,
+                        onError: onPlayerError
+                    }
+                });
+                
+                setTimeout(() => {
+                    if (!playerReady) {
+                        retryPlayerCreation(videoId, { id: 'youtube', name: 'YouTube' });
+                    }
+                }, 5000);
+            } catch (error) {
+                console.error('Error creating YouTube player:', error);
+                showNotification('Failed to initialize YouTube player');
                 retryPlayerCreation(videoId, { id: 'youtube', name: 'YouTube' });
             }
-        }, 5000);
-    } catch (error) {
-        console.error('Error creating YouTube player:', error);
-        showNotification('Failed to initialize YouTube player');
-        retryPlayerCreation(videoId, { id: 'youtube', name: 'YouTube' });
-    }
-}
-
-// Create Vimeo player
-function createVimeoPlayer(videoId) {
-    try {
-        clearPlayer();
-        const iframe = document.createElement('iframe');
-        iframe.src = `https://player.vimeo.com/video/${videoId}?autoplay=0&loop=0&byline=0&portrait=0&title=0&background=0`;
-        iframe.width = '100%';
-        iframe.height = '100%';
-        iframe.frameBorder = '0';
-        iframe.allow = 'autoplay; fullscreen';
-        iframe.allowFullscreen = true;
-        
-        document.getElementById('player').innerHTML = '';
-        document.getElementById('player').appendChild(iframe);
-        
-        vimeoPlayer = new Vimeo.Player(iframe);
-        
-        vimeoPlayer.ready().then(() => {
-            playerReady = true;
-            isPlaying = false;
-            elements.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
-            
-            vimeoPlayer.on('play', () => {
-                isPlaying = true;
-                elements.playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
-                if (isHost && roomRef) {
-                    roomRef.update({
-                        state: 'playing',
-                        lastUpdated: firebase.database.ServerValue.TIMESTAMP
-                    });
-                }
-            });
-            
-            vimeoPlayer.on('pause', () => {
-                isPlaying = false;
-                elements.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
-                if (isHost && roomRef) {
-                    roomRef.update({
-                        state: 'paused',
-                        lastUpdated: firebase.database.ServerValue.TIMESTAMP
-                    });
-                }
-            });
-            
-            vimeoPlayer.on('ended', () => {
-                if (nextVideos.length > 0) {
-                    const nextVideo = nextVideos.shift();
-                    loadVideoByUrl(nextVideo.url);
-                    if (isHost && roomRef) {
-                        roomRef.update({
-                            videoId: nextVideo.url,
-                            nextVideos,
-                            lastUpdated: firebase.database.ServerValue.TIMESTAMP
-                        });
-                    }
-                    currentVideoIndex++;
-                    updateBadge();
-                    updateQueueList();
-                }
-            });
-            
-            if (lastRoomState) {
-                vimeoPlayer.setCurrentTime(lastRoomState.currentTime).then(() => {
-                    if (lastRoomState.state === 'playing') {
-                        vimeoPlayer.play();
-                    } else {
-                        vimeoPlayer.pause();
-                    }
-                });
-            }
-            
-            resetControlsTimeout();
-            elements.playPauseBtn.style.display = 'flex';
-            elements.backwardBtn.style.display = 'flex';
-            elements.forwardBtn.style.display = 'flex';
-        }).catch(error => {
-            console.error('Vimeo player error:', error);
-            showNotification('Failed to initialize Vimeo player');
-            retryPlayerCreation(videoId, { id: 'vimeo', name: 'Vimeo' });
-        });
-    } catch (error) {
-        console.error('Error creating Vimeo player:', error);
-        showNotification('Failed to initialize Vimeo player');
-        retryPlayerCreation(videoId, { id: 'vimeo', name: 'Vimeo' });
-    }
-}
-
-// Create SoundCloud player
-function createSoundCloudPlayer(url) {
-    try {
-        clearPlayer();
-        const iframe = document.createElement('iframe');
-        iframe.src = `https://w.soundcloud.com/player/?url=${encodeURIComponent(url)}&auto_play=false&hide_related=true&show_comments=false&show_user=false&show_reposts=false&visual=true`;
-        iframe.width = '100%';
-        iframe.height = '100%';
-        iframe.frameBorder = '0';
-        iframe.allow = 'autoplay';
-        
-        document.getElementById('player').innerHTML = '';
-        document.getElementById('player').appendChild(iframe);
-        
-        soundCloudWidget = SC.Widget(iframe);
-        
-        soundCloudWidget.bind(SC.Widget.Events.READY, () => {
-            playerReady = true;
-            soundCloudWidget.bind(SC.Widget.Events.PLAY, () => {
-                isPlaying = true;
-                elements.playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
-                if (isHost && roomRef) {
-                    roomRef.update({
-                        state: 'playing',
-                        lastUpdated: firebase.database.ServerValue.TIMESTAMP
-                    });
-                }
-            });
-            
-            soundCloudWidget.bind(SC.Widget.Events.PAUSE, () => {
-                isPlaying = false;
-                elements.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
-                if (isHost && roomRef) {
-                    roomRef.update({
-                        state: 'paused',
-                        lastUpdated: firebase.database.ServerValue.TIMESTAMP
-                    });
-                }
-            });
-            
-            soundCloudWidget.bind(SC.Widget.Events.FINISH, () => {
-                if (nextVideos.length > 0) {
-                    const nextVideo = nextVideos.shift();
-                    loadVideoByUrl(nextVideo.url);
-                    if (isHost && roomRef) {
-                        roomRef.update({
-                            videoId: nextVideo.url,
-                            nextVideos,
-                            lastUpdated: firebase.database.ServerValue.TIMESTAMP
-                        });
-                    }
-                    currentVideoIndex++;
-                    updateBadge();
-                    updateQueueList();
-                }
-            });
-            
-            if (lastRoomState) {
-                if (lastRoomState.state === 'playing') {
-                    soundCloudWidget.play();
-                } else {
-                    soundCloudWidget.pause();
-                }
-            }
-            
-            resetControlsTimeout();
-            elements.playPauseBtn.style.display = 'flex';
-            elements.backwardBtn.style.display = 'none';
-            elements.forwardBtn.style.display = 'none';
-        });
-    } catch (error) {
-        console.error('Error creating SoundCloud player:', error);
-        showNotification('Failed to initialize SoundCloud player');
-        retryPlayerCreation(url, { id: 'soundcloud', name: 'SoundCloud' });
-    }
-}
-
-// Create Video.js player for direct video/audio
-function createVideoJSPlayer(source) {
-    try {
-        clearPlayer();
-        const videoElement = document.createElement('video-js');
-        videoElement.id = 'videojs-player';
-        videoElement.className = 'video-js vjs-default-skin vjs-big-play-centered';
-        videoElement.style.width = '100%';
-        videoElement.style.height = '100%';
-        
-        const playerContainer = document.getElementById('player');
-        playerContainer.innerHTML = '';
-        playerContainer.appendChild(videoElement);
-        
-        videojsPlayer = videojs(videoElement, {
-            controls: false,
-            autoplay: false,
-            preload: 'auto',
-            fluid: true,
-            sources: [source],
-            techOrder: ['html5']
-        });
-        
-        videojsPlayer.ready(() => {
-            playerReady = true;
-            videojsPlayer.on('play', () => {
-                isPlaying = true;
-                elements.playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
-                if (isHost && roomRef) {
-                    roomRef.update({
-                        state: 'playing',
-                        currentTime: videojsPlayer.currentTime(),
-                        lastUpdated: firebase.database.ServerValue.TIMESTAMP
-                    });
-                }
-            });
-            
-            videojsPlayer.on('pause', () => {
-                isPlaying = false;
-                elements.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
-                if (isHost && roomRef) {
-                    roomRef.update({
-                        state: 'paused',
-                        currentTime: videojsPlayer.currentTime(),
-                        lastUpdated: firebase.database.ServerValue.TIMESTAMP
-                    });
-                }
-            });
-            
-            videojsPlayer.on('ended', () => {
-                if (nextVideos.length > 0) {
-                    const nextVideo = nextVideos.shift();
-                    loadVideoByUrl(nextVideo.url);
-                    if (isHost && roomRef) {
-                        roomRef.update({
-                            videoId: nextVideo.url,
-                            nextVideos,
-                            lastUpdated: firebase.database.ServerValue.TIMESTAMP
-                        });
-                    }
-                    currentVideoIndex++;
-                    updateBadge();
-                    updateQueueList();
-                }
-            });
-            
-            videojsPlayer.on('error', () => {
-                showNotification('Player error occurred');
-            });
-            
-            if (lastRoomState) {
-                videojsPlayer.currentTime(lastRoomState.currentTime);
-                if (lastRoomState.state === 'playing') {
-                    videojsPlayer.play();
-                } else {
-                    videojsPlayer.pause();
-                }
-            }
-            
-            resetControlsTimeout();
-            elements.playPauseBtn.style.display = 'flex';
-            elements.backwardBtn.style.display = 'flex';
-            elements.forwardBtn.style.display = 'flex';
-        });
-    } catch (error) {
-        console.error('Error creating Video.js player:', error);
-        showNotification('Failed to initialize player');
-        retryPlayerCreation(source, { id: 'direct', name: 'Direct Media' });
-    }
-}
-
-// Create HLS player for streaming
-function createHLSPlayer(url) {
-    if (Hls.isSupported()) {
-        try {
-            clearPlayer();
-            const videoElement = document.createElement('video');
-            videoElement.id = 'hls-player';
-            videoElement.style.width = '100%';
-            videoElement.style.height = '100%';
-            videoElement.controls = false;
-            
-            const playerContainer = document.getElementById('player');
-            playerContainer.innerHTML = '';
-            playerContainer.appendChild(videoElement);
-            
-            hls = new Hls();
-            hls.loadSource(url);
-            hls.attachMedia(videoElement);
-            
-            videoElement.addEventListener('play', () => {
-                isPlaying = true;
-                elements.playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
-                if (isHost && roomRef) {
-                    roomRef.update({
-                        state: 'playing',
-                        currentTime: videoElement.currentTime,
-                        lastUpdated: firebase.database.ServerValue.TIMESTAMP
-                    });
-                }
-            });
-            
-            videoElement.addEventListener('pause', () => {
-                isPlaying = false;
-                elements.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
-                if (isHost && roomRef) {
-                    roomRef.update({
-                        state: 'paused',
-                        currentTime: videoElement.currentTime,
-                        lastUpdated: firebase.database.ServerValue.TIMESTAMP
-                    });
-                }
-            });
-            
-            videoElement.addEventListener('ended', () => {
-                if (nextVideos.length > 0) {
-                    const nextVideo = nextVideos.shift();
-                    loadVideoByUrl(nextVideo.url);
-                    if (isHost && roomRef) {
-                        roomRef.update({
-                            videoId: nextVideo.url,
-                            nextVideos,
-                            lastUpdated: firebase.database.ServerValue.TIMESTAMP
-                        });
-                    }
-                    currentVideoIndex++;
-                    updateBadge();
-                    updateQueueList();
-                }
-            });
-            
-            videoElement.addEventListener('error', () => {
-                showNotification('Player error occurred');
-            });
-            
-            if (lastRoomState) {
-                videoElement.currentTime = lastRoomState.currentTime;
-                if (lastRoomState.state === 'playing') {
-                    videoElement.play();
-                } else {
-                    videoElement.pause();
-                }
-            }
-            
-            playerReady = true;
-            elements.playPauseBtn.style.display = 'flex';
-            elements.backwardBtn.style.display = 'flex';
-            elements.forwardBtn.style.display = 'flex';
-            
-            resetControlsTimeout();
-        } catch (error) {
-            console.error('Error creating HLS player:', error);
-            showNotification('Failed to initialize player');
-            retryPlayerCreation(url, { id: 'direct', name: 'Direct Media' });
         }
-    } else if (document.getElementById('player').canPlayType('application/vnd.apple.mpegurl')) {
-        try {
-            const videoElement = document.createElement('video');
-            videoElement.id = 'hls-player';
-            videoElement.style.width = '100%';
-            videoElement.style.height = '100%';
-            videoElement.controls = false;
-            videoElement.src = url;
-            
-            const playerContainer = document.getElementById('player');
-            playerContainer.innerHTML = '';
-            playerContainer.appendChild(videoElement);
-            
-            videoElement.addEventListener('play', () => {
-                isPlaying = true;
-                elements.playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
-                if (isHost && roomRef) {
-                    roomRef.update({
-                        state: 'playing',
-                        currentTime: videoElement.currentTime,
-                        lastUpdated: firebase.database.ServerValue.TIMESTAMP
-                    });
-                }
-            });
-            
-            videoElement.addEventListener('pause', () => {
-                isPlaying = false;
-                elements.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
-                if (isHost && roomRef) {
-                    roomRef.update({
-                        state: 'paused',
-                        currentTime: videoElement.currentTime,
-                        lastUpdated: firebase.database.ServerValue.TIMESTAMP
-                    });
-                }
-            });
-            
-            videoElement.addEventListener('ended', () => {
-                if (nextVideos.length > 0) {
-                    const nextVideo = nextVideos.shift();
-                    loadVideoByUrl(nextVideo.url);
-                    if (isHost && roomRef) {
-                        roomRef.update({
-                            videoId: nextVideo.url,
-                            nextVideos,
-                            lastUpdated: firebase.database.ServerValue.TIMESTAMP
-                        });
-                    }
-                    currentVideoIndex++;
-                    updateBadge();
-                    updateQueueList();
-                }
-            });
-            
-            videoElement.addEventListener('error', () => {
-                showNotification('Player error occurred');
-            });
-            
-            if (lastRoomState) {
-                videoElement.currentTime = lastRoomState.currentTime;
-                if (lastRoomState.state === 'playing') {
-                    videoElement.play();
-                } else {
-                    videoElement.pause();
-                }
-            }
-            
-            playerReady = true;
-            elements.playPauseBtn.style.display = 'flex';
-            elements.backwardBtn.style.display = 'flex';
-            elements.forwardBtn.style.display = 'flex';
-            
-            resetControlsTimeout();
-        } catch (error) {
-            console.error('Error creating native HLS player:', error);
-            showNotification('Failed to initialize player');
-            retryPlayerCreation(url, { id: 'direct', name: 'Direct Media' });
-        }
-    } else {
-        showNotification('HLS is not supported in your browser');
-    }
-}
 
-// Clear all player instances
-function clearPlayer() {
-    try {
-        if (player) {
-            if (player.destroy) {
-                player.destroy();
-            }
-            player = null;
-        }
-        if (videojsPlayer) {
-            videojsPlayer.dispose();
-            videojsPlayer = null;
-        }
-        if (hls) {
-            hls.destroy();
-            hls = null;
-        }
-        if (soundCloudWidget) {
-            soundCloudWidget.unbind(SC.Widget.Events.READY);
-            soundCloudWidget.unbind(SC.Widget.Events.PLAY);
-            soundCloudWidget.unbind(SC.Widget.Events.PAUSE);
-            soundCloudWidget.unbind(SC.Widget.Events.FINISH);
-            soundCloudWidget = null;
-        }
-        if (vimeoPlayer) {
-            vimeoPlayer.unload();
-            vimeoPlayer = null;
-        }
-        
-        document.getElementById('player').innerHTML = '';
-        playerReady = false;
-    } catch (error) {
-        console.error('Error clearing player:', error);
-    }
-}
-
-// Create appropriate player based on platform
-function createPlayer(videoId, platform) {
-    playerReady = false;
-    playerLoadAttempts = 0;
-    console.log(`Creating player for ${platform.name} with ID: ${videoId}`);
-    
-    switch(platform.id) {
-        case 'youtube':
-            createYouTubePlayer(videoId);
-            break;
-        case 'vimeo':
-            createVimeoPlayer(videoId);
-            break;
-        case 'soundcloud':
-            createSoundCloudPlayer(videoId);
-            break;
-        case 'direct':
-            if (videoId.match(/\.(mp4|webm|ogg|mov|avi|mkv)$/i)) {
-                createVideoJSPlayer({
-                    src: videoId,
-                    type: `video/${videoId.split('.').pop().toLowerCase()}`
-                });
-            } else if (videoId.match(/\.(mp3|wav|ogg)$/i)) {
-                createVideoJSPlayer({
-                    src: videoId,
-                    type: `audio/${videoId.split('.').pop().toLowerCase()}`
-                });
-            } else if (videoId.match(/\.m3u8$/i)) {
-                createHLSPlayer(videoId);
-            } else {
-                showNotification('Unsupported direct URL format');
-            }
-            break;
-        default:
-            createGenericIframePlayer(videoId, platform);
-    }
-}
-
-// Create generic iframe player for unsupported platforms
-function createGenericIframePlayer(url, platform) {
-    try {
-        clearPlayer();
-        const iframe = document.createElement('iframe');
-        iframe.src = url;
-        iframe.width = '100%';
-        iframe.height = '100%';
-        iframe.frameBorder = '0';
-        iframe.allow = 'autoplay; fullscreen';
-        iframe.allowFullscreen = true;
-        
-        document.getElementById('player').innerHTML = '';
-        document.getElementById('player').appendChild(iframe);
-        
-        playerReady = true;
-        isPlaying = false;
-        elements.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
-        player = iframe;
-        
-        elements.playPauseBtn.style.display = 'none';
-        elements.backwardBtn.style.display = 'none';
-        elements.forwardBtn.style.display = 'none';
-        
-        resetControlsTimeout();
-    } catch (error) {
-        console.error('Error creating generic iframe player:', error);
-        showNotification(`Failed to initialize ${platform.name} player`);
-        retryPlayerCreation(url, platform);
-    }
-}
-
-// Retry player creation with limited attempts
-function retryPlayerCreation(videoId, platform) {
-    if (playerLoadAttempts < 3) {
-        playerLoadAttempts++;
-        console.log(`Retrying player creation (attempt ${playerLoadAttempts})`);
-        showNotification(`Loading player... Attempt ${playerLoadAttempts}`);
-        setTimeout(() => createPlayer(videoId, platform), 2000);
-    } else {
-        showNotification('Failed to load player. Please refresh the page.');
-    }
-}
-
-// Load video by URL with platform detection
-function loadVideoByUrl(url) {
-    const platform = detectPlatform(url);
-    if (!platform) {
-        showNotification('Unsupported platform or invalid URL');
-        return;
-    }
-    
-    let videoId;
-    if (platform.id === 'direct') {
-        videoId = url;
-    } else {
-        videoId = platform.extractId(url);
-        if (!videoId) {
-            showNotification(`Invalid ${platform.name} URL`);
-            return;
-        }
-    }
-    
-    try {
-        playerLoadAttempts = 0;
-        createPlayer(videoId, platform);
-        isPlaying = false;
-        elements.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
-        
-        if (!isJoiner) {
-            createRoom(url);
-        }
-    } catch (error) {
-        console.error('Error loading video:', error);
-        showNotification('Failed to load video');
-    }
-}
-
-// Load video from input
-function loadVideo() {
-    const url = elements.videoUrl.value;
-    if (!validateUrl(url)) {
-        showNotification('Please enter a valid URL');
-        return;
-    }
-    loadVideoByUrl(url);
-}
-
-// Create a new room
-function createRoom(videoId) {
-    try {
-        roomId = Math.random().toString(36).substring(2, 10);
-        roomRef = database.ref(`rooms/${roomId}`);
-        roomRef.set({
-            videoId,
-            state: 'paused',
-            currentTime: 0,
-            hostActive: true,
-            joiners: 0,
-            nextVideos: [],
-            raiseHands: 0,
-            currentHost: true,
-            lastUpdated: firebase.database.ServerValue.TIMESTAMP
-        });
-        
-        isHost = true;
-        elements.modeIndicator.textContent = 'Host Mode';
-        elements.modeIndicator.className = 'mode-indicator host-indicator';
-        elements.modeIndicator.style.display = 'block';
-        elements.hostControls.style.display = 'flex';
-        elements.joinerControls.style.display = 'none';
-        elements.feedbackContainer.style.display = 'flex';
-        
-        const roomLink = `${window.location.origin}${window.location.pathname}?roomId=${roomId}`;
-        elements.copyRoomLink.style.display = 'flex';
-        elements.copyRoomLink.setAttribute('data-link', roomLink);
-        elements.destroyRoomBtn.style.display = 'flex';
-        
-        roomRef.child('joiners').on('value', (snapshot) => {
-            const count = snapshot.val() || 0;
-            if (count > previousJoinerCount) {
-                showNotification(`${count} joiner(s) connected`);
-                playBeep();
-            }
-            previousJoinerCount = count;
-            joinerCount = count;
-        });
-        
-        roomRef.child('nextVideos').on('value', (snapshot) => {
-            nextVideos = snapshot.val() || [];
-            updateBadge();
-            updateQueueList();
-        });
-        
-        roomRef.child('raiseHands').on('value', (snapshot) => {
-            raiseHandCount = snapshot.val() || 0;
-            if (isHost && raiseHandCount > 0) {
-                const message = isPlaying ? 'STOP' : 'CONTINUE';
-                showNotification(message, 3000);
-                playBeep();
-            }
-        });
-        
-        syncInterval = setInterval(() => {
-            if (isHost) {
-                let currentTime = 0;
-                let state = isPlaying ? 'playing' : 'paused';
+        // Create Vimeo player
+        function createVimeoPlayer(videoId) {
+            try {
+                clearPlayer();
+                currentPlatform = 'vimeo';
+                const iframe = document.createElement('iframe');
+                iframe.src = `https://player.vimeo.com/video/${videoId}?autoplay=0&loop=0&byline=0&portrait=0&title=0&background=0`;
+                iframe.width = '100%';
+                iframe.height = '100%';
+                iframe.frameBorder = '0';
+                iframe.allow = 'autoplay; fullscreen';
+                iframe.allowFullscreen = true;
                 
-                if (player && player.getCurrentTime) {
-                    currentTime = player.getCurrentTime();
-                } else if (videojsPlayer) {
-                    currentTime = videojsPlayer.currentTime();
-                    state = !videojsPlayer.paused() ? 'playing' : 'paused';
-                } else if (document.getElementById('hls-player')) {
-                    const hlsPlayer = document.getElementById('hls-player');
-                    currentTime = hlsPlayer.currentTime;
-                    state = !hlsPlayer.paused ? 'playing' : 'paused';
-                } else if (soundCloudWidget) {
-                    state = isPlaying ? 'playing' : 'paused';
-                } else if (vimeoPlayer) {
-                    vimeoPlayer.getCurrentTime().then(time => {
-                        currentTime = time;
+                document.getElementById('player').innerHTML = '';
+                document.getElementById('player').appendChild(iframe);
+                
+                vimeoPlayer = new Vimeo.Player(iframe);
+                
+                vimeoPlayer.ready().then(() => {
+                    playerReady = true;
+                    isPlaying = false;
+                    elements.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                    
+                    vimeoPlayer.on('play', () => {
+                        isPlaying = true;
+                        elements.playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                        if (isHost && roomRef) {
+                            roomRef.update({
+                                state: 'playing',
+                                lastUpdated: firebase.database.ServerValue.TIMESTAMP
+                            });
+                        }
+                    });
+                    
+                    vimeoPlayer.on('pause', () => {
+                        isPlaying = false;
+                        elements.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                        if (isHost && roomRef) {
+                            roomRef.update({
+                                state: 'paused',
+                                lastUpdated: firebase.database.ServerValue.TIMESTAMP
+                            });
+                        }
+                    });
+                    
+                    vimeoPlayer.on('ended', () => {
+                        if (nextVideos.length > 0) {
+                            const nextVideo = nextVideos.shift();
+                            loadVideoByUrl(nextVideo.url);
+                            if (isHost && roomRef) {
+                                roomRef.update({
+                                    videoId: nextVideo.url,
+                                    nextVideos,
+                                    lastUpdated: firebase.database.ServerValue.TIMESTAMP
+                                });
+                            }
+                            currentVideoIndex++;
+                            updateBadge();
+                            updateQueueList();
+                        }
+                    });
+                    
+                    if (lastRoomState) {
+                        vimeoPlayer.setCurrentTime(lastRoomState.currentTime).then(() => {
+                            if (lastRoomState.state === 'playing') {
+                                vimeoPlayer.play();
+                            } else {
+                                vimeoPlayer.pause();
+                            }
+                        });
+                    }
+                    
+                    resetControlsTimeout();
+                    elements.playPauseBtn.style.display = 'flex';
+                    elements.backwardBtn.style.display = 'flex';
+                    elements.forwardBtn.style.display = 'flex';
+                }).catch(error => {
+                    console.error('Vimeo player error:', error);
+                    showNotification('Failed to initialize Vimeo player');
+                    retryPlayerCreation(videoId, { id: 'vimeo', name: 'Vimeo' });
+                });
+            } catch (error) {
+                console.error('Error creating Vimeo player:', error);
+                showNotification('Failed to initialize Vimeo player');
+                retryPlayerCreation(videoId, { id: 'vimeo', name: 'Vimeo' });
+            }
+        }
+
+        // Create SoundCloud player
+        function createSoundCloudPlayer(url) {
+            try {
+                clearPlayer();
+                currentPlatform = 'soundcloud';
+                const iframe = document.createElement('iframe');
+                iframe.src = `https://w.soundcloud.com/player/?url=${encodeURIComponent(url)}&auto_play=false&hide_related=true&show_comments=false&show_user=false&show_reposts=false&visual=true`;
+                iframe.width = '100%';
+                iframe.height = '100%';
+                iframe.frameBorder = '0';
+                iframe.allow = 'autoplay';
+                
+                document.getElementById('player').innerHTML = '';
+                document.getElementById('player').appendChild(iframe);
+                
+                soundCloudWidget = SC.Widget(iframe);
+                
+                soundCloudWidget.bind(SC.Widget.Events.READY, () => {
+                    playerReady = true;
+                    soundCloudWidget.bind(SC.Widget.Events.PLAY, () => {
+                        isPlaying = true;
+                        elements.playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                        if (isHost && roomRef) {
+                            roomRef.update({
+                                state: 'playing',
+                                lastUpdated: firebase.database.ServerValue.TIMESTAMP
+                            });
+                        }
+                    });
+                    
+                    soundCloudWidget.bind(SC.Widget.Events.PAUSE, () => {
+                        isPlaying = false;
+                        elements.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                        if (isHost && roomRef) {
+                            roomRef.update({
+                                state: 'paused',
+                                lastUpdated: firebase.database.ServerValue.TIMESTAMP
+                            });
+                        }
+                    });
+                    
+                    soundCloudWidget.bind(SC.Widget.Events.FINISH, () => {
+                        if (nextVideos.length > 0) {
+                            const nextVideo = nextVideos.shift();
+                            loadVideoByUrl(nextVideo.url);
+                            if (isHost && roomRef) {
+                                roomRef.update({
+                                    videoId: nextVideo.url,
+                                    nextVideos,
+                                    lastUpdated: firebase.database.ServerValue.TIMESTAMP
+                                });
+                            }
+                            currentVideoIndex++;
+                            updateBadge();
+                            updateQueueList();
+                        }
+                    });
+                    
+                    if (lastRoomState) {
+                        if (lastRoomState.state === 'playing') {
+                            soundCloudWidget.play();
+                        } else {
+                            soundCloudWidget.pause();
+                        }
+                    }
+                    
+                    resetControlsTimeout();
+                    elements.playPauseBtn.style.display = 'flex';
+                    elements.backwardBtn.style.display = 'none';
+                    elements.forwardBtn.style.display = 'none';
+                });
+            } catch (error) {
+                console.error('Error creating SoundCloud player:', error);
+                showNotification('Failed to initialize SoundCloud player');
+                retryPlayerCreation(url, { id: 'soundcloud', name: 'SoundCloud' });
+            }
+        }
+
+        // Create Video.js player for direct video/audio
+        function createVideoJSPlayer(source) {
+            try {
+                clearPlayer();
+                currentPlatform = 'direct';
+                const videoElement = document.createElement('video-js');
+                videoElement.id = 'videojs-player';
+                videoElement.className = 'video-js vjs-default-skin vjs-big-play-centered';
+                videoElement.style.width = '100%';
+                videoElement.style.height = '100%';
+                
+                const playerContainer = document.getElementById('player');
+                playerContainer.innerHTML = '';
+                playerContainer.appendChild(videoElement);
+                
+                videojsPlayer = videojs(videoElement, {
+                    controls: false,
+                    autoplay: false,
+                    preload: 'auto',
+                    fluid: true,
+                    sources: [source],
+                    techOrder: ['html5']
+                });
+                
+                videojsPlayer.ready(() => {
+                    playerReady = true;
+                    videojsPlayer.on('play', () => {
+                        isPlaying = true;
+                        elements.playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                        if (isHost && roomRef) {
+                            roomRef.update({
+                                state: 'playing',
+                                currentTime: videojsPlayer.currentTime(),
+                                lastUpdated: firebase.database.ServerValue.TIMESTAMP
+                            });
+                        }
+                    });
+                    
+                    videojsPlayer.on('pause', () => {
+                        isPlaying = false;
+                        elements.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                        if (isHost && roomRef) {
+                            roomRef.update({
+                                state: 'paused',
+                                currentTime: videojsPlayer.currentTime(),
+                                lastUpdated: firebase.database.ServerValue.TIMESTAMP
+                            });
+                        }
+                    });
+                    
+                    videojsPlayer.on('ended', () => {
+                        if (nextVideos.length > 0) {
+                            const nextVideo = nextVideos.shift();
+                            loadVideoByUrl(nextVideo.url);
+                            if (isHost && roomRef) {
+                                roomRef.update({
+                                    videoId: nextVideo.url,
+                                    nextVideos,
+                                    lastUpdated: firebase.database.ServerValue.TIMESTAMP
+                                });
+                            }
+                            currentVideoIndex++;
+                            updateBadge();
+                            updateQueueList();
+                        }
+                    });
+                    
+                    videojsPlayer.on('error', () => {
+                        showNotification('Player error occurred');
+                    });
+                    
+                    if (lastRoomState) {
+                        videojsPlayer.currentTime(lastRoomState.currentTime);
+                        if (lastRoomState.state === 'playing') {
+                            videojsPlayer.play();
+                        } else {
+                            videojsPlayer.pause();
+                        }
+                    }
+                    
+                    resetControlsTimeout();
+                    elements.playPauseBtn.style.display = 'flex';
+                    elements.backwardBtn.style.display = 'flex';
+                    elements.forwardBtn.style.display = 'flex';
+                });
+            } catch (error) {
+                console.error('Error creating Video.js player:', error);
+                showNotification('Failed to initialize player');
+                retryPlayerCreation(source, { id: 'direct', name: 'Direct Media' });
+            }
+        }
+
+        // Create HLS player for streaming
+        function createHLSPlayer(url) {
+            if (Hls.isSupported()) {
+                try {
+                    clearPlayer();
+                    currentPlatform = 'hls';
+                    const videoElement = document.createElement('video');
+                    videoElement.id = 'hls-player';
+                    videoElement.style.width = '100%';
+                    videoElement.style.height = '100%';
+                    videoElement.controls = false;
+                    
+                    const playerContainer = document.getElementById('player');
+                    playerContainer.innerHTML = '';
+                    playerContainer.appendChild(videoElement);
+                    
+                    hls = new Hls();
+                    hls.loadSource(url);
+                    hls.attachMedia(videoElement);
+                    
+                    videoElement.addEventListener('play', () => {
+                        isPlaying = true;
+                        elements.playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                        if (isHost && roomRef) {
+                            roomRef.update({
+                                state: 'playing',
+                                currentTime: videoElement.currentTime,
+                                lastUpdated: firebase.database.ServerValue.TIMESTAMP
+                            });
+                        }
+                    });
+                    
+                    videoElement.addEventListener('pause', () => {
+                        isPlaying = false;
+                        elements.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                        if (isHost && roomRef) {
+                            roomRef.update({
+                                state: 'paused',
+                                currentTime: videoElement.currentTime,
+                                lastUpdated: firebase.database.ServerValue.TIMESTAMP
+                            });
+                        }
+                    });
+                    
+                    videoElement.addEventListener('ended', () => {
+                        if (nextVideos.length > 0) {
+                            const nextVideo = nextVideos.shift();
+                            loadVideoByUrl(nextVideo.url);
+                            if (isHost && roomRef) {
+                                roomRef.update({
+                                    videoId: nextVideo.url,
+                                    nextVideos,
+                                    lastUpdated: firebase.database.ServerValue.TIMESTAMP
+                                });
+                            }
+                            currentVideoIndex++;
+                            updateBadge();
+                            updateQueueList();
+                        }
+                    });
+                    
+                    videoElement.addEventListener('error', () => {
+                        showNotification('Player error occurred');
+                    });
+                    
+                    if (lastRoomState) {
+                        videoElement.currentTime = lastRoomState.currentTime;
+                        if (lastRoomState.state === 'playing') {
+                            videoElement.play();
+                        } else {
+                            videoElement.pause();
+                        }
+                    }
+                    
+                    playerReady = true;
+                    elements.playPauseBtn.style.display = 'flex';
+                    elements.backwardBtn.style.display = 'flex';
+                    elements.forwardBtn.style.display = 'flex';
+                    
+                    resetControlsTimeout();
+                } catch (error) {
+                    console.error('Error creating HLS player:', error);
+                    showNotification('Failed to initialize player');
+                    retryPlayerCreation(url, { id: 'direct', name: 'Direct Media' });
+                }
+            } else if (document.getElementById('player').canPlayType('application/vnd.apple.mpegurl')) {
+                try {
+                    currentPlatform = 'hls';
+                    const videoElement = document.createElement('video');
+                    videoElement.id = 'hls-player';
+                    videoElement.style.width = '100%';
+                    videoElement.style.height = '100%';
+                    videoElement.controls = false;
+                    videoElement.src = url;
+                    
+                    const playerContainer = document.getElementById('player');
+                    playerContainer.innerHTML = '';
+                    playerContainer.appendChild(videoElement);
+                    
+                    videoElement.addEventListener('play', () => {
+                        isPlaying = true;
+                        elements.playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                        if (isHost && roomRef) {
+                            roomRef.update({
+                                state: 'playing',
+                                currentTime: videoElement.currentTime,
+                                lastUpdated: firebase.database.ServerValue.TIMESTAMP
+                            });
+                        }
+                    });
+                    
+                    videoElement.addEventListener('pause', () => {
+                        isPlaying = false;
+                        elements.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                        if (isHost && roomRef) {
+                            roomRef.update({
+                                state: 'paused',
+                                currentTime: videoElement.currentTime,
+                                lastUpdated: firebase.database.ServerValue.TIMESTAMP
+                            });
+                        }
+                    });
+                    
+                    videoElement.addEventListener('ended', () => {
+                        if (nextVideos.length > 0) {
+                            const nextVideo = nextVideos.shift();
+                            loadVideoByUrl(nextVideo.url);
+                            if (isHost && roomRef) {
+                                roomRef.update({
+                                    videoId: nextVideo.url,
+                                    nextVideos,
+                                    lastUpdated: firebase.database.ServerValue.TIMESTAMP
+                                });
+                            }
+                            currentVideoIndex++;
+                            updateBadge();
+                            updateQueueList();
+                        }
+                    });
+                    
+                    videoElement.addEventListener('error', () => {
+                        showNotification('Player error occurred');
+                    });
+                    
+                    if (lastRoomState) {
+                        videoElement.currentTime = lastRoomState.currentTime;
+                        if (lastRoomState.state === 'playing') {
+                            videoElement.play();
+                        } else {
+                            videoElement.pause();
+                        }
+                    }
+                    
+                    playerReady = true;
+                    elements.playPauseBtn.style.display = 'flex';
+                    elements.backwardBtn.style.display = 'flex';
+                    elements.forwardBtn.style.display = 'flex';
+                    
+                    resetControlsTimeout();
+                } catch (error) {
+                    console.error('Error creating native HLS player:', error);
+                    showNotification('Failed to initialize player');
+                    retryPlayerCreation(url, { id: 'direct', name: 'Direct Media' });
+                }
+            } else {
+                showNotification('HLS is not supported in your browser');
+            }
+        }
+
+        // Clear all player instances
+        function clearPlayer() {
+            try {
+                if (player) {
+                    if (player.destroy) {
+                        player.destroy();
+                    }
+                    player = null;
+                }
+                if (videojsPlayer) {
+                    videojsPlayer.dispose();
+                    videojsPlayer = null;
+                }
+                if (hls) {
+                    hls.destroy();
+                    hls = null;
+                }
+                if (soundCloudWidget) {
+                    soundCloudWidget.unbind(SC.Widget.Events.READY);
+                    soundCloudWidget.unbind(SC.Widget.Events.PLAY);
+                    soundCloudWidget.unbind(SC.Widget.Events.PAUSE);
+                    soundCloudWidget.unbind(SC.Widget.Events.FINISH);
+                    soundCloudWidget = null;
+                }
+                if (vimeoPlayer) {
+                    vimeoPlayer.unload();
+                    vimeoPlayer = null;
+                }
+                
+                document.getElementById('player').innerHTML = '';
+                playerReady = false;
+                currentPlatform = null;
+            } catch (error) {
+                console.error('Error clearing player:', error);
+            }
+        }
+
+        // Create appropriate player based on platform
+        function createPlayer(videoId, platform) {
+            playerReady = false;
+            playerLoadAttempts = 0;
+            console.log(`Creating player for ${platform.name} with ID: ${videoId}`);
+            
+            switch(platform.id) {
+                case 'youtube':
+                    createYouTubePlayer(videoId);
+                    break;
+                case 'vimeo':
+                    createVimeoPlayer(videoId);
+                    break;
+                case 'soundcloud':
+                    createSoundCloudPlayer(videoId);
+                    break;
+                case 'direct':
+                    if (videoId.match(/\.(mp4|webm|ogg|mov|avi|mkv)$/i)) {
+                        createVideoJSPlayer({
+                            src: videoId,
+                            type: `video/${videoId.split('.').pop().toLowerCase()}`
+                        });
+                    } else if (videoId.match(/\.(mp3|wav|ogg)$/i)) {
+                        createVideoJSPlayer({
+                            src: videoId,
+                            type: `audio/${videoId.split('.').pop().toLowerCase()}`
+                        });
+                    } else if (videoId.match(/\.m3u8$/i)) {
+                        createHLSPlayer(videoId);
+                    } else {
+                        showNotification('Unsupported direct URL format');
+                    }
+                    break;
+                default:
+                    createGenericIframePlayer(videoId, platform);
+            }
+        }
+
+        // Create generic iframe player for unsupported platforms
+        function createGenericIframePlayer(url, platform) {
+            try {
+                clearPlayer();
+                currentPlatform = 'generic';
+                const iframe = document.createElement('iframe');
+                iframe.src = url;
+                iframe.width = '100%';
+                iframe.height = '100%';
+                iframe.frameBorder = '0';
+                iframe.allow = 'autoplay; fullscreen';
+                iframe.allowFullscreen = true;
+                
+                document.getElementById('player').innerHTML = '';
+                document.getElementById('player').appendChild(iframe);
+                
+                playerReady = true;
+                isPlaying = false;
+                elements.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                player = iframe;
+                
+                elements.playPauseBtn.style.display = 'none';
+                elements.backwardBtn.style.display = 'none';
+                elements.forwardBtn.style.display = 'none';
+                
+                resetControlsTimeout();
+            } catch (error) {
+                console.error('Error creating generic iframe player:', error);
+                showNotification(`Failed to initialize ${platform.name} player`);
+                retryPlayerCreation(url, platform);
+            }
+        }
+
+        // Retry player creation with limited attempts
+        function retryPlayerCreation(videoId, platform) {
+            if (playerLoadAttempts < 3) {
+                playerLoadAttempts++;
+                console.log(`Retrying player creation (attempt ${playerLoadAttempts})`);
+                showNotification(`Loading player... Attempt ${playerLoadAttempts}`);
+                setTimeout(() => createPlayer(videoId, platform), 2000);
+            } else {
+                showNotification('Failed to load player. Please refresh the page.');
+            }
+        }
+
+        // Load video by URL with platform detection
+        function loadVideoByUrl(url) {
+            const platform = detectPlatform(url);
+            if (!platform) {
+                showNotification('Unsupported platform or invalid URL');
+                return;
+            }
+            
+            let videoId;
+            if (platform.id === 'direct') {
+                videoId = url;
+            } else {
+                videoId = platform.extractId(url);
+                if (!videoId) {
+                    showNotification(`Invalid ${platform.name} URL`);
+                    return;
+                }
+            }
+            
+            try {
+                playerLoadAttempts = 0;
+                createPlayer(videoId, platform);
+                isPlaying = false;
+                elements.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                
+                if (!isJoiner) {
+                    createRoom(url);
+                }
+            } catch (error) {
+                console.error('Error loading video:', error);
+                showNotification('Failed to load video');
+            }
+        }
+
+        // Load video from input
+        function loadVideo() {
+            const url = elements.videoUrl.value;
+            if (!validateUrl(url)) {
+                showNotification('Please enter a valid URL');
+                return;
+            }
+            loadVideoByUrl(url);
+        }
+
+        // Create a new room
+        function createRoom(videoId) {
+            try {
+                roomId = Math.random().toString(36).substring(2, 10);
+                roomRef = database.ref(`rooms/${roomId}`);
+                roomRef.set({
+                    videoId,
+                    state: 'paused',
+                    currentTime: 0,
+                    hostActive: true,
+                    joiners: 0,
+                    nextVideos: [],
+                    raiseHands: 0,
+                    currentHost: true,
+                    platform: detectPlatform(videoId)?.id || 'direct',
+                    lastUpdated: firebase.database.ServerValue.TIMESTAMP
+                });
+                
+                isHost = true;
+                elements.modeIndicator.textContent = 'Host Mode';
+                elements.modeIndicator.className = 'mode-indicator host-indicator';
+                elements.modeIndicator.style.display = 'block';
+                elements.hostControls.style.display = 'flex';
+                elements.joinerControls.style.display = 'none';
+                elements.feedbackContainer.style.display = 'flex';
+                
+                const roomLink = `${window.location.origin}${window.location.pathname}?roomId=${roomId}`;
+                elements.copyRoomLink.style.display = 'flex';
+                elements.copyRoomLink.setAttribute('data-link', roomLink);
+                elements.destroyRoomBtn.style.display = 'flex';
+                
+                roomRef.child('joiners').on('value', (snapshot) => {
+                    const count = snapshot.val() || 0;
+                    if (count > previousJoinerCount) {
+                        showNotification(`${count} joiner(s) connected`);
+                        playBeep();
+                    }
+                    previousJoinerCount = count;
+                    joinerCount = count;
+                });
+                
+                roomRef.child('nextVideos').on('value', (snapshot) => {
+                    nextVideos = snapshot.val() || [];
+                    updateBadge();
+                    updateQueueList();
+                });
+                
+                roomRef.child('raiseHands').on('value', (snapshot) => {
+                    raiseHandCount = snapshot.val() || 0;
+                    if (isHost && raiseHandCount > 0) {
+                        const message = isPlaying ? 'STOP' : 'CONTINUE';
+                        showNotification(message, 3000);
+                        playBeep();
+                    }
+                });
+                
+                syncInterval = setInterval(() => {
+                    if (isHost) {
+                        let currentTime = 0;
+                        let state = isPlaying ? 'playing' : 'paused';
+                        
+                        if (player && player.getCurrentTime) {
+                            currentTime = player.getCurrentTime();
+                        } else if (videojsPlayer) {
+                            currentTime = videojsPlayer.currentTime();
+                            state = !videojsPlayer.paused() ? 'playing' : 'paused';
+                        } else if (document.getElementById('hls-player')) {
+                            const hlsPlayer = document.getElementById('hls-player');
+                            currentTime = hlsPlayer.currentTime;
+                            state = !hlsPlayer.paused ? 'playing' : 'paused';
+                        } else if (soundCloudWidget) {
+                            state = isPlaying ? 'playing' : 'paused';
+                        } else if (vimeoPlayer) {
+                            vimeoPlayer.getCurrentTime().then(time => {
+                                currentTime = time;
+                                roomRef.update({
+                                    currentTime,
+                                    state,
+                                    nextVideos,
+                                    lastUpdated: firebase.database.ServerValue.TIMESTAMP
+                                });
+                            });
+                            return;
+                        }
+                        
                         roomRef.update({
                             currentTime,
                             state,
                             nextVideos,
                             lastUpdated: firebase.database.ServerValue.TIMESTAMP
                         });
-                    });
-                    return;
-                }
+                    }
+                }, 1000);
                 
+                window.addEventListener('beforeunload', cleanupRoom);
+                roomRef.child('hostActive').onDisconnect().set(false);
+            } catch (error) {
+                console.error('Error creating room:', error);
+                showNotification('Failed to create room');
+            }
+        }
+
+        // Clean up room on exit
+        function cleanupRoom() {
+            try {
+                if (syncInterval) {
+                    clearInterval(syncInterval);
+                    syncInterval = null;
+                }
+                if (roomRef && isHost) {
+                    roomRef.update({ hostActive: false });
+                }
+            } catch (error) {
+                console.error('Error cleaning up room:', error);
+            }
+        }
+
+        // Destroy room
+        function destroyRoom() {
+            if (!roomRef) return;
+            try {
                 roomRef.update({
-                    currentTime,
-                    state,
-                    nextVideos,
+                    hostActive: false,
+                    destroyed: true,
                     lastUpdated: firebase.database.ServerValue.TIMESTAMP
+                }).then(() => {
+                    roomRef.remove();
+                    showNotification('Room destroyed');
+                    playBeep();
+                    resetAfterRoomDestroy();
+                    window.location.href = window.location.pathname;
                 });
+            } catch (error) {
+                console.error('Error destroying room:', error);
+                showNotification('Failed to destroy room');
             }
-        }, 1000);
-        
-        window.addEventListener('beforeunload', cleanupRoom);
-        roomRef.child('hostActive').onDisconnect().set(false);
-    } catch (error) {
-        console.error('Error creating room:', error);
-        showNotification('Failed to create room');
-    }
-}
+        }
 
-// Clean up room on exit
-function cleanupRoom() {
-    try {
-        if (syncInterval) {
-            clearInterval(syncInterval);
-            syncInterval = null;
-        }
-        if (roomRef && isHost) {
-            roomRef.update({ hostActive: false });
-        }
-    } catch (error) {
-        console.error('Error cleaning up room:', error);
-    }
-}
-
-// Destroy room
-function destroyRoom() {
-    if (!roomRef) return;
-    try {
-        roomRef.update({
-            hostActive: false,
-            destroyed: true,
-            lastUpdated: firebase.database.ServerValue.TIMESTAMP
-        }).then(() => {
-            roomRef.remove();
-            showNotification('Room destroyed');
-            playBeep();
-            resetAfterRoomDestroy();
-            window.location.href = window.location.pathname;
-        });
-    } catch (error) {
-        console.error('Error destroying room:', error);
-        showNotification('Failed to destroy room');
-    }
-}
-
-// Reset state after room destruction
-function resetAfterRoomDestroy() {
-    try {
-        if (syncInterval) {
-            clearInterval(syncInterval);
-            syncInterval = null;
-        }
-        isHost = false;
-        isJoiner = false;
-        roomId = null;
-        roomRef = null;
-        elements.modeIndicator.style.display = 'none';
-        elements.copyRoomLink.style.display = 'none';
-        elements.destroyRoomBtn.style.display = 'none';
-        elements.inputGroup.style.display = 'flex';
-        nextVideos = [];
-        updateBadge();
-        updateQueueList();
-        
-        if (player && player.pauseVideo) {
-            player.pauseVideo();
-        }
-        if (videojsPlayer) {
-            videojsPlayer.pause();
-        }
-        if (document.getElementById('hls-player')) {
-            document.getElementById('hls-player').pause();
-        }
-        if (soundCloudWidget) {
-            soundCloudWidget.pause();
-        }
-        if (vimeoPlayer) {
-            vimeoPlayer.pause();
-        }
-        
-        elements.videoContainer.style.display = 'none';
-    } catch (error) {
-        console.error('Error resetting after room destroy:', error);
-    }
-}
-
-// Show notification
-function showNotification(message, duration = 3000) {
-    elements.notificationText.textContent = message;
-    elements.notification.classList.add('show');
-    setTimeout(() => {
-        elements.notification.classList.remove('show');
-    }, duration);
-}
-
-// Apply room state to player
-function applyRoomState(roomData) {
-    let currentTime = 0;
-    let playerState = false;
-    
-    if (player && player.getCurrentTime) {
-        currentTime = player.getCurrentTime();
-        if (Math.abs(currentTime - roomData.currentTime) > 1) {
-            player.seekTo(roomData.currentTime, true);
-        }
-        if (roomData.state === 'playing' && !isPlaying) {
-            player.playVideo();
-            return true;
-        } else if (roomData.state === 'paused' && isPlaying) {
-            player.pauseVideo();
-            return true;
-        }
-    } else if (videojsPlayer) {
-        currentTime = videojsPlayer.currentTime();
-        if (Math.abs(currentTime - roomData.currentTime) > 1) {
-            videojsPlayer.currentTime(roomData.currentTime);
-        }
-        if (roomData.state === 'playing' && videojsPlayer.paused()) {
-            videojsPlayer.play();
-            return true;
-        } else if (roomData.state === 'paused' && !videojsPlayer.paused()) {
-            videojsPlayer.pause();
-            return true;
-        }
-    } else if (document.getElementById('hls-player')) {
-        const hlsPlayer = document.getElementById('hls-player');
-        currentTime = hlsPlayer.currentTime;
-        if (Math.abs(currentTime - roomData.currentTime) > 1) {
-            hlsPlayer.currentTime = roomData.currentTime;
-        }
-        if (roomData.state === 'playing' && hlsPlayer.paused) {
-            hlsPlayer.play();
-            return true;
-        } else if (roomData.state === 'paused' && !hlsPlayer.paused) {
-            hlsPlayer.pause();
-            return true;
-        }
-    } else if (soundCloudWidget) {
-        if (roomData.state === 'playing' && !isPlaying) {
-            soundCloudWidget.play();
-            return true;
-        } else if (roomData.state === 'paused' && isPlaying) {
-            soundCloudWidget.pause();
-            return true;
-        }
-    } else if (vimeoPlayer) {
-        if (Math.abs(currentTime - roomData.currentTime) > 1) {
-            vimeoPlayer.setCurrentTime(roomData.currentTime);
-        }
-        if (roomData.state === 'playing' && !isPlaying) {
-            vimeoPlayer.play();
-            return true;
-        } else if (roomData.state === 'paused' && isPlaying) {
-            vimeoPlayer.pause();
-            return true;
-        }
-    }
-    return false;
-}
-
-// Join a room
-function joinRoom(roomId) {
-    try {
-        roomRef = database.ref(`rooms/${roomId}`);
-        roomRef.once('value').then((snapshot) => {
-            const roomData = snapshot.val();
-            if (!roomData || !roomData.hostActive) {
-                showNotification('Room not found or host disconnected');
-                return;
-            }
-            if (roomData.destroyed) {
-                showNotification('Room has been destroyed');
-                window.location.href = window.location.pathname;
-                return;
-            }
-            isJoiner = true;
-            elements.modeIndicator.textContent = 'Joiner Mode';
-            elements.modeIndicator.className = 'mode-indicator joiner-indicator';
-            elements.modeIndicator.style.display = 'block';
-            elements.inputGroup.style.display = 'none';
-            hostControls = false;
-            elements.hostControls.style.display = 'none';
-            elements.joinerControls.style.display = 'flex';
-            elements.feedbackContainer.style.display = 'flex';
-            
-            lastRoomState = roomData;
-            
-            playerLoadAttempts = 0;
-            const platform = detectPlatform(roomData.videoId);
-            if (platform) {
-                createPlayer(roomData.videoId, platform);
-            } else {
-                createPlayer(roomData.videoId, { id: 'direct', name: 'Direct Media' });
-            }
-            
-            roomRef.on('value', (snapshot) => {
-                const roomData = snapshot.val();
-                if (!roomData) {
-                    showNotification('Room disconnected');
-                    resetAfterRoomDestroy();
-                    window.location.href = window.location.pathname;
-                    return;
+        // Reset state after room destruction
+        function resetAfterRoomDestroy() {
+            try {
+                if (syncInterval) {
+                    clearInterval(syncInterval);
+                    syncInterval = null;
                 }
-                if (roomData.destroyed) {
-                    showNotification('Room destroyed by host');
-                    resetAfterRoomDestroy();
-                    window.location.href = window.location.pathname;
-                    return;
-                }
-                nextVideos = roomData.nextVideos || [];
+                isHost = false;
+                isJoiner = false;
+                roomId = null;
+                roomRef = null;
+                elements.modeIndicator.style.display = 'none';
+                elements.copyRoomLink.style.display = 'none';
+                elements.destroyRoomBtn.style.display = 'none';
+                elements.inputGroup.style.display = 'flex';
+                nextVideos = [];
                 updateBadge();
                 updateQueueList();
                 
-                if (!applyRoomState(roomData)) {
+                if (player && player.pauseVideo) {
+                    player.pauseVideo();
+                }
+                if (videojsPlayer) {
+                    videojsPlayer.pause();
+                }
+                if (document.getElementById('hls-player')) {
+                    document.getElementById('hls-player').pause();
+                }
+                if (soundCloudWidget) {
+                    soundCloudWidget.pause();
+                }
+                if (vimeoPlayer) {
+                    vimeoPlayer.pause();
+                }
+                
+                elements.videoContainer.style.display = 'none';
+            } catch (error) {
+                console.error('Error resetting after room destroy:', error);
+            }
+        }
+
+        // Show notification
+        function showNotification(message, duration = 3000) {
+            elements.notificationText.textContent = message;
+            elements.notification.classList.add('show');
+            setTimeout(() => {
+                elements.notification.classList.remove('show');
+            }, duration);
+        }
+
+        // Apply room state to player
+        function applyRoomState(roomData) {
+            if (!roomData || !playerReady) return false;
+            
+            // Only apply state if the platform matches
+            if (roomData.platform && currentPlatform !== roomData.platform) {
+                return false;
+            }
+            
+            let currentTime = 0;
+            let playerState = false;
+            
+            if (player && player.getCurrentTime) {
+                currentTime = player.getCurrentTime();
+                if (Math.abs(currentTime - roomData.currentTime) > 1) {
+                    player.seekTo(roomData.currentTime, true);
+                }
+                if (roomData.state === 'playing' && !isPlaying) {
+                    player.playVideo();
+                    return true;
+                } else if (roomData.state === 'paused' && isPlaying) {
+                    player.pauseVideo();
+                    return true;
+                }
+            } else if (videojsPlayer) {
+                currentTime = videojsPlayer.currentTime();
+                if (Math.abs(currentTime - roomData.currentTime) > 1) {
+                    videojsPlayer.currentTime(roomData.currentTime);
+                }
+                if (roomData.state === 'playing' && videojsPlayer.paused()) {
+                    videojsPlayer.play();
+                    return true;
+                } else if (roomData.state === 'paused' && !videojsPlayer.paused()) {
+                    videojsPlayer.pause();
+                    return true;
+                }
+            } else if (document.getElementById('hls-player')) {
+                const hlsPlayer = document.getElementById('hls-player');
+                currentTime = hlsPlayer.currentTime;
+                if (Math.abs(currentTime - roomData.currentTime) > 1) {
+                    hlsPlayer.currentTime = roomData.currentTime;
+                }
+                if (roomData.state === 'playing' && hlsPlayer.paused) {
+                    hlsPlayer.play();
+                    return true;
+                } else if (roomData.state === 'paused' && !hlsPlayer.paused) {
+                    hlsPlayer.pause();
+                    return true;
+                }
+            } else if (soundCloudWidget) {
+                if (roomData.state === 'playing' && !isPlaying) {
+                    soundCloudWidget.play();
+                    return true;
+                } else if (roomData.state === 'paused' && isPlaying) {
+                    soundCloudWidget.pause();
+                    return true;
+                }
+            } else if (vimeoPlayer) {
+                vimeoPlayer.getCurrentTime().then(currentTime => {
+                    if (Math.abs(currentTime - roomData.currentTime) > 1) {
+                        vimeoPlayer.setCurrentTime(roomData.currentTime);
+                    }
+                });
+                if (roomData.state === 'playing' && !isPlaying) {
+                    vimeoPlayer.play();
+                    return true;
+                } else if (roomData.state === 'paused' && isPlaying) {
+                    vimeoPlayer.pause();
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // Join a room
+        function joinRoom(roomId) {
+            try {
+                roomRef = database.ref(`rooms/${roomId}`);
+                roomRef.once('value').then((snapshot) => {
+                    const roomData = snapshot.val();
+                    if (!roomData || !roomData.hostActive) {
+                        showNotification('Room not found or host disconnected');
+                        return;
+                    }
+                    if (roomData.destroyed) {
+                        showNotification('Room has been destroyed');
+                        window.location.href = window.location.pathname;
+                        return;
+                    }
+                    
+                    isJoiner = true;
+                    elements.modeIndicator.textContent = 'Joiner Mode';
+                    elements.modeIndicator.className = 'mode-indicator joiner-indicator';
+                    elements.modeIndicator.style.display = 'block';
+                    elements.inputGroup.style.display = 'none';
+                    hostControls = false;
+                    elements.hostControls.style.display = 'none';
+                    elements.joinerControls.style.display = 'flex';
+                    elements.feedbackContainer.style.display = 'flex';
+                    
                     lastRoomState = roomData;
-                }
-            });
-            
-            roomRef.child('joiners').transaction((count) => (count || 0) + 1);
-            roomRef.child('raiseHands').on('value', (snapshot) => {
-                raiseHandCount = snapshot.val() || 0;
-                if (isJoiner && raiseHandCount > 0) {
-                    showNotification('YES', 3000);
-                    playBeep();
-                }
-            });
-            
-            window.addEventListener('beforeunload', () => {
-                roomRef.child('joiners').transaction((count) => Math.max(0, (count || 0) - 1));
-            });
-        });
-    } catch (error) {
-        console.error('Error joining room:', error);
-        showNotification('Failed to join room');
-    }
-}
-
-// Check YouTube API readiness
-function checkYouTubeAPI() {
-    if (window.YT && window.YT.Player) {
-        apiReady = true;
-        if (pendingVideoId) {
-            createPlayer(pendingVideoId, { id: 'youtube', name: 'YouTube' });
-            pendingVideoId = null;
+                    
+                    playerLoadAttempts = 0;
+                    const platform = detectPlatform(roomData.videoId);
+                    if (platform) {
+                        createPlayer(roomData.videoId, platform);
+                    } else {
+                        createPlayer(roomData.videoId, { id: 'direct', name: 'Direct Media' });
+                    }
+                    
+                    // Listen for room changes
+                    roomRef.on('value', (snapshot) => {
+                        const roomData = snapshot.val();
+                        if (!roomData) {
+                            showNotification('Room disconnected');
+                            resetAfterRoomDestroy();
+                            window.location.href = window.location.pathname;
+                            return;
+                        }
+                        if (roomData.destroyed) {
+                            showNotification('Room destroyed by host');
+                            resetAfterRoomDestroy();
+                            window.location.href = window.location.pathname;
+                            return;
+                        }
+                        
+                        // Only update video if it's different and platform matches
+                        if (roomData.videoId !== lastRoomState?.videoId && 
+                            roomData.platform === currentPlatform) {
+                            const platform = detectPlatform(roomData.videoId);
+                            if (platform) {
+                                createPlayer(roomData.videoId, platform);
+                            }
+                        }
+                        
+                        nextVideos = roomData.nextVideos || [];
+                        updateBadge();
+                        updateQueueList();
+                        
+                        if (!applyRoomState(roomData)) {
+                            lastRoomState = roomData;
+                        }
+                    });
+                    
+                    roomRef.child('joiners').transaction((count) => (count || 0) + 1);
+                    roomRef.child('raiseHands').on('value', (snapshot) => {
+                        raiseHandCount = snapshot.val() || 0;
+                        if (isJoiner && raiseHandCount > 0) {
+                            showNotification('YES', 3000);
+                            playBeep();
+                        }
+                    });
+                    
+                    window.addEventListener('beforeunload', () => {
+                        roomRef.child('joiners').transaction((count) => Math.max(0, (count || 0) - 1));
+                    });
+                });
+            } catch (error) {
+                console.error('Error joining room:', error);
+                showNotification('Failed to join room');
+            }
         }
-    } else {
-        setTimeout(checkYouTubeAPI, 500);
-    }
-}
-checkYouTubeAPI();
 
-// YouTube player ready handler
-function onPlayerReady(event) {
-    playerReady = true;
-    try {
-        if (lastRoomState) {
-            event.target.seekTo(lastRoomState.currentTime, true);
-            if (lastRoomState.state === 'playing') {
-                event.target.playVideo();
+        // Check YouTube API readiness
+        function checkYouTubeAPI() {
+            if (window.YT && window.YT.Player) {
+                apiReady = true;
+                if (pendingVideoId) {
+                    createPlayer(pendingVideoId, { id: 'youtube', name: 'YouTube' });
+                    pendingVideoId = null;
+                }
             } else {
-                event.target.pauseVideo();
+                setTimeout(checkYouTubeAPI, 500);
             }
         }
-        resetControlsTimeout();
-    } catch (error) {
-        console.error('Error in onPlayerReady:', error);
-    }
-}
+        checkYouTubeAPI();
 
-// YouTube player state change handler
-function onPlayerStateChange(event) {
-    try {
-        if (event.data === YT.PlayerState.PLAYING) {
-            isPlaying = true;
-            elements.playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
-            if (isHost && roomRef) {
-                roomRef.update({
-                    state: 'playing',
-                    currentTime: player.getCurrentTime(),
-                    lastUpdated: firebase.database.ServerValue.TIMESTAMP
-                });
+        // YouTube player ready handler
+        function onPlayerReady(event) {
+            playerReady = true;
+            try {
+                if (lastRoomState) {
+                    event.target.seekTo(lastRoomState.currentTime, true);
+                    if (lastRoomState.state === 'playing') {
+                        event.target.playVideo();
+                    } else {
+                        event.target.pauseVideo();
+                    }
+                }
+                resetControlsTimeout();
+            } catch (error) {
+                console.error('Error in onPlayerReady:', error);
             }
-            resetControlsTimeout();
-        } else if (event.data === YT.PlayerState.PAUSED || event.data === YT.PlayerState.ENDED) {
-            isPlaying = false;
-            elements.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
-            if (isHost && roomRef) {
-                roomRef.update({
-                    state: 'paused',
-                    currentTime: player.getCurrentTime(),
-                    lastUpdated: firebase.database.ServerValue.TIMESTAMP
-                });
+        }
+
+        // YouTube player state change handler
+        function onPlayerStateChange(event) {
+            try {
+                if (event.data === YT.PlayerState.PLAYING) {
+                    isPlaying = true;
+                    elements.playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                    if (isHost && roomRef) {
+                        roomRef.update({
+                            state: 'playing',
+                            currentTime: player.getCurrentTime(),
+                            lastUpdated: firebase.database.ServerValue.TIMESTAMP
+                        });
+                    }
+                    resetControlsTimeout();
+                } else if (event.data === YT.PlayerState.PAUSED || event.data === YT.PlayerState.ENDED) {
+                    isPlaying = false;
+                    elements.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                    if (isHost && roomRef) {
+                        roomRef.update({
+                            state: 'paused',
+                            currentTime: player.getCurrentTime(),
+                            lastUpdated: firebase.database.ServerValue.TIMESTAMP
+                        });
+                    }
+                    showControls();
+                    if (event.data === YT.PlayerState.ENDED && nextVideos.length > 0) {
+                        const nextVideo = nextVideos.shift();
+                        loadVideoByUrl(nextVideo.url);
+                        if (isHost && roomRef) {
+                            roomRef.update({
+                                videoId: nextVideo.url,
+                                nextVideos,
+                                lastUpdated: firebase.database.ServerValue.TIMESTAMP
+                            });
+                        }
+                        currentVideoIndex++;
+                        updateBadge();
+                        updateQueueList();
+                    }
+                }
+            } catch (error) {
+                console.error('Error in onPlayerStateChange:', error);
             }
-            showControls();
-            if (event.data === YT.PlayerState.ENDED && nextVideos.length > 0) {
-                const nextVideo = nextVideos.shift();
-                loadVideoByUrl(nextVideo.url);
+        }
+
+        // YouTube player error handler
+        function onPlayerError(event) {
+            console.error('Player error:', event.data);
+            const errorMessages = {
+                2: 'Invalid video URL',
+                5: 'HTML5 player error',
+                100: 'Video not found',
+                101: 'Video not allowed in embedded players',
+                150: 'Video not allowed in embedded players'
+            };
+            showNotification(errorMessages[event.data] || 'An error occurred');
+        }
+
+        // Toggle play/pause
+        function togglePlayPause() {
+            if (!playerReady) {
+                showNotification('Player is not ready');
+                return;
+            }
+            
+            try {
+                if (player && player.getPlayerState) {
+                    if (isPlaying) {
+                        player.pauseVideo();
+                    } else {
+                        player.playVideo();
+                    }
+                } else if (videojsPlayer) {
+                    if (videojsPlayer.paused()) {
+                        videojsPlayer.play();
+                    } else {
+                        videojsPlayer.pause();
+                    }
+                } else if (document.getElementById('hls-player')) {
+                    const hlsPlayer = document.getElementById('hls-player');
+                    if (hlsPlayer.paused) {
+                        hlsPlayer.play();
+                    } else {
+                        hlsPlayer.pause();
+                    }
+                } else if (soundCloudWidget) {
+                    if (isPlaying) {
+                        soundCloudWidget.pause();
+                    } else {
+                        soundCloudWidget.play();
+                    }
+                } else if (vimeoPlayer) {
+                    if (isPlaying) {
+                        vimeoPlayer.pause();
+                    } else {
+                        vimeoPlayer.play();
+                    }
+                }
+                
+                showControls();
+                resetControlsTimeout();
+            } catch (error) {
+                console.error('Error toggling play/pause:', error);
+                showNotification('Error controlling player');
+            }
+        }
+
+        // Skip forward 10 seconds
+        function skipForward() {
+            try {
+                let currentTime = 0;
+                
+                if (player && player.getCurrentTime) {
+                    currentTime = player.getCurrentTime();
+                    player.seekTo(currentTime + 10, true);
+                } else if (videojsPlayer) {
+                    currentTime = videojsPlayer.currentTime();
+                    videojsPlayer.currentTime(currentTime + 10);
+                } else if (document.getElementById('hls-player')) {
+                    const hlsPlayer = document.getElementById('hls-player');
+                    currentTime = hlsPlayer.currentTime;
+                    hlsPlayer.currentTime = currentTime + 10;
+                } else {
+                    showNotification('Seeking not supported for this platform');
+                    return;
+                }
+                
                 if (isHost && roomRef) {
                     roomRef.update({
-                        videoId: nextVideo.url,
-                        nextVideos,
+                        currentTime: currentTime + 10,
                         lastUpdated: firebase.database.ServerValue.TIMESTAMP
                     });
                 }
-                currentVideoIndex++;
-                updateBadge();
-                updateQueueList();
+                
+                showControls();
+                resetControlsTimeout();
+            } catch (error) {
+                console.error('Error skipping forward:', error);
             }
         }
-    } catch (error) {
-        console.error('Error in onPlayerStateChange:', error);
-    }
-}
 
-// YouTube player error handler
-function onPlayerError(event) {
-    console.error('Player error:', event.data);
-    const errorMessages = {
-        2: 'Invalid video URL',
-        5: 'HTML5 player error',
-        100: 'Video not found',
-        101: 'Video not allowed in embedded players',
-        150: 'Video not allowed in embedded players'
-    };
-    showNotification(errorMessages[event.data] || 'An error occurred');
-}
-
-// Toggle play/pause
-function togglePlayPause() {
-    if (!playerReady) {
-        showNotification('Player is not ready');
-        return;
-    }
-    
-    try {
-        if (player && player.getPlayerState) {
-            if (isPlaying) {
-                player.pauseVideo();
-            } else {
-                player.playVideo();
-            }
-        } else if (videojsPlayer) {
-            if (videojsPlayer.paused()) {
-                videojsPlayer.play();
-            } else {
-                videojsPlayer.pause();
-            }
-        } else if (document.getElementById('hls-player')) {
-            const hlsPlayer = document.getElementById('hls-player');
-            if (hlsPlayer.paused) {
-                hlsPlayer.play();
-            } else {
-                hlsPlayer.pause();
-            }
-        } else if (soundCloudWidget) {
-            if (isPlaying) {
-                soundCloudWidget.pause();
-            } else {
-                soundCloudWidget.play();
-            }
-        } else if (vimeoPlayer) {
-            if (isPlaying) {
-                vimeoPlayer.pause();
-            } else {
-                vimeoPlayer.play();
+        // Skip backward 10 seconds
+        function skipBackward() {
+            try {
+                let currentTime = 0;
+                
+                if (player && player.getCurrentTime) {
+                    currentTime = player.getCurrentTime();
+                    player.seekTo(Math.max(0, currentTime - 10), true);
+                } else if (videojsPlayer) {
+                    currentTime = videojsPlayer.currentTime();
+                    videojsPlayer.currentTime(Math.max(0, currentTime - 10));
+                } else if (document.getElementById('hls-player')) {
+                    const hlsPlayer = document.getElementById('hls-player');
+                    currentTime = hlsPlayer.currentTime;
+                    hlsPlayer.currentTime = Math.max(0, currentTime - 10);
+                } else {
+                    showNotification('Seeking not supported for this platform');
+                    return;
+                }
+                
+                if (isHost && roomRef) {
+                    roomRef.update({
+                        currentTime: Math.max(0, currentTime - 10),
+                        lastUpdated: firebase.database.ServerValue.TIMESTAMP
+                    });
+                }
+                
+                showControls();
+                resetControlsTimeout();
+            } catch (error) {
+                console.error('Error skipping backward:', error);
             }
         }
-        
-        showControls();
-        resetControlsTimeout();
-    } catch (error) {
-        console.error('Error toggling play/pause:', error);
-        showNotification('Error controlling player');
-    }
-}
 
-// Skip forward 10 seconds
-function skipForward() {
-    try {
-        let currentTime = 0;
-        
-        if (player && player.getCurrentTime) {
-            currentTime = player.getCurrentTime();
-            player.seekTo(currentTime + 10, true);
-        } else if (videojsPlayer) {
-            currentTime = videojsPlayer.currentTime();
-            videojsPlayer.currentTime(currentTime + 10);
-        } else if (document.getElementById('hls-player')) {
-            const hlsPlayer = document.getElementById('hls-player');
-            currentTime = hlsPlayer.currentTime;
-            hlsPlayer.currentTime = currentTime + 10;
-        } else {
-            showNotification('Seeking not supported for this platform');
-            return;
+        // Toggle video quality
+        function toggleQuality() {
+            if (!player) return;
+            try {
+                const qualities = ['auto', 'small', 'medium', 'large', 'hd720', 'hd1080', 'highres'];
+                const currentIndex = qualities.indexOf(currentQuality);
+                const nextIndex = (currentIndex + 1) % qualities.length;
+                currentQuality = qualities[nextIndex];
+                player.setPlaybackQuality(currentQuality);
+                showNotification(`Quality: ${currentQuality}`);
+                showControls();
+                resetControlsTimeout();
+            } catch (error) {
+                console.error('Error toggling quality:', error);
+            }
         }
-        
-        if (isHost && roomRef) {
-            roomRef.update({
-                currentTime: currentTime + 10,
-                lastUpdated: firebase.database.ServerValue.TIMESTAMP
+
+        // Toggle subtitles
+        function toggleSubtitle() {
+            if (!player) return;
+            try {
+                const ccLoadPolicy = player.getOptions().indexOf('cc_load_policy') !== -1 ? 1 : 0;
+                player.setOption('cc_load_policy', ccLoadPolicy ? 0 : 1);
+                showNotification(`Subtitles ${ccLoadPolicy ? 'off' : 'on'}`);
+                showControls();
+                resetControlsTimeout();
+            } catch (error) {
+                console.error('Error toggling subtitles:', error);
+            }
+        }
+
+        // Update queue list UI
+        function updateQueueList() {
+            elements.queueList.innerHTML = '';
+            
+            if (nextVideos.length === 0) {
+                elements.queueList.innerHTML = '<div class="queue-empty">Queue is empty</div>';
+                return;
+            }
+            
+            nextVideos.forEach((video, index) => {
+                const item = document.createElement('div');
+                item.className = 'queue-item';
+                
+                const info = document.createElement('div');
+                info.className = 'queue-item-info';
+                
+                const platform = detectPlatform(video.url);
+                const title = document.createElement('div');
+                title.className = 'queue-item-title';
+                title.textContent = `Video ${index + 1}${platform ? ` (${platform.name})` : ''}`;
+                
+                const url = document.createElement('div');
+                url.className = 'queue-item-url';
+                url.textContent = video.url;
+                
+                info.appendChild(title);
+                info.appendChild(url);
+                
+                const removeBtn = document.createElement('button');
+                removeBtn.className = 'queue-item-remove';
+                removeBtn.innerHTML = '<i class="fas fa-trash"></i>';
+                removeBtn.title = 'Remove from queue';
+                removeBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    removeFromQueue(index);
+                });
+                
+                item.appendChild(info);
+                item.appendChild(removeBtn);
+                
+                elements.queueList.appendChild(item);
             });
         }
-        
-        showControls();
-        resetControlsTimeout();
-    } catch (error) {
-        console.error('Error skipping forward:', error);
-    }
-}
 
-// Skip backward 10 seconds
-function skipBackward() {
-    try {
-        let currentTime = 0;
-        
-        if (player && player.getCurrentTime) {
-            currentTime = player.getCurrentTime();
-            player.seekTo(Math.max(0, currentTime - 10), true);
-        } else if (videojsPlayer) {
-            currentTime = videojsPlayer.currentTime();
-            videojsPlayer.currentTime(Math.max(0, currentTime - 10));
-        } else if (document.getElementById('hls-player')) {
-            const hlsPlayer = document.getElementById('hls-player');
-            currentTime = hlsPlayer.currentTime;
-            hlsPlayer.currentTime = Math.max(0, currentTime - 10);
-        } else {
-            showNotification('Seeking not supported for this platform');
-            return;
-        }
-        
-        if (isHost && roomRef) {
-            roomRef.update({
-                currentTime: Math.max(0, currentTime - 10),
-                lastUpdated: firebase.database.ServerValue.TIMESTAMP
-            });
-        }
-        
-        showControls();
-        resetControlsTimeout();
-    } catch (error) {
-        console.error('Error skipping backward:', error);
-    }
-}
-
-// Toggle video quality
-function toggleQuality() {
-    if (!player) return;
-    try {
-        const qualities = ['auto', 'small', 'medium', 'large', 'hd720', 'hd1080', 'highres'];
-        const currentIndex = qualities.indexOf(currentQuality);
-        const nextIndex = (currentIndex + 1) % qualities.length;
-        currentQuality = qualities[nextIndex];
-        player.setPlaybackQuality(currentQuality);
-        showNotification(`Quality: ${currentQuality}`);
-        showControls();
-        resetControlsTimeout();
-    } catch (error) {
-        console.error('Error toggling quality:', error);
-    }
-}
-
-// Toggle subtitles
-function toggleSubtitle() {
-    if (!player) return;
-    try {
-        const ccLoadPolicy = player.getOptions().indexOf('cc_load_policy') !== -1 ? 1 : 0;
-        player.setOption('cc_load_policy', ccLoadPolicy ? 0 : 1);
-        showNotification(`Subtitles ${ccLoadPolicy ? 'off' : 'on'}`);
-        showControls();
-        resetControlsTimeout();
-    } catch (error) {
-        console.error('Error toggling subtitles:', error);
-    }
-}
-
-// Update queue list UI
-function updateQueueList() {
-    elements.queueList.innerHTML = '';
-    
-    if (nextVideos.length === 0) {
-        elements.queueList.innerHTML = '<div class="queue-empty">Queue is empty</div>';
-        return;
-    }
-    
-    nextVideos.forEach((video, index) => {
-        const item = document.createElement('div');
-        item.className = 'queue-item';
-        
-        const info = document.createElement('div');
-        info.className = 'queue-item-info';
-        
-        const platform = detectPlatform(video.url);
-        const title = document.createElement('div');
-        title.className = 'queue-item-title';
-        title.textContent = `Video ${index + 1}${platform ? ` (${platform.name})` : ''}`;
-        
-        const url = document.createElement('div');
-        url.className = 'queue-item-url';
-        url.textContent = video.url;
-        
-        info.appendChild(title);
-        info.appendChild(url);
-        
-        const removeBtn = document.createElement('button');
-        removeBtn.className = 'queue-item-remove';
-        removeBtn.innerHTML = '<i class="fas fa-trash"></i>';
-        removeBtn.title = 'Remove from queue';
-        removeBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            removeFromQueue(index);
-        });
-        
-        item.appendChild(info);
-        item.appendChild(removeBtn);
-        
-        elements.queueList.appendChild(item);
-    });
-}
-
-// Remove video from queue
-function removeFromQueue(index) {
-    if (index < 0 || index >= nextVideos.length) return;
-    
-    nextVideos.splice(index, 1);
-    
-    if (isHost && roomRef) {
-        roomRef.update({ nextVideos });
-    } else if (isJoiner && roomRef) {
-        roomRef.child('nextVideos').transaction((queue) => {
-            const newQueue = queue || [];
-            if (index >= 0 && index < newQueue.length) {
-                newQueue.splice(index, 1);
-                return newQueue;
-            }
-            return queue;
-        });
-    }
-    
-    updateBadge();
-    updateQueueList();
-    showNotification('Video removed from queue');
-}
-
-// Add video to queue
-function addToQueue(url) {
-    if (!url) return;
-    
-    if (isJoiner && nextVideos.length >= 3) {
-        showNotification('Queue is full (max 3 videos)');
-        return;
-    }
-    
-    const videoItem = { url };
-    
-    if (isHost) {
-        if (nextVideos.length < 3) {
-            nextVideos.push(videoItem);
-            if (roomRef) {
+        // Remove video from queue
+        function removeFromQueue(index) {
+            if (index < 0 || index >= nextVideos.length) return;
+            
+            nextVideos.splice(index, 1);
+            
+            if (isHost && roomRef) {
                 roomRef.update({ nextVideos });
+            } else if (isJoiner && roomRef) {
+                roomRef.child('nextVideos').transaction((queue) => {
+                    const newQueue = queue || [];
+                    if (index >= 0 && index < newQueue.length) {
+                        newQueue.splice(index, 1);
+                        return newQueue;
+                    }
+                    return queue;
+                });
             }
-            showNotification('Video added to queue');
+            
             updateBadge();
             updateQueueList();
-        } else {
-            showNotification('Queue is full (max 3 videos)');
+            showNotification('Video removed from queue');
         }
-    } else if (isJoiner && roomRef) {
-        roomRef.child('nextVideos').transaction((queue) => {
-            const newQueue = queue || [];
-            if (newQueue.length < 3) {
-                newQueue.push(videoItem);
-                return newQueue;
+
+        // Add video to queue
+        function addToQueue(url) {
+            if (!url) return;
+            
+            if (isJoiner && nextVideos.length >= 3) {
+                showNotification('Queue is full (max 3 videos)');
+                return;
             }
-            return queue;
-        });
-        showNotification('Video added to queue');
-    }
-}
+            
+            const videoItem = { url };
+            
+            if (isHost) {
+                if (nextVideos.length < 3) {
+                    nextVideos.push(videoItem);
+                    if (roomRef) {
+                        roomRef.update({ nextVideos });
+                    }
+                    showNotification('Video added to queue');
+                    updateBadge();
+                    updateQueueList();
+                } else {
+                    showNotification('Queue is full (max 3 videos)');
+                }
+            } else if (isJoiner && roomRef) {
+                roomRef.child('nextVideos').transaction((queue) => {
+                    const newQueue = queue || [];
+                    if (newQueue.length < 3) {
+                        newQueue.push(videoItem);
+                        return newQueue;
+                    }
+                    return queue;
+                });
+                showNotification('Video added to queue');
+            }
+        }
 
-// Open queue modal
-function openQueueModal() {
-    elements.queueModal.classList.add('active');
-    elements.queueInput.value = '';
-    elements.queueInput.focus();
-    showControls();
-    resetControlsTimeout();
-}
+        // Open queue modal
+        function openQueueModal() {
+            elements.queueModal.classList.add('active');
+            elements.queueInput.value = '';
+            elements.queueInput.focus();
+            showControls();
+            resetControlsTimeout();
+        }
 
-// Close queue modal
-function closeQueueModal() {
-    elements.queueModal.classList.remove('active');
-    showControls();
-    resetControlsTimeout();
-}
+        // Close queue modal
+        function closeQueueModal() {
+            elements.queueModal.classList.remove('active');
+            showControls();
+            resetControlsTimeout();
+        }
 
-// Handle queue submission
-function handleQueueSubmit() {
-    const url = elements.queueInput.value;
-    if (url) {
-        addToQueue(url);
-        elements.queueInput.value = '';
-    } else {
-        showNotification('Please enter a valid URL');
-    }
-}
+        // Handle queue submission
+        function handleQueueSubmit() {
+            const url = elements.queueInput.value;
+            if (url) {
+                addToQueue(url);
+                elements.queueInput.value = '';
+            } else {
+                showNotification('Please enter a valid URL');
+            }
+        }
 
-// Manage queue
-function manageQueue() {
-    openQueueModal();
-}
+        // Manage queue
+        function manageQueue() {
+            openQueueModal();
+        }
 
-// Update queue badge
-function updateBadge() {
-    elements.nextVideoBadge.textContent = nextVideos.length;
-    elements.nextVideoBadge.style.display = nextVideos.length > 0 ? 'flex' : 'none';
-}
+        // Update queue badge
+        function updateBadge() {
+            elements.nextVideoBadge.textContent = nextVideos.length;
+            elements.nextVideoBadge.style.display = nextVideos.length > 0 ? 'flex' : 'none';
+        }
 
-// Toggle fullscreen
-function toggleFullscreen() {
-    try {
-        if (!document.fullscreenElement) {
-            elements.videoContainer.requestFullscreen().catch(err => {
-                showNotification(`Fullscreen error: ${err.message}`);
+        // Toggle fullscreen
+        function toggleFullscreen() {
+            try {
+                if (!document.fullscreenElement) {
+                    elements.videoContainer.requestFullscreen().catch(err => {
+                        showNotification(`Fullscreen error: ${err.message}`);
+                    });
+                    elements.fullscreenBtn.innerHTML = '<i class="fas fa-compress"></i>';
+                    elements.joinerFullscreenBtn.innerHTML = '<i class="fas fa-compress"></i>';
+                } else {
+                    document.exitFullscreen();
+                    elements.fullscreenBtn.innerHTML = '<i class="fas fa-expand"></i>';
+                    elements.joinerFullscreenBtn.innerHTML = '<i class="fas fa-expand"></i>';
+                }
+                showControls();
+                resetControlsTimeout();
+            } catch (error) {
+                console.error('Error toggling fullscreen:', error);
+            }
+        }
+
+        // Copy room link
+        function copyRoomLink() {
+            try {
+                const roomLink = elements.copyRoomLink.getAttribute('data-link');
+                navigator.clipboard.writeText(roomLink).then(() => {
+                    showNotification('Room link copied to clipboard');
+                }).catch(err => {
+                    console.error('Failed to copy room link:', err);
+                    showNotification('Failed to copy link');
+                });
+            } catch (error) {
+                console.error('Error copying room link:', error);
+            }
+        }
+
+        // Leave room
+        async function leaveRoom() {
+            if (!roomRef || !isJoiner) {
+                showNotification('You are not in a room');
+                return;
+            }
+            
+            try {
+                await roomRef.child('joiners').transaction((count) => Math.max(0, (count || 0) - 1));
+                roomRef.off();
+                showNotification('You have left the room');
+                await resetAfterRoomDestroy();
+                history.pushState({}, '', window.location.pathname);
+                isJoiner = false;
+                roomRef = null;
+                roomId = null;
+            } catch (error) {
+                console.error('Error leaving room:', error);
+                showNotification('Error leaving room');
+            }
+        }
+
+        // Raise hand
+        function raiseHand() {
+            if (!roomRef) return;
+            
+            try {
+                roomRef.child('raiseHands').transaction((count) => (count || 0) + 1);
+                if (isHost) {
+                    showNotification('YES', 3000);
+                    playBeep();
+                }
+            } catch (error) {
+                console.error('Error raising hand:', error);
+                showNotification('Failed to raise hand');
+            }
+        }
+
+        // Show controls
+        function showControls() {
+            elements.controlsContainer.style.opacity = '1';
+            elements.controlsContainer.style.pointerEvents = 'auto';
+        }
+
+        // Hide controls
+        function hideControls() {
+            elements.controlsContainer.style.opacity = '0';
+            elements.controlsContainer.style.pointerEvents = 'none';
+        }
+
+        // Reset controls timeout
+        function resetControlsTimeout() {
+            if (controlsTimeout) {
+                clearTimeout(controlsTimeout);
+            }
+            showControls();
+            controlsTimeout = setTimeout(hideControls, 3000);
+        }
+
+        // Handle user interaction
+        const handleInteraction = debounce(() => {
+            showControls();
+            resetControlsTimeout();
+        }, 100);
+
+        // Initialize on DOM load
+        document.addEventListener('DOMContentLoaded', () => {
+            initAudio();
+            
+            const urlParams = new URLSearchParams(window.location.search);
+            const joinRoomId = urlParams.get('roomId');
+            if (joinRoomId) {
+                joinRoom(joinRoomId);
+            }
+            
+            elements.videoUrl.addEventListener('input', () => {
+                validateUrl(elements.videoUrl.value);
             });
-            elements.fullscreenBtn.innerHTML = '<i class="fas fa-compress"></i>';
-            elements.joinerFullscreenBtn.innerHTML = '<i class="fas fa-compress"></i>';
-        } else {
-            document.exitFullscreen();
-            elements.fullscreenBtn.innerHTML = '<i class="fas fa-expand"></i>';
-            elements.joinerFullscreenBtn.innerHTML = '<i class="fas fa-expand"></i>';
-        }
-        showControls();
-        resetControlsTimeout();
-    } catch (error) {
-        console.error('Error toggling fullscreen:', error);
-    }
-}
-
-// Copy room link
-function copyRoomLink() {
-    try {
-        const roomLink = elements.copyRoomLink.getAttribute('data-link');
-        navigator.clipboard.writeText(roomLink).then(() => {
-            showNotification('Room link copied to clipboard');
-        }).catch(err => {
-            console.error('Failed to copy room link:', err);
-            showNotification('Failed to copy link');
+            
+            elements.videoUrl.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') loadVideo();
+            });
+            
+            elements.loadVideo.addEventListener('click', loadVideo);
+            elements.playPauseBtn.addEventListener('click', togglePlayPause);
+            elements.backwardBtn.addEventListener('click', skipBackward);
+            elements.forwardBtn.addEventListener('click', skipForward);
+            elements.qualityBtn.addEventListener('click', toggleQuality);
+            elements.subtitleBtn.addEventListener('click', toggleSubtitle);
+            elements.nextVideoBtn.addEventListener('click', manageQueue);
+            elements.joinerNextVideoBtn.addEventListener('click', manageQueue);
+            elements.fullscreenBtn.addEventListener('click', toggleFullscreen);
+            elements.copyRoomLink.addEventListener('click', copyRoomLink);
+            elements.destroyRoomBtn.addEventListener('click', destroyRoom);
+            elements.videoContainer.addEventListener('mousemove', handleInteraction);
+            elements.videoContainer.addEventListener('touchstart', handleInteraction, { passive: true });
+            
+            elements.joinerQualityBtn.addEventListener('click', toggleQuality);
+            elements.joinerSubtitleBtn.addEventListener('click', toggleSubtitle);
+            elements.leaveRoomBtn.addEventListener('click', leaveRoom);
+            elements.joinerFullscreenBtn.addEventListener('click', toggleFullscreen);
+            elements.raiseHandBtn.addEventListener('click', raiseHand);
+            
+            elements.closeQueueModal.addEventListener('click', closeQueueModal);
+            elements.queueSubmit.addEventListener('click', handleQueueSubmit);
+            elements.queueInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') handleQueueSubmit();
+            });
+            elements.queueModal.addEventListener('click', (e) => {
+                if (e.target === elements.queueModal) {
+                    closeQueueModal();
+                }
+            });
+            
+            resetControlsTimeout();
+            
+            document.addEventListener('fullscreenchange', () => {
+                if (document.fullscreenElement) {
+                    elements.fullscreenBtn.innerHTML = '<i class="fas fa-compress"></i>';
+                    elements.joinerFullscreenBtn.innerHTML = '<i class="fas fa-compress"></i>';
+                    showNotification('Entered fullscreen mode', 2000);
+                } else {
+                    elements.fullscreenBtn.innerHTML = '<i class="fas fa-expand"></i>';
+                    elements.joinerFullscreenBtn.innerHTML = '<i class="fas fa-expand"></i>';
+                    showNotification('Exited fullscreen mode', 2000);
+                }
+                showControls();
+                resetControlsTimeout();
+            });
         });
-    } catch (error) {
-        console.error('Error copying room link:', error);
-    }
-}
-
-// Leave room
-async function leaveRoom() {
-    if (!roomRef || !isJoiner) {
-        showNotification('You are not in a room');
-        return;
-    }
-    
-    try {
-        await roomRef.child('joiners').transaction((count) => Math.max(0, (count || 0) - 1));
-        roomRef.off();
-        showNotification('You have left the room');
-        await resetAfterRoomDestroy();
-        history.pushState({}, '', window.location.pathname);
-        isJoiner = false;
-        roomRef = null;
-        roomId = null;
-    } catch (error) {
-        console.error('Error leaving room:', error);
-        showNotification('Error leaving room');
-    }
-}
-
-// Raise hand
-function raiseHand() {
-    if (!roomRef) return;
-    
-    try {
-        roomRef.child('raiseHands').transaction((count) => (count || 0) + 1);
-        if (isHost) {
-            showNotification('YES', 3000);
-            playBeep();
-        }
-    } catch (error) {
-        console.error('Error raising hand:', error);
-        showNotification('Failed to raise hand');
-    }
-}
-
-// Show controls
-function showControls() {
-    elements.controlsContainer.style.opacity = '1';
-    elements.controlsContainer.style.pointerEvents = 'auto';
-}
-
-// Hide controls
-function hideControls() {
-    elements.controlsContainer.style.opacity = '0';
-    elements.controlsContainer.style.pointerEvents = 'none';
-}
-
-// Reset controls timeout
-function resetControlsTimeout() {
-    if (controlsTimeout) {
-        clearTimeout(controlsTimeout);
-    }
-    showControls();
-    controlsTimeout = setTimeout(hideControls, 3000);
-}
-
-// Handle user interaction
-const handleInteraction = debounce(() => {
-    showControls();
-    resetControlsTimeout();
-}, 100);
-
-// Initialize on DOM load
-document.addEventListener('DOMContentLoaded', () => {
-    initAudio();
-    
-    const urlParams = new URLSearchParams(window.location.search);
-    const joinRoomId = urlParams.get('roomId');
-    if (joinRoomId) {
-        joinRoom(joinRoomId);
-    }
-    
-    elements.videoUrl.addEventListener('input', () => {
-        validateUrl(elements.videoUrl.value);
-    });
-    
-    elements.videoUrl.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') loadVideo();
-    });
-    
-    elements.loadVideo.addEventListener('click', loadVideo);
-    elements.playPauseBtn.addEventListener('click', togglePlayPause);
-    elements.backwardBtn.addEventListener('click', skipBackward);
-    elements.forwardBtn.addEventListener('click', skipForward);
-    elements.qualityBtn.addEventListener('click', toggleQuality);
-    elements.subtitleBtn.addEventListener('click', toggleSubtitle);
-    elements.nextVideoBtn.addEventListener('click', manageQueue);
-    elements.joinerNextVideoBtn.addEventListener('click', manageQueue);
-    elements.fullscreenBtn.addEventListener('click', toggleFullscreen);
-    elements.copyRoomLink.addEventListener('click', copyRoomLink);
-    elements.destroyRoomBtn.addEventListener('click', destroyRoom);
-    elements.videoContainer.addEventListener('mousemove', handleInteraction);
-    elements.videoContainer.addEventListener('touchstart', handleInteraction, { passive: true });
-    
-    elements.joinerQualityBtn.addEventListener('click', toggleQuality);
-    elements.joinerSubtitleBtn.addEventListener('click', toggleSubtitle);
-    elements.leaveRoomBtn.addEventListener('click', leaveRoom);
-    elements.joinerFullscreenBtn.addEventListener('click', toggleFullscreen);
-    elements.raiseHandBtn.addEventListener('click', raiseHand);
-    
-    elements.closeQueueModal.addEventListener('click', closeQueueModal);
-    elements.queueSubmit.addEventListener('click', handleQueueSubmit);
-    elements.queueInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') handleQueueSubmit();
-    });
-    elements.queueModal.addEventListener('click', (e) => {
-        if (e.target === elements.queueModal) {
-            closeQueueModal();
-        }
-    });
-    
-    resetControlsTimeout();
-    
-    document.addEventListener('fullscreenchange', () => {
-        if (document.fullscreenElement) {
-            elements.fullscreenBtn.innerHTML = '<i class="fas fa-compress"></i>';
-            elements.joinerFullscreenBtn.innerHTML = '<i class="fas fa-compress"></i>';
-            showNotification('Entered fullscreen mode', 2000);
-        } else {
-            elements.fullscreenBtn.innerHTML = '<i class="fas fa-expand"></i>';
-            elements.joinerFullscreenBtn.innerHTML = '<i class="fas fa-expand"></i>';
-            showNotification('Exited fullscreen mode', 2000);
-        }
-        showControls();
-        resetControlsTimeout();
-    });
-});
     </script>
 </body>
 </html>
