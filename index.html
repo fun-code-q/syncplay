@@ -684,6 +684,16 @@
             color: #4ade80;
         }
 
+        /* Platform notice */
+        .platform-notice {
+            font-size: 0.8rem;
+            opacity: 0.7;
+            margin-top: 10px;
+            padding: 8px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 8px;
+        }
+
         @media (max-width: 768px) {
             .input-group {
                 flex-direction: row;
@@ -908,6 +918,9 @@
         </div>
         
         <div class="supported-platforms">
+            <div class="platform-notice">
+                Note: Some platforms (Spotify, TikTok, Instagram, Facebook) have limited player control due to API restrictions.
+            </div>
             <div class="platform-icons">
                 <i class="fab fa-youtube" title="YouTube"></i>
                 <i class="fab fa-vimeo" title="Vimeo"></i>
@@ -915,10 +928,10 @@
                 <i class="fab fa-soundcloud" title="SoundCloud"></i>
                 <i class="fas fa-video" title="Pexels"></i>
                 <i class="fas fa-archive" title="Internet Archive"></i>
-                <i class="fab fa-spotify" title="Spotify"></i>
-                <i class="fab fa-tiktok" title="TikTok"></i>
-                <i class="fab fa-facebook" title="Facebook"></i>
-                <i class="fab fa-instagram" title="Instagram"></i>
+                <i class="fab fa-spotify" title="Spotify (limited controls)"></i>
+                <i class="fab fa-tiktok" title="TikTok (limited controls)"></i>
+                <i class="fab fa-facebook" title="Facebook (limited controls)"></i>
+                <i class="fab fa-instagram" title="Instagram (limited controls)"></i>
             </div>
         </div>
     </div>
@@ -1104,7 +1117,7 @@
             { 
                 id: 'spotify', 
                 regex: /spotify\.com/, 
-                name: 'Spotify',
+                name: 'Spotify (limited controls)',
                 extractId: (url) => {
                     const spRegExp = /spotify\.com\/(track|album|playlist)\/([a-zA-Z0-9]+)/;
                     const spMatch = url.match(spRegExp);
@@ -1114,7 +1127,7 @@
             { 
                 id: 'tiktok', 
                 regex: /tiktok\.com/, 
-                name: 'TikTok',
+                name: 'TikTok (limited controls)',
                 extractId: (url) => {
                     const tiktokRegExp = /tiktok\.com\/@.+\/video\/(\d+)/;
                     const tiktokMatch = url.match(tiktokRegExp);
@@ -1124,7 +1137,7 @@
             { 
                 id: 'facebook', 
                 regex: /facebook\.com/, 
-                name: 'Facebook',
+                name: 'Facebook (limited controls)',
                 extractId: (url) => {
                     const fbRegExp = /facebook\.com\/(?:[^\/]+\/videos\/|watch\/\?v=)(\d+)/;
                     const fbMatch = url.match(fbRegExp);
@@ -1134,7 +1147,7 @@
             { 
                 id: 'instagram', 
                 regex: /instagram\.com/, 
-                name: 'Instagram',
+                name: 'Instagram (limited controls)',
                 extractId: (url) => {
                     const igRegExp = /instagram\.com\/(?:p|reel)\/([a-zA-Z0-9_-]+)/;
                     const igMatch = url.match(igRegExp);
@@ -1572,16 +1585,19 @@
                 document.getElementById('player').innerHTML = '';
                 document.getElementById('player').appendChild(iframe);
                 
-                // Spotify Web Playback SDK would be needed for full control
-                // This is a basic implementation with limited control
+                // Add event listener for postMessage communication
+                window.addEventListener('message', function(event) {
+                    if (event.origin === "https://open.spotify.com") {
+                        console.log('Spotify message:', event.data);
+                    }
+                });
+                
                 playerReady = true;
                 isPlaying = false;
                 elements.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
-                
-                // Store the iframe for later control
                 player = iframe;
                 
-                // Enable play/pause controls (limited functionality)
+                // Enable play/pause controls with limited functionality
                 elements.playPauseBtn.style.display = 'flex';
                 elements.backwardBtn.style.display = 'none';
                 elements.forwardBtn.style.display = 'none';
@@ -1600,7 +1616,6 @@
                 // Clear previous players
                 clearPlayer();
                 
-                // TikTok requires an iframe
                 const iframe = document.createElement('iframe');
                 iframe.src = `https://www.tiktok.com/embed/v2/${videoId}`;
                 iframe.width = '100%';
@@ -1612,15 +1627,21 @@
                 document.getElementById('player').innerHTML = '';
                 document.getElementById('player').appendChild(iframe);
                 
-                // TikTok doesn't provide a public API for control
                 playerReady = true;
                 isPlaying = false;
                 elements.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
-                
-                // Store the iframe for later control
                 player = iframe;
                 
-                // Show play/pause button but with limited functionality
+                // Add click handler to simulate play/pause
+                elements.playPauseBtn.onclick = function() {
+                    iframe.contentWindow.postMessage({
+                        type: 'play' 
+                    }, '*');
+                    isPlaying = !isPlaying;
+                    elements.playPauseBtn.innerHTML = isPlaying ? 
+                        '<i class="fas fa-pause"></i>' : '<i class="fas fa-play"></i>';
+                };
+                
                 elements.playPauseBtn.style.display = 'flex';
                 elements.backwardBtn.style.display = 'none';
                 elements.forwardBtn.style.display = 'none';
@@ -1639,7 +1660,6 @@
                 // Clear previous players
                 clearPlayer();
                 
-                // Facebook requires an iframe
                 const iframe = document.createElement('iframe');
                 iframe.src = `https://www.facebook.com/plugins/video.php?href=https%3A%2F%2Fwww.facebook.com%2Fvideo.php%3Fv%3D${videoId}&show_text=false&width=560&height=315&appId`;
                 iframe.width = '100%';
@@ -1651,15 +1671,21 @@
                 document.getElementById('player').innerHTML = '';
                 document.getElementById('player').appendChild(iframe);
                 
-                // Facebook doesn't provide a public API for control
                 playerReady = true;
                 isPlaying = false;
                 elements.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
-                
-                // Store the iframe for later control
                 player = iframe;
                 
-                // Show play/pause button but with limited functionality
+                // Add click handler to simulate play/pause
+                elements.playPauseBtn.onclick = function() {
+                    iframe.contentWindow.postMessage({
+                        type: isPlaying ? 'pause' : 'play'
+                    }, '*');
+                    isPlaying = !isPlaying;
+                    elements.playPauseBtn.innerHTML = isPlaying ? 
+                        '<i class="fas fa-pause"></i>' : '<i class="fas fa-play"></i>';
+                };
+                
                 elements.playPauseBtn.style.display = 'flex';
                 elements.backwardBtn.style.display = 'none';
                 elements.forwardBtn.style.display = 'none';
@@ -1678,7 +1704,6 @@
                 // Clear previous players
                 clearPlayer();
                 
-                // Instagram requires an iframe
                 const iframe = document.createElement('iframe');
                 iframe.src = `https://www.instagram.com/p/${mediaId}/embed`;
                 iframe.width = '100%';
@@ -1690,15 +1715,21 @@
                 document.getElementById('player').innerHTML = '';
                 document.getElementById('player').appendChild(iframe);
                 
-                // Instagram doesn't provide a public API for control
                 playerReady = true;
                 isPlaying = false;
                 elements.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
-                
-                // Store the iframe for later control
                 player = iframe;
                 
-                // Show play/pause button but with limited functionality
+                // Add click handler to simulate play/pause
+                elements.playPauseBtn.onclick = function() {
+                    iframe.contentWindow.postMessage({
+                        action: isPlaying ? 'pause' : 'play'
+                    }, '*');
+                    isPlaying = !isPlaying;
+                    elements.playPauseBtn.innerHTML = isPlaying ? 
+                        '<i class="fas fa-pause"></i>' : '<i class="fas fa-play"></i>';
+                };
+                
                 elements.playPauseBtn.style.display = 'flex';
                 elements.backwardBtn.style.display = 'none';
                 elements.forwardBtn.style.display = 'none';
@@ -2649,7 +2680,13 @@
                     }
                 } else if (player && player.contentWindow) {
                     // Generic iframe - try to post message
-                    player.contentWindow.postMessage(isPlaying ? 'pause' : 'play', '*');
+                    const message = isPlaying ? 'pause' : 'play';
+                    player.contentWindow.postMessage(message, '*');
+                    
+                    // Toggle state locally since we can't reliably detect the actual state
+                    isPlaying = !isPlaying;
+                    elements.playPauseBtn.innerHTML = isPlaying ? 
+                        '<i class="fas fa-pause"></i>' : '<i class="fas fa-play"></i>';
                 }
                 
                 showControls();
