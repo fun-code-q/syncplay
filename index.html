@@ -1637,42 +1637,60 @@
         }
 
         // Create appropriate player based on platform
-        function createPlayer(videoId, platform) {
-            playerReady = false;
-            playerLoadAttempts = 0;
-            console.log(`Creating player for ${platform.name} with ID: ${videoId}`);
-            
-            switch(platform.id) {
-                case 'youtube':
-                    createYouTubePlayer(videoId);
-                    break;
-                case 'vimeo':
-                    createVimeoPlayer(videoId);
-                    break;
-                case 'soundcloud':
-                    createSoundCloudPlayer(videoId);
-                    break;
-                case 'direct':
-                    if (videoId.match(/\.(mp4|webm|ogg|mov|avi|mkv)$/i)) {
-                        createVideoJSPlayer({
-                            src: videoId,
-                            type: `video/${videoId.split('.').pop().toLowerCase()}`
-                        });
-                    } else if (videoId.match(/\.(mp3|wav|ogg)$/i)) {
-                        createVideoJSPlayer({
-                            src: videoId,
-                            type: `audio/${videoId.split('.').pop().toLowerCase()}`
-                        });
-                    } else if (videoId.match(/\.m3u8$/i)) {
-                        createHLSPlayer(videoId);
-                    } else {
-                        showNotification('Unsupported direct URL format');
-                    }
-                    break;
-                default:
-                    createGenericIframePlayer(videoId, platform);
-            }
+       function createPlayer(url, platform) {
+        // FIX: Added fallback for undefined platform
+        if (!platform) {
+            platform = detectPlatform(url) || { id: 'direct', name: 'Direct Media' };
         }
+        
+        playerReady = false;
+        playerLoadAttempts = 0;
+        console.log(`Creating player for ${platform.name} with URL: ${url}`);
+        
+        switch(platform.id) {
+            case 'youtube':
+                const videoId = platform.extractId(url);
+                if (videoId) {
+                    createYouTubePlayer(videoId);
+                } else {
+                    showNotification('Invalid YouTube URL');
+                    createGenericIframePlayer(url, platform);
+                }
+                break;
+            case 'vimeo':
+                const vimeoId = platform.extractId(url);
+                if (vimeoId) {
+                    createVimeoPlayer(vimeoId);
+                } else {
+                    showNotification('Invalid Vimeo URL');
+                    createGenericIframePlayer(url, platform);
+                }
+                break;
+            case 'soundcloud':
+                createSoundCloudPlayer(url);
+                break;
+            case 'direct':
+                if (url.match(/\.(mp4|webm|ogg|mov|avi|mkv)$/i)) {
+                    createVideoJSPlayer({
+                        src: url,
+                        type: `video/${url.split('.').pop().toLowerCase()}`
+                    });
+                } else if (url.match(/\.(mp3|wav|ogg)$/i)) {
+                    createVideoJSPlayer({
+                        src: url,
+                        type: `audio/${url.split('.').pop().toLowerCase()}`
+                    });
+                } else if (url.match(/\.m3u8$/i)) {
+                    createHLSPlayer(url);
+                } else {
+                    showNotification('Unsupported direct URL format');
+                    createGenericIframePlayer(url, platform);
+                }
+                break;
+            default:
+                createGenericIframePlayer(url, platform);
+        }
+    }
 
         // Create generic iframe player for unsupported platforms
         function createGenericIframePlayer(url, platform) {
@@ -2026,93 +2044,94 @@
         }
 
         // Join a room
-        function joinRoom(roomId) {
-            try {
-                roomRef = database.ref(`rooms/${roomId}`);
-                roomRef.once('value').then((snapshot) => {
+      function joinRoom(roomId) {
+        try {
+            roomRef = database.ref(`rooms/${roomId}`);
+            roomRef.once('value').then((snapshot) => {
+                const roomData = snapshot.val();
+                if (!roomData || !roomData.hostActive) {
+                    showNotification('Room not found or host disconnected');
+                    return;
+                }
+                if (roomData.destroyed) {
+                    showNotification('Room has been destroyed');
+                    window.location.href = window.location.pathname;
+                    return;
+                }
+                
+                isJoiner = true;
+                elements.modeIndicator.textContent = 'Joiner Mode';
+                elements.modeIndicator.className = 'mode-indicator joiner-indicator';
+                elements.modeIndicator.style.display = 'block';
+                elements.inputGroup.style.display = 'none';
+                hostControls = false;
+                elements.hostControls.style.display = 'none';
+                elements.joinerControls.style.display = 'flex';
+                elements.feedbackContainer.style.display = 'flex';
+                
+                lastRoomState = roomData;
+                
+                playerLoadAttempts = 0;
+                
+                // FIX: Use stored platform ID for detection
+                const platformId = roomData.platform || 'direct';
+                const platform = supportedPlatforms.find(p => p.id === platformId) || 
+                                { id: 'direct', name: 'Direct Media' };
+                
+                // FIX: Use roomData.videoId instead of roomData.videoId
+                createPlayer(roomData.videoId, platform);
+                
+                // Listen for room changes
+                roomRef.on('value', (snapshot) => {
                     const roomData = snapshot.val();
-                    if (!roomData || !roomData.hostActive) {
-                        showNotification('Room not found or host disconnected');
+                    if (!roomData) {
+                        showNotification('Room disconnected');
+                        resetAfterRoomDestroy();
+                        window.location.href = window.location.pathname;
                         return;
                     }
                     if (roomData.destroyed) {
-                        showNotification('Room has been destroyed');
+                        showNotification('Room destroyed by host');
+                        resetAfterRoomDestroy();
                         window.location.href = window.location.pathname;
                         return;
                     }
                     
-                    isJoiner = true;
-                    elements.modeIndicator.textContent = 'Joiner Mode';
-                    elements.modeIndicator.className = 'mode-indicator joiner-indicator';
-                    elements.modeIndicator.style.display = 'block';
-                    elements.inputGroup.style.display = 'none';
-                    hostControls = false;
-                    elements.hostControls.style.display = 'none';
-                    elements.joinerControls.style.display = 'flex';
-                    elements.feedbackContainer.style.display = 'flex';
-                    
-                    lastRoomState = roomData;
-                    
-                    playerLoadAttempts = 0;
-                    const platform = detectPlatform(roomData.videoId);
-                    if (platform) {
+                    // Only update video if it's different and platform matches
+                    if (roomData.videoId !== lastRoomState?.videoId && 
+                        roomData.platform === currentPlatform) {
+                        const platform = supportedPlatforms.find(p => p.id === roomData.platform) || 
+                                        { id: 'direct', name: 'Direct Media' };
                         createPlayer(roomData.videoId, platform);
-                    } else {
-                        createPlayer(roomData.videoId, { id: 'direct', name: 'Direct Media' });
                     }
                     
-                    // Listen for room changes
-                    roomRef.on('value', (snapshot) => {
-                        const roomData = snapshot.val();
-                        if (!roomData) {
-                            showNotification('Room disconnected');
-                            resetAfterRoomDestroy();
-                            window.location.href = window.location.pathname;
-                            return;
-                        }
-                        if (roomData.destroyed) {
-                            showNotification('Room destroyed by host');
-                            resetAfterRoomDestroy();
-                            window.location.href = window.location.pathname;
-                            return;
-                        }
-                        
-                        // Only update video if it's different and platform matches
-                        if (roomData.videoId !== lastRoomState?.videoId && 
-                            roomData.platform === currentPlatform) {
-                            const platform = detectPlatform(roomData.videoId);
-                            if (platform) {
-                                createPlayer(roomData.videoId, platform);
-                            }
-                        }
-                        
-                        nextVideos = roomData.nextVideos || [];
-                        updateBadge();
-                        updateQueueList();
-                        
-                        if (!applyRoomState(roomData)) {
-                            lastRoomState = roomData;
-                        }
-                    });
+                    nextVideos = roomData.nextVideos || [];
+                    updateBadge();
+                    updateQueueList();
                     
-                    roomRef.child('joiners').transaction((count) => (count || 0) + 1);
-                    roomRef.child('raiseHands').on('value', (snapshot) => {
-                        raiseHandCount = snapshot.val() || 0;
-                        if (isJoiner && raiseHandCount > 0) {
-                            showNotification('YES', 3000);
-                            playBeep();
-                        }
-                    });
-                    
-                    window.addEventListener('beforeunload', () => {
-                        roomRef.child('joiners').transaction((count) => Math.max(0, (count || 0) - 1));
-                    });
+                    if (!applyRoomState(roomData)) {
+                        lastRoomState = roomData;
+                    }
                 });
-            } catch (error) {
-                console.error('Error joining room:', error);
-                showNotification('Failed to join room');
-            }
+                
+                roomRef.child('joiners').transaction((count) => (count || 0) + 1);
+                roomRef.child('raiseHands').on('value', (snapshot) => {
+                    raiseHandCount = snapshot.val() || 0;
+                    if (isJoiner && raiseHandCount > 0) {
+                        showNotification('Hand raised!', 3000);
+                        playBeep();
+                    }
+                });
+                
+                window.addEventListener('beforeunload', () => {
+                    roomRef.child('joiners').transaction((count) => Math.max(0, (count || 0) - 1));
+                });
+            });
+        } catch (error) {
+            console.error('Error joining room:', error);
+            showNotification('Failed to join room');
         }
+    }
 
         // Check YouTube API readiness
         function checkYouTubeAPI() {
