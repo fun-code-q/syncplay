@@ -643,6 +643,7 @@
         .footer-icon:nth-child(2) { animation-delay: 0.5s; }
         .footer-icon:nth-child(3) { animation-delay: 1s; }
         .footer-icon:nth-child(4) { animation-delay: 1.5s; }
+        .footer-icon:nth-child(5) { animation-delay: 2s; }
 
         @keyframes float {
             0%, 100% { transform: translateY(0); }
@@ -857,11 +858,15 @@
             <i class="fab fa-youtube footer-icon" title="YouTube"></i>
             <i class="fab fa-vimeo-v footer-icon" title="Vimeo"></i>
             <i class="fas fa-music footer-icon" title="Direct Media"></i>
+            <i class="fab fa-soundcloud footer-icon" title="SoundCloud"></i>
         </div>
     </div>
 
     <!-- YouTube IFrame API -->
     <script src="https://www.youtube.com/iframe_api"></script>
+    
+    <!-- Vimeo Player API -->
+    <script src="https://player.vimeo.com/api/player.js"></script>
     
     <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
@@ -907,6 +912,7 @@
         let audioContext;
         let beepBuffer;
         let currentPlatform = 'youtube';
+        let vimeoPlayer = null;
 
         // DOM elements
         const elements = {
@@ -971,6 +977,12 @@
                 id: 'direct',
                 regex: /\.(mp4|webm|ogg|mov|avi|mkv|mp3|wav|m3u8)$/i,
                 name: 'Direct Media',
+                extractId: (url) => url
+            },
+            soundcloud: {
+                id: 'soundcloud',
+                regex: /soundcloud\.com/,
+                name: 'SoundCloud',
                 extractId: (url) => url
             }
         };
@@ -1039,6 +1051,11 @@
                 return supportedPlatforms.vimeo;
             }
             
+            // Check for SoundCloud
+            if (url.match(supportedPlatforms.soundcloud.regex)) {
+                return supportedPlatforms.soundcloud;
+            }
+            
             return null;
         }
 
@@ -1100,7 +1117,7 @@
         function createVimeoPlayer(videoId) {
             try {
                 const iframe = document.createElement('iframe');
-                iframe.src = `https://player.vimeo.com/video/${videoId}?autoplay=0&loop=0&byline=0&portrait=0&title=0`;
+                iframe.src = `https://player.vimeo.com/video/${videoId}?autoplay=0&loop=0&byline=0&portrait=0&title=0&api=1`;
                 iframe.width = '100%';
                 iframe.height = '100%';
                 iframe.frameBorder = '0';
@@ -1110,20 +1127,97 @@
                 document.getElementById('player').innerHTML = '';
                 document.getElementById('player').appendChild(iframe);
                 
+                // Initialize Vimeo Player API
+                vimeoPlayer = new Vimeo.Player(iframe);
+                
+                vimeoPlayer.on('play', function() {
+                    isPlaying = true;
+                    elements.playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                    if (isHost && roomRef) {
+                        vimeoPlayer.getCurrentTime().then(function(currentTime) {
+                            roomRef.update({
+                                state: 'playing',
+                                currentTime: currentTime,
+                                lastUpdated: firebase.database.ServerValue.TIMESTAMP
+                            });
+                        });
+                    }
+                });
+                
+                vimeoPlayer.on('pause', function() {
+                    isPlaying = false;
+                    elements.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                    if (isHost && roomRef) {
+                        vimeoPlayer.getCurrentTime().then(function(currentTime) {
+                            roomRef.update({
+                                state: 'paused',
+                                currentTime: currentTime,
+                                lastUpdated: firebase.database.ServerValue.TIMESTAMP
+                            });
+                        });
+                    }
+                });
+                
+                vimeoPlayer.on('ended', function() {
+                    if (nextVideos.length > 0) {
+                        const nextVideo = nextVideos.shift();
+                        loadVideoByUrl(nextVideo);
+                        if (isHost && roomRef) {
+                            roomRef.update({
+                                videoUrl: nextVideo,
+                                nextVideos,
+                                lastUpdated: firebase.database.ServerValue.TIMESTAMP
+                            });
+                        }
+                        currentVideoIndex++;
+                        updateBadge();
+                        updateQueueList();
+                    }
+                });
+                
+                vimeoPlayer.on('error', function(error) {
+                    console.error('Vimeo player error:', error);
+                    showNotification('Error playing Vimeo video');
+                });
+                
                 playerReady = true;
                 isPlaying = false;
                 elements.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
                 player = iframe;
                 
-                // Vimeo doesn't support API controls, so hide buttons
-                elements.playPauseBtn.style.display = 'none';
+                resetControlsTimeout();
+            } catch (error) {
+                console.error('Error creating Vimeo player:', error);
+                showNotification('Failed to initialize Vimeo player');
+            }
+        }
+
+        // Create SoundCloud player
+        function createSoundCloudPlayer(url) {
+            try {
+                const iframe = document.createElement('iframe');
+                iframe.src = `https://w.soundcloud.com/player/?url=${encodeURIComponent(url)}&auto_play=false&hide_related=true&show_comments=false&show_user=false&show_reposts=false&visual=false`;
+                iframe.width = '100%';
+                iframe.height = '100%';
+                iframe.frameBorder = '0';
+                iframe.allow = 'autoplay';
+                
+                document.getElementById('player').innerHTML = '';
+                document.getElementById('player').appendChild(iframe);
+                
+                playerReady = true;
+                isPlaying = false;
+                elements.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                player = iframe;
+                
+                // SoundCloud doesn't support seeking via API without their widget API
                 elements.backwardBtn.style.display = 'none';
                 elements.forwardBtn.style.display = 'none';
                 
                 resetControlsTimeout();
             } catch (error) {
-                console.error('Error creating Vimeo player:', error);
-                showNotification('Failed to initialize Vimeo player');
+                console.error('Error creating SoundCloud player:', error);
+                showNotification('Failed to initialize SoundCloud player');
             }
         }
 
@@ -1175,7 +1269,7 @@
                         loadVideoByUrl(nextVideo);
                         if (isHost && roomRef) {
                             roomRef.update({
-                                videoId: nextVideo,
+                                videoUrl: nextVideo,
                                 nextVideos,
                                 lastUpdated: firebase.database.ServerValue.TIMESTAMP
                             });
@@ -1226,6 +1320,9 @@
                 case 'direct':
                     createDirectMediaPlayer(url);
                     break;
+                case 'soundcloud':
+                    createSoundCloudPlayer(url);
+                    break;
                 default:
                     showNotification('Unsupported platform');
             }
@@ -1267,14 +1364,26 @@
         }
 
         // Load video from input
-        function loadVideo() {
-            const url = elements.videoUrl.value;
-            if (!url) {
-                showNotification('Please enter a URL');
-                return;
-            }
-            loadVideoByUrl(url);
+       function loadVideo() {
+    try {
+        const url = elements.videoUrl.value;
+        if (!url) {
+            showNotification('Please enter a URL');
+            return;
         }
+        
+        const platform = detectPlatform(url);
+        if (!platform) {
+            showNotification('Unsupported platform');
+            return;
+        }
+        
+        loadVideoByUrl(url);
+    } catch (error) {
+        console.error('Error loading video:', error);
+        showNotification('Failed to load video');
+    }
+    }
 
         // Create a new room
         function createRoom(videoUrl) {
@@ -1339,6 +1448,17 @@
                         
                         if (player && player.getCurrentTime) {
                             currentTime = player.getCurrentTime();
+                        } else if (vimeoPlayer) {
+                            vimeoPlayer.getCurrentTime().then(function(time) {
+                                currentTime = time;
+                                roomRef.update({
+                                    currentTime,
+                                    state,
+                                    nextVideos,
+                                    lastUpdated: firebase.database.ServerValue.TIMESTAMP
+                                });
+                            });
+                            return;
                         } else if (currentPlatform === 'direct' && document.querySelector('video')) {
                             const video = document.querySelector('video');
                             currentTime = video.currentTime;
@@ -1460,6 +1580,20 @@
                     return true;
                 } else if (roomData.state === 'paused' && isPlaying) {
                     player.pauseVideo();
+                    return true;
+                }
+            } else if (vimeoPlayer) {
+                vimeoPlayer.getCurrentTime().then(function(time) {
+                    if (Math.abs(time - roomData.currentTime) > 1) {
+                        vimeoPlayer.setCurrentTime(roomData.currentTime);
+                    }
+                });
+                
+                if (roomData.state === 'playing' && !isPlaying) {
+                    vimeoPlayer.play();
+                    return true;
+                } else if (roomData.state === 'paused' && isPlaying) {
+                    vimeoPlayer.pause();
                     return true;
                 }
             } else if (document.querySelector('video')) {
@@ -1643,6 +1777,12 @@
                     } else {
                         player.playVideo();
                     }
+                } else if (vimeoPlayer) {
+                    if (isPlaying) {
+                        vimeoPlayer.pause();
+                    } else {
+                        vimeoPlayer.play();
+                    }
                 } else if (document.querySelector('video')) {
                     const video = document.querySelector('video');
                     if (video.paused) {
@@ -1668,6 +1808,10 @@
                 if (player && player.getCurrentTime) {
                     currentTime = player.getCurrentTime();
                     player.seekTo(currentTime + 10, true);
+                } else if (vimeoPlayer) {
+                    vimeoPlayer.getCurrentTime().then(function(time) {
+                        vimeoPlayer.setCurrentTime(time + 10);
+                    });
                 } else if (document.querySelector('video')) {
                     const video = document.querySelector('video');
                     currentTime = video.currentTime;
@@ -1699,6 +1843,10 @@
                 if (player && player.getCurrentTime) {
                     currentTime = player.getCurrentTime();
                     player.seekTo(Math.max(0, currentTime - 10), true);
+                } else if (vimeoPlayer) {
+                    vimeoPlayer.getCurrentTime().then(function(time) {
+                        vimeoPlayer.setCurrentTime(Math.max(0, time - 10));
+                    });
                 } else if (document.querySelector('video')) {
                     const video = document.querySelector('video');
                     currentTime = video.currentTime;
@@ -1865,8 +2013,10 @@
         // Toggle fullscreen
         function toggleFullscreen() {
             try {
+                const element = document.querySelector('video') || elements.videoContainer;
+                
                 if (!document.fullscreenElement) {
-                    elements.videoContainer.requestFullscreen().catch(err => {
+                    element.requestFullscreen().catch(err => {
                         showNotification(`Fullscreen error: ${err.message}`);
                     });
                     elements.fullscreenBtn.innerHTML = '<i class="fas fa-compress"></i>';
@@ -1900,12 +2050,12 @@
 
         // Leave room
         function leaveRoom() {
-            if (roomRef && isJoiner) {
-                roomRef.child('joiners').transaction((count) => Math.max(0, (count || 0) - 1));
-                resetAfterRoomDestroy();
-                window.location.href = window.location.pathname;
-            }
-        }
+    if (roomRef && isJoiner) {
+        roomRef.child('joiners').transaction((count) => Math.max(0, (count || 0) - 1));
+        resetAfterRoomDestroy();
+        window.location.href = window.location.pathname;
+    }
+    }
 
         // Raise hand
         function raiseHand() {
